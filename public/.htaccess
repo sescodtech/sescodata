@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  Options -MultiViews
+  RewriteEngine On
+  RewriteBase /sescohubs/
+
+  # If the request is not for a valid file or directory, rewrite to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L,QSA]
+</IfModule>
+
+ErrorDocument 404 /sescohubs/index.html

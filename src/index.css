@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   SescoHub V1 — Design tokens
+   Single source of truth for color / type / radius / shadow used
+   across the whole app. Existing gold/navy brand DNA, tightened.
+   ============================================================ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-shb-navy: #0B1220;
+  --color-shb-navy-2: #121C2E;
+  --color-shb-navy-3: #1A2740;
+  --color-shb-gold: #D4A73B;
+  --color-shb-gold-soft: #F2E4BB;
+  --color-shb-gold-dark: #B78B25;
+  --color-shb-success: #22C55E;
+  --color-shb-danger: #EF4444;
+  --color-shb-text: #F5F6F8;
+  --color-shb-muted: #8B93A7;
+
+  --shadow-card: 0 8px 24px rgba(11, 18, 32, 0.10);
+  --shadow-gold: 0 8px 24px rgba(212, 167, 59, 0.25);
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply font-sans text-gray-900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Improve touch targets on mobile */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better focus states for accessibility — gold ring matches brand instead of generic blue */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-shb-gold), 0 0 0 4px rgba(212, 167, 59, 0.25);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .shb-card {
+    @apply bg-white rounded-2xl border border-gray-100;
+    box-shadow: var(--shadow-card);
+  }
+
+  .shb-btn-primary {
+    background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
+    @apply text-shb-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: var(--shadow-gold);
+  }
+
+  .shb-btn-secondary {
+    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:bg-shb-navy hover:text-white active:scale-[0.98];
+  }
+
+  .shb-skeleton {
+    @apply animate-pulse bg-gray-100 rounded-xl;
+  }
+}
+
+.content-reveal {
+  animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Print isolation for digital receipts — everything except the receipt
+   itself is hidden when the user prints from the transaction details drawer. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print-area, .receipt-print-area * {
+    visibility: visible;
+  }
+  .receipt-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
