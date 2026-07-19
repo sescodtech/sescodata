@@ -122,4 +122,30 @@ export class EmailService {
     const { subject, html } = emailTemplates.systemAnnouncement(title, bodyText, ctaLabel, ctaUrl);
     await deliver(user.email, subject, html);
   }
+
+  // ── Module 4: Retry & Manual Processing ──────────────────────
+  static async sendRetryInitiated(user: { name: string; email: string }, product: string, ref: string) {
+    const { subject, html } = emailTemplates.retryInitiated(user.name, product, ref);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendRetrySucceeded(user: { name: string; email: string }, txn: { product: string; amount: number; ref: string }) {
+    const { subject, html } = emailTemplates.retrySucceeded(user.name, txn);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendRetryFailedPermanently(user: { name: string; email: string }, txn: { product: string; amount: number; ref: string }) {
+    const { subject, html } = emailTemplates.retryFailedPermanently(user.name, txn);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendManualRefund(user: { name: string; email: string }, amount: number, reason: string) {
+    const { subject, html } = emailTemplates.manualRefund(user.name, amount, reason);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendManualReviewCompleted(user: { name: string; email: string }, product: string, outcome: 'approved' | 'rejected' | 'completed', notes?: string) {
+    const { subject, html } = emailTemplates.manualReviewCompleted(user.name, product, outcome, notes);
+    await deliver(user.email, subject, html);
+  }
 }

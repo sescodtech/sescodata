@@ -126,11 +126,28 @@ export default function ResetPasswordPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            {password && (
+              <div className="flex items-center gap-2 pt-1">
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      password.length < 6 ? 'bg-red-400 w-1/5' :
+                      password.length < 8 ? 'bg-amber-400 w-3/5' :
+                      /[0-9]/.test(password) && /[A-Z]/.test(password) ? 'bg-green-500 w-full' : 'bg-shb-gold w-4/5'
+                    }`}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-gray-500 shrink-0">
+                  {password.length < 6 ? 'Too short' : password.length < 8 ? 'Fair' : /[0-9]/.test(password) && /[A-Z]/.test(password) ? 'Strong' : 'Good'}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -149,6 +166,7 @@ export default function ResetPasswordPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
               >
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}

@@ -23,6 +23,30 @@
 
   --shadow-card: 0 8px 24px rgba(11, 18, 32, 0.10);
   --shadow-gold: 0 8px 24px rgba(212, 167, 59, 0.25);
+
+  /* ============================================================
+     Admin — Business Control Center design tokens
+     Deliberately separate from the shb-* customer tokens above so
+     re-theming the admin can never affect a completed customer module.
+     Primary = professional royal blue. Secondary = deep navy (large
+     surfaces, headers). Gold is accent-only — highlights, active
+     indicators, premium touches — never a primary fill.
+     ============================================================ */
+  --color-admin-blue: #2563EB;
+  --color-admin-blue-dark: #1D4ED8;
+  --color-admin-blue-soft: #DBEAFE;
+  --color-admin-navy: #0F172A;
+  --color-admin-navy-2: #16213A;
+  --color-admin-gold: #D4A73B;
+  --color-admin-gold-soft: #FBF3DE;
+  --color-admin-bg: #F8FAFC;
+  --color-admin-success: #16A34A;
+  --color-admin-danger: #DC2626;
+  --color-admin-warning: #D97706;
+  --color-admin-muted: #64748B;
+
+  --shadow-admin-card: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --shadow-admin-blue: 0 8px 24px rgba(37, 99, 235, 0.22);
 }
 
 @layer base {
@@ -94,6 +118,37 @@
   .shb-skeleton {
     @apply animate-pulse bg-gray-100 rounded-xl;
   }
+
+  /* ── Admin component classes ─────────────────────────────── */
+  .admin-card {
+    @apply bg-white rounded-2xl border border-gray-100;
+    box-shadow: var(--shadow-admin-card);
+  }
+
+  .admin-btn-primary {
+    background: linear-gradient(135deg, var(--color-admin-blue), var(--color-admin-blue-dark));
+    @apply text-white font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: var(--shadow-admin-blue);
+  }
+
+  .admin-btn-secondary {
+    @apply border-2 border-admin-navy text-admin-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
+  }
+
+  .admin-skeleton {
+    @apply animate-pulse bg-gray-100 rounded-xl;
+  }
+}
+
+/* Admin-scoped focus ring — blue instead of the customer app's gold,
+   applied only within .admin-shell so the customer app is unaffected. */
+.admin-shell button:focus-visible,
+.admin-shell a:focus-visible,
+.admin-shell input:focus-visible,
+.admin-shell select:focus-visible,
+.admin-shell textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-admin-blue), 0 0 0 4px rgba(37, 99, 235, 0.2);
 }
 
 .content-reveal {

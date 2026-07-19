@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { User } from '../models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-12345';
@@ -47,6 +48,7 @@ export class AuthService {
     if (!user) throw new Error('Invalid email or password');
 
     if (user.status === 'suspended') throw new Error('This account has been suspended');
+    if (user.isLocked) throw new Error('This account has been locked for security reasons. Contact support.');
 
     const isMatch = await this.comparePassword(password, user.password);
     if (!isMatch) throw new Error('Invalid email or password');
@@ -64,5 +66,23 @@ export class AuthService {
     } catch (e) {
       throw new Error('Invalid or expired token');
     }
+  }
+
+  /**
+   * Shared by both the customer self-service "forgot password" flow
+   * (AuthController.requestReset) and the admin-triggered "reset this
+   * user's password" action (AdminController) — one implementation instead
+   * of two copies of the same token-hashing logic.
+   */
+  static async generateResetToken(user: any) {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.resetPasswordTokenHash = tokenHash;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+    return { rawToken, resetUrl };
   }
 }

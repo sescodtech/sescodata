@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ProductService } from '../services/ProductService';
 
 export class ProductController {
-  static async list(req: any, res: Response) {
+  static async list(_req: any, res: Response) {
     try {
       // Public-facing catalog never includes provider cost price.
       const catalog = await ProductService.getPublicCatalog();

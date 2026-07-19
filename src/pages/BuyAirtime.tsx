@@ -3,7 +3,7 @@ import { Smartphone, ArrowLeft, Loader2, AlertCircle, Wallet, Clock } from 'luci
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
-import { products as productsApi, matchesProvider, purchase, NETWORKS, AIRTIME_UNIT_COST, formatNaira, type Product } from '../lib/api';
+import { products as productsApi, matchesProvider, purchase, NETWORKS, formatNaira, type Product } from '../lib/api';
 import { recentNumbers } from '../lib/localPrefs';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -48,10 +48,6 @@ export default function BuyAirtime() {
       if (!plan) {
         throw new Error(`${selectedNetwork.name} airtime not available. Please contact support.`);
       }
-
-      // quantity = how many ₦100 units the user wants
-      // e.g. user wants ₦500 → quantity = 5 → backend dispatches ₦500 airtime
-      const quantity = Number(amount) / AIRTIME_UNIT_COST;
 
       if (user.walletBalance == null || user.walletBalance < Number(amount)) {
         setError('Insufficient wallet balance. Please fund your wallet first.');

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tv, Zap, ArrowLeft, Loader2, AlertCircle, Wallet, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { products as productsApi, matchesProvider, purchase, formatNaira, type Product } from '../lib/api';
 import PageHeader from '../components/PageHeader';

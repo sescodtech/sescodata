@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Terminal, Shield, Key, Copy, Check, ExternalLink, Play, Layout, Zap, Database, Smartphone } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Terminal, Shield, Key, Copy, Check, ExternalLink, Zap, Database } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function APIPage() {

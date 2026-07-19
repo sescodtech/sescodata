@@ -44,6 +44,8 @@ async function executePurchase(opts: {
       deliveryStatus: 'delivered',
       product: productMeta,
       provider: { name: result.usedProvider, reference: result.reference },
+      providerMethod,
+      providerParams: { ...providerParams, ref },
       paymentReference: ref
     });
 
@@ -65,6 +67,8 @@ async function executePurchase(opts: {
     status: 'failed',
     deliveryStatus: 'failed',
     product: productMeta,
+    providerMethod,
+    providerParams: { ...providerParams, ref },
     paymentReference: ref,
     failReason: result.error
   });
@@ -74,6 +78,20 @@ async function executePurchase(opts: {
   }).catch(() => {});
 
   return { ok: false as const, error: result.error || 'Delivery failed. You have been refunded.' };
+}
+
+/**
+ * The delivery-attempt half of executePurchase, exported standalone for
+ * Module 4's retry flow: it needs to re-attempt provider delivery for an
+ * *existing* transaction (wallet debit and Transaction row already exist),
+ * not create a brand new purchase. Reuses the identical
+ * providerOrchestrator.executeWithFailover call — no duplicated delivery logic.
+ */
+export async function attemptProviderDelivery(
+  providerMethod: 'buyData' | 'buyAirtime' | 'buyCable' | 'buyElectricity' | 'buyExamPin' | 'buyRechargeCard',
+  providerParams: any,
+) {
+  return providerOrchestrator.executeWithFailover(providerMethod, providerParams);
 }
 
 export class PurchaseController {
@@ -168,7 +186,12 @@ export class PurchaseController {
         return res.status(400).json({ success: false, error: 'disco, meter and amount are required' });
       }
 
-      const markupPct = ProductService.markup['bills'] ?? 8;
+      const isEnabled = await ProductService.isElectricityEnabled(disco);
+      if (!isEnabled) {
+        return res.status(404).json({ success: false, error: 'This electricity provider is currently unavailable. Please try again later.' });
+      }
+
+      const markupPct = await ProductService.getElectricityMarkup(disco);
       const cost = Number(amount);
       const userPrice = Math.ceil(cost * (1 + markupPct / 100));
 

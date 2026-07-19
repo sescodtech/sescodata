@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -20,12 +20,31 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const { login, register, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const isValidEmail = email.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const passwordStrength = (() => {
+    if (!password) return null;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (password.length < 6) return { label: 'Too short', color: 'bg-red-400', width: '20%' };
+    if (score <= 1) return { label: 'Weak', color: 'bg-red-400', width: '35%' };
+    if (score <= 2) return { label: 'Fair', color: 'bg-amber-400', width: '60%' };
+    if (score === 3) return { label: 'Good', color: 'bg-shb-gold', width: '80%' };
+    return { label: 'Strong', color: 'bg-green-500', width: '100%' };
+  })();
+  const passwordsMatch = mode !== 'register' || !confirmPassword || password === confirmPassword;
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -52,6 +71,12 @@ export default function LoginPage() {
         const user = await login(email, password);
         navigate(user?.backendRole === 'admin' ? '/app/admin' : '/app');
       } else if (mode === 'register') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        if (!agreedToTerms) {
+          throw new Error('Please agree to the Terms & Conditions to continue');
+        }
         await register(name, email, password, phone);
         navigate('/app');
       } else if (mode === 'forgot') {
@@ -213,10 +238,16 @@ export default function LoginPage() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-4 sm:py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all text-base"
+                    aria-invalid={!isValidEmail}
+                    className={`w-full pl-10 pr-4 py-4 sm:py-3 bg-white border rounded-xl focus:ring-2 focus:border-transparent outline-none transition-all text-base ${isValidEmail ? 'border-gray-200 focus:ring-shb-gold' : 'border-red-300 focus:ring-red-400'}`}
                     placeholder="name@example.com" required
                   />
                 </div>
+                {!isValidEmail && (
+                  <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+                    <AlertCircle size={12} /> Enter a valid email address
+                  </p>
+                )}
               </div>
 
               {mode === 'register' && (
@@ -255,16 +286,64 @@ export default function LoginPage() {
                       className="w-full pl-10 pr-12 py-4 sm:py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all text-base"
                       placeholder="••••••••" required minLength={6}
                     />
-                    <button type="button" onClick={() => setShowPassword(s => !s)}
+                    <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {mode === 'register' && passwordStrength && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`} style={{ width: passwordStrength.width }} />
+                      </div>
+                      <span className="text-[11px] font-bold text-gray-500 shrink-0">{passwordStrength.label}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
+              {mode === 'register' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 block">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                      aria-invalid={!passwordsMatch}
+                      className={`w-full pl-10 pr-12 py-4 sm:py-3 bg-white border rounded-xl focus:ring-2 focus:border-transparent outline-none transition-all text-base ${passwordsMatch ? 'border-gray-200 focus:ring-shb-gold' : 'border-red-300 focus:ring-red-400'}`}
+                      placeholder="••••••••" required minLength={6}
+                    />
+                    <button type="button" onClick={() => setShowConfirmPassword(s => !s)} aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {!passwordsMatch && (
+                    <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+                      <AlertCircle size={12} /> Passwords do not match
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {mode === 'register' && (
+                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+                  <input
+                    type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-shb-gold-dark focus:ring-shb-gold shrink-0"
+                  />
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    I agree to SescoHub's{' '}
+                    <Link to="/terms" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Terms &amp; Conditions</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Privacy Policy</Link>
+                  </span>
+                </label>
+              )}
+
               <button
-                type="submit" disabled={isLoading}
+                type="submit" disabled={isLoading || (mode === 'register' && (!passwordsMatch || !agreedToTerms || !isValidEmail))}
                 className="shb-btn-primary w-full py-4 sm:py-3 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-base touch-manipulation"
               >
                 {isLoading ? (

@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Wallet, ReceiptText, User, ShoppingCart,
+  LayoutDashboard, Wallet, ReceiptText, ShoppingCart,
   Settings, ShieldCheck, LogOut, Menu, X, Zap,
   Tv, Smartphone, MessageSquare, GraduationCap, Bell,
 } from 'lucide-react';

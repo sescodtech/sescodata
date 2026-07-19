@@ -1,32 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Users, DollarSign, TrendingUp, Package, Wallet, UserCheck,
+  Users, DollarSign, TrendingUp, Package, Wallet,
   CheckCircle2, Clock, XCircle, Zap, RefreshCw, AlertTriangle,
-  AlertCircle, Info, ShoppingCart, ArrowDownLeft, ArrowRight, Ticket,
+  AlertCircle, Info, ShoppingCart, ArrowDownLeft, Ticket,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { cn } from '../../lib/utils';
-import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   admin, formatNaira, formatDate,
   type AdminStats, type RevenuePoint, type ProviderHealth, type SystemAlert,
 } from '../../lib/api';
-import { Skeleton, SkeletonList } from '../Skeleton';
+import { Skeleton } from '../Skeleton';
 import EmptyState from '../EmptyState';
 
 type Period = 7 | 30 | 90;
 const PERIOD_LABEL: Record<Period, string> = { 7: 'Weekly', 30: 'Monthly', 90: 'Quarterly' };
 
-function KpiCard({ label, value, sub, icon: Icon, tone = 'gold' }: {
-  label: string; value: string; sub?: string; icon: any; tone?: 'gold' | 'green' | 'amber' | 'red' | 'navy';
+function KpiCard({ label, value, sub, icon: Icon, tone = 'blue' }: {
+  label: string; value: string; sub?: string; icon: any; tone?: 'blue' | 'gold' | 'green' | 'amber' | 'red' | 'navy';
 }) {
   const toneClasses: Record<string, string> = {
-    gold: 'bg-shb-gold-soft/50 text-shb-gold-dark',
+    blue: 'bg-admin-blue-soft text-admin-blue',
+    gold: 'bg-admin-gold-soft text-admin-gold',
     green: 'bg-green-50 text-green-600',
     amber: 'bg-amber-50 text-amber-600',
     red: 'bg-red-50 text-red-600',
-    navy: 'bg-shb-navy/5 text-shb-navy',
+    navy: 'bg-admin-navy/5 text-admin-navy',
   };
   return (
     <div className="shb-card p-5 group hover:-translate-y-0.5 transition-all">
@@ -125,8 +125,8 @@ export default function AdminOverview() {
 
   if (error) {
     return (
-      <EmptyState icon={AlertCircle} title={error} action={
-        <button onClick={() => load(period)} className="shb-btn-primary mt-2 px-5 py-2 text-sm">Try Again</button>
+      <EmptyState tone="admin" icon={AlertCircle} title={error} action={
+        <button onClick={() => load(period)} className="admin-btn-primary mt-2 px-5 py-2 text-sm">Try Again</button>
       } />
     );
   }
@@ -157,7 +157,7 @@ export default function AdminOverview() {
       {/* KPI Grid — row 1: business */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total Users" value={stats.totalUsers.toLocaleString()} sub={`${stats.activeUsers} active (30d)`} icon={Users} tone="navy" />
-        <KpiCard label="Platform Wallet Float" value={formatNaira(stats.totalWalletBalance)} sub="Total customer balances" icon={Wallet} tone="gold" />
+        <KpiCard label="Platform Wallet Float" value={formatNaira(stats.totalWalletBalance)} sub="Total customer balances" icon={Wallet} tone="blue" />
         <KpiCard label="Today's Revenue" value={formatNaira(stats.todayRevenue)} sub={`${stats.todayTransactions} orders today`} icon={DollarSign} tone="green" />
         <KpiCard label="Net Profit (all-time)" value={formatNaira(stats.profit)} sub={`${formatNaira(stats.revenue)} revenue`} icon={TrendingUp} tone="gold" />
       </div>
@@ -187,7 +187,7 @@ export default function AdminOverview() {
                   onClick={() => setPeriod(p)}
                   className={cn(
                     'px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all',
-                    period === p ? 'bg-white text-shb-navy shadow-sm' : 'text-gray-500 hover:text-gray-700',
+                    period === p ? 'bg-white text-admin-navy shadow-sm' : 'text-gray-500 hover:text-gray-700',
                   )}
                 >
                   {PERIOD_LABEL[p]}
@@ -197,14 +197,14 @@ export default function AdminOverview() {
           </div>
 
           {series.every((s) => s.revenue === 0) ? (
-            <EmptyState icon={TrendingUp} title="No revenue in this period" description="The chart will populate as orders come in." />
+            <EmptyState tone="admin" icon={TrendingUp} title="No revenue in this period" description="The chart will populate as orders come in." />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={series} margin={{ left: -20, right: 10 }}>
                 <defs>
                   <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D4A73B" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#D4A73B" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -221,7 +221,7 @@ export default function AdminOverview() {
                   labelFormatter={(d) => formatDate(d)}
                   contentStyle={{ borderRadius: 12, border: '1px solid #eee', fontSize: 12 }}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#D4A73B" strokeWidth={2} fill="url(#revGradient)" />
+                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#revGradient)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -229,7 +229,7 @@ export default function AdminOverview() {
 
         <div className="shb-card p-5 sm:p-7">
           <div className="flex items-center gap-2 mb-5">
-            <Zap size={16} className="text-shb-gold-dark" />
+            <Zap size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Provider Health</h3>
           </div>
           {stats.providers.length === 0 ? (
@@ -248,14 +248,14 @@ export default function AdminOverview() {
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last 8</span>
           </div>
           {recentTxns.length === 0 ? (
-            <EmptyState icon={ShoppingCart} title="No transactions yet" />
+            <EmptyState tone="admin" icon={ShoppingCart} title="No transactions yet" />
           ) : (
             <div className="divide-y divide-gray-50">
               {recentTxns.map((tx) => (
                 <div key={tx._id || tx.id} className="flex items-center justify-between px-5 sm:px-6 py-3.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                      tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
+                      tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
                       {tx.amount > 0 ? <ArrowDownLeft size={14} /> : <ShoppingCart size={14} />}
                     </div>
                     <div className="min-w-0">
@@ -272,7 +272,7 @@ export default function AdminOverview() {
 
         <div className="shb-card p-5 sm:p-7 space-y-3">
           <h3 className="font-extrabold text-gray-900 font-display mb-2">Quick Actions</h3>
-          <button onClick={handleRefresh} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-shb-gold-soft/20 hover:bg-shb-gold-soft/40 transition-colors text-sm font-bold text-shb-navy">
+          <button onClick={handleRefresh} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-admin-blue-soft hover:brightness-95 transition-all text-sm font-bold text-admin-blue">
             Refresh Dashboard <RefreshCw size={15} />
           </button>
           {stats.openTickets > 0 && (

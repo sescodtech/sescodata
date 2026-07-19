@@ -409,21 +409,249 @@ export interface RevenuePoint {
   count: number;
 }
 
+export interface AdminUser {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'admin' | 'customer';
+  status: 'active' | 'suspended';
+  isLocked: boolean;
+  kycStatus: 'not_started' | 'pending' | 'verified' | 'rejected';
+  walletBalance: number;
+  lastLogin?: string;
+  createdAt: string;
+}
+
+export interface AdminTransaction {
+  _id: string;
+  userId: { _id: string; name: string; email: string } | string;
+  amount: number;
+  cost?: number;
+  profit?: number;
+  type: string;
+  status: string;
+  deliveryStatus: 'pending' | 'delivered' | 'failed';
+  product: { name: string; category: string; recipient?: string; quantity?: number };
+  paymentReference: string;
+  failReason?: string;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  _id: string;
+  adminName: string;
+  action: string;
+  targetType: string;
+  targetLabel?: string;
+  before?: any;
+  after?: any;
+  reason?: string;
+  ip?: string;
+  createdAt: string;
+}
+
+export interface AdminNoteEntry {
+  _id: string;
+  adminName: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface LoginEventEntry {
+  _id: string;
+  ip?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface UserDetailResponse {
+  success: boolean;
+  user: AdminUser;
+  transactionSummary: { totalSpent: number; totalOrders: number; delivered: number; failed: number; pending: number };
+  recentTransactions: AdminTransaction[];
+  loginHistory: LoginEventEntry[];
+  adminNotes: AdminNoteEntry[];
+  recentActivity: AuditLogEntry[];
+}
+
+export interface PaginatedUsers { success: boolean; users: AdminUser[]; total: number; page: number; pageSize: number; totalPages: number }
+export interface PaginatedTransactions { success: boolean; transactions: AdminTransaction[]; total: number; page: number; pageSize: number; totalPages: number }
+
+export interface UserListFilters { page?: number; pageSize?: number; status?: string; role?: string; kycStatus?: string; search?: string }
+export interface TxnListFilters { page?: number; limit?: number; status?: string; category?: string; userId?: string; search?: string; dateFrom?: string; dateTo?: string }
+
+function toQueryString(params: Record<string, string | number | undefined>) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') q.set(k, String(v)); });
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
 export const admin = {
   stats: () => apiFetch<{ success: boolean; stats: AdminStats }>('/api/admin/stats', {}, true),
   revenueChart: (days = 30) =>
     apiFetch<{ success: boolean; series: RevenuePoint[] }>(`/api/admin/revenue-chart?days=${days}`, {}, true),
-  transactions: (limit = 500) =>
-    apiFetch(`/api/admin/transactions?limit=${limit}`, {}, true),
-  users: () => apiFetch('/api/admin/users', {}, true),
+
+  // Transactions (Module 3)
+  transactions: (filters: TxnListFilters | number = {}) => {
+    const f = typeof filters === 'number' ? { limit: filters } : filters;
+    return apiFetch<PaginatedTransactions>(`/api/admin/transactions${toQueryString(f as any)}`, {}, true);
+  },
+
+  // Users (Module 2)
+  users: (filters: UserListFilters = {}) =>
+    apiFetch<PaginatedUsers>(`/api/admin/users${toQueryString(filters as any)}`, {}, true),
+  userDetail: (userId: string) =>
+    apiFetch<UserDetailResponse>(`/api/admin/users/${userId}`, {}, true),
   updateUserRole: (userId: string, role: string) =>
     apiFetch(`/api/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) }, true),
-  updateUserStatus: (userId: string, status: string) =>
-    apiFetch(`/api/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status }) }, true),
+  updateUserStatus: (userId: string, status: string, reason?: string) =>
+    apiFetch(`/api/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status, reason }) }, true),
+  setUserLock: (userId: string, locked: boolean, reason?: string) =>
+    apiFetch(`/api/admin/users/${userId}/lock`, { method: 'PUT', body: JSON.stringify({ locked, reason }) }, true),
+  resetUserPassword: (userId: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/users/${userId}/reset-password`, { method: 'POST' }, true),
+  addUserNote: (userId: string, note: string) =>
+    apiFetch<{ success: boolean; note: AdminNoteEntry }>(`/api/admin/users/${userId}/notes`, { method: 'POST', body: JSON.stringify({ note }) }, true),
+  notifyUser: (userId: string, title: string, message: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/users/${userId}/notify`, { method: 'POST', body: JSON.stringify({ title, message }) }, true),
+  auditLogs: (params: { targetId?: string; action?: string; limit?: number } = {}) =>
+    apiFetch<{ success: boolean; logs: AuditLogEntry[] }>(`/api/admin/audit-logs${toQueryString({ limit: 100, ...params } as any)}`, {}, true),
+
+  // Wallet (Module 3)
+  creditWallet: (userId: string, amount: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number }>(`/api/admin/users/${userId}/wallet/credit`, { method: 'POST', body: JSON.stringify({ amount, reason }) }, true),
+  debitWallet: (userId: string, amount: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number }>(`/api/admin/users/${userId}/wallet/debit`, { method: 'POST', body: JSON.stringify({ amount, reason }) }, true),
+
+  // Pricing (unchanged — future module)
   getMarkup: () => apiFetch('/api/admin/markup', {}, true),
   setMarkup: (markup: Record<string, number>) =>
     apiFetch('/api/admin/markup', { method: 'PUT', body: JSON.stringify(markup) }, true),
   providerStatus: () => apiFetch<{ success: boolean; providers: ProviderHealth[] }>('/api/admin/providers/status', {}, true),
+};
+
+// ============================================================
+// MODULE 4 — Retry Failed Transactions & Manual Processing
+// ============================================================
+export interface RetryEligibility { eligible: boolean; reason?: string }
+export interface RetryHistoryEntry { attemptedAt: string; adminName: string; previousDeliveryStatus: string; newDeliveryStatus: string; providerUsed?: string; reason?: string; error?: string }
+export interface ManualReviewNote { adminName: string; note: string; createdAt: string }
+export interface ManualReview { status: 'none' | 'pending' | 'approved' | 'rejected' | 'completed'; providerReference?: string; evidenceUrl?: string; notes: ManualReviewNote[] }
+
+export interface OperationsTransaction extends AdminTransaction {
+  retryCount: number;
+  isRetryLocked: boolean;
+  retryHistory: RetryHistoryEntry[];
+  manualReview: ManualReview;
+  refundedManually: boolean;
+  reversedManually: boolean;
+  retryEligibility?: RetryEligibility;
+}
+
+export interface TimelineEvent { type: string; label: string; detail?: string; admin?: string; timestamp: string }
+
+export interface OperationsStats {
+  failedTransactions: number;
+  pendingReviews: number;
+  manualProcessingQueue: number;
+  retrySuccessRate: number | null;
+  totalRetried: number;
+  successfulRetries: number;
+  todayRefundsAmount: number;
+  todayRefundsCount: number;
+  recentManualActions: AuditLogEntry[];
+}
+
+export interface OperationsQueueFilters { page?: number; pageSize?: number; search?: string; category?: string; provider?: string; userId?: string; dateFrom?: string; dateTo?: string; status?: string }
+export interface PaginatedOperationsTransactions { success: boolean; transactions: OperationsTransaction[]; total: number; page: number; pageSize: number; totalPages: number }
+
+export const adminOperations = {
+  stats: () => apiFetch<{ success: boolean; stats: OperationsStats }>('/api/admin/operations/stats', {}, true),
+
+  failedQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/failed${toQueryString(filters as any)}`, {}, true),
+  pendingQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/pending${toQueryString(filters as any)}`, {}, true),
+  manualReviewQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/manual-review${toQueryString(filters as any)}`, {}, true),
+
+  timeline: (transactionId: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction; timeline: TimelineEvent[] }>(`/api/admin/operations/transactions/${transactionId}/timeline`, {}, true),
+
+  retry: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; retrySucceeded: boolean; transaction: OperationsTransaction; error?: string }>(`/api/admin/operations/transactions/${transactionId}/retry`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  bulkRetry: (transactionIds: string[], reason: string) =>
+    apiFetch<{ success: boolean; message: string; results: { id: string; success: boolean; error?: string }[] }>('/api/admin/operations/transactions/bulk-retry', { method: 'POST', body: JSON.stringify({ transactionIds, reason }) }, true),
+
+  flagForReview: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/flag-review`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  approve: (transactionId: string, reason: string, providerReference?: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/approve`, { method: 'POST', body: JSON.stringify({ reason, providerReference }) }, true),
+  reject: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  markCompleted: (transactionId: string, reason: string, providerReference: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/complete`, { method: 'POST', body: JSON.stringify({ reason, providerReference }) }, true),
+  refund: (transactionId: string, reason: string, amount?: number) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/refund`, { method: 'POST', body: JSON.stringify({ reason, amount }) }, true),
+  reverse: (transactionId: string, reason: string, amount?: number) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/reverse`, { method: 'POST', body: JSON.stringify({ reason, amount }) }, true),
+  addNote: (transactionId: string, note: string, evidenceUrl?: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/notes`, { method: 'POST', body: JSON.stringify({ note, evidenceUrl }) }, true),
+};
+
+// ============================================================
+// MODULE 5 — Product & Pricing Management
+// ============================================================
+export interface AdminProduct {
+  id: string;
+  name: string;
+  category: string;
+  provider: string;
+  providerId: string;
+  costPrice: number;
+  sellingPrice: number;
+  validity?: string;
+  planType?: string;
+  enabled: boolean;
+  visible: boolean;
+}
+
+export interface ProviderMappingEntry { provider: string; productCount: number; categories: string[] }
+export interface ElectricityDisco { id: string; name: string }
+
+export const adminProducts = {
+  list: (filters: { category?: string; search?: string; status?: string } = {}) =>
+    apiFetch<{ success: boolean; products: AdminProduct[]; total: number; categories: string[] }>(`/api/admin/products${toQueryString(filters as any)}`, {}, true),
+  categories: () => apiFetch<{ success: boolean; categories: string[]; discos: ElectricityDisco[] }>('/api/admin/products/categories', {}, true),
+  providerMapping: () => apiFetch<{ success: boolean; mapping: ProviderMappingEntry[] }>('/api/admin/products/provider-mapping', {}, true),
+
+  toggleEnabled: (productId: string, enabled: boolean, category: string, reason: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/enabled`, { method: 'PUT', body: JSON.stringify({ enabled, category, reason }) }, true),
+  toggleVisibility: (productId: string, visible: boolean, category: string, reason: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/visibility`, { method: 'PUT', body: JSON.stringify({ visible, category, reason }) }, true),
+  setCustomPricing: (productId: string, category: string, reason: string, customSellingPrice?: number | null, customMarkupPct?: number | null) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/pricing`, { method: 'PUT', body: JSON.stringify({ category, reason, customSellingPrice, customMarkupPct }) }, true),
+  bulkUpdatePricing: (productIds: string[], customMarkupPct: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string }>('/api/admin/products/bulk-pricing', { method: 'POST', body: JSON.stringify({ productIds, customMarkupPct, reason }) }, true),
+  importPricing: (csv: string, reason: string) =>
+    apiFetch<{ success: boolean; message: string; results: { row: number; productId: string; success: boolean; error?: string }[] }>('/api/admin/products/import', { method: 'POST', body: JSON.stringify({ csv, reason }) }, true),
+
+  /** Export returns raw CSV, not JSON — bypasses apiFetch's JSON parsing and triggers a real browser download, reusing the same auth token every other admin call uses. */
+  exportPricingCsv: async () => {
+    const res = await fetch(`${BASE_URL}/api/admin/products/export`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export pricing');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-pricing-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 // ============================================================

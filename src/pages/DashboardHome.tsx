@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Wallet, Smartphone, Tv, Zap, ArrowDownLeft, Clock, ShoppingCart, ChevronRight, GraduationCap, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { transactions as txnApi, formatNaira, formatDate, type Transaction } from '../lib/api';

@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { AuthService } from '../services/AuthService';
 import { User } from '../models/User';
 import { EmailService } from '../services/EmailService';
+import { LoginEvent } from '../models/LoginEvent';
+import { AuditLogService } from '../services/AuditLogService';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -21,6 +23,12 @@ export class AuthController {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password);
       res.json({ success: true, ...result });
+      // Real login history — fire-and-forget, must never block login itself.
+      LoginEvent.create({
+        userId: result.user._id,
+        ip: AuditLogService.getClientIp(req),
+        userAgent: req.headers['user-agent'],
+      }).catch(() => {});
     } catch (e: any) {
       res.status(401).json({ success: false, error: e.message });
     }
@@ -88,14 +96,7 @@ export class AuthController {
       const user = await User.findOne({ email: String(email || '').toLowerCase() });
       if (!user) return res.json(genericResponse);
 
-      const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-
-      user.resetPasswordTokenHash = tokenHash;
-      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-      await user.save();
-
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+      const { resetUrl } = await AuthService.generateResetToken(user);
       EmailService.sendPasswordReset(user, resetUrl).catch(() => {});
 
       res.json(genericResponse);

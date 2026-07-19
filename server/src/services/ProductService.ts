@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { IProvider } from '../providers/IProvider';
+import { ProductOverride } from '../models/ProductOverride';
 
 export interface Product {
   id: string;
@@ -13,6 +13,8 @@ export interface Product {
   planType?: string;
   isPromo: boolean;
   originalPrice?: number;
+  enabled?: boolean;
+  visible?: boolean;
 }
 
 interface RawPlan {
@@ -26,6 +28,23 @@ interface RawPlan {
   planType: string;
   apiSource: string;
 }
+
+/**
+ * Electricity has no catalog entry in RAW — PurchaseController.buyElectricity
+ * takes disco/meter/amount directly from the customer and computes price as
+ * amount * (1 + markup%) on the fly, since the amount itself is user-chosen
+ * rather than a fixed plan. This static list is what Module 5 manages
+ * (enable/disable, custom markup per disco) — the same 6 discos already
+ * hardcoded in the customer-facing UtilityBills.tsx picker.
+ */
+export const ELECTRICITY_DISCOS = [
+  { id: 'ikedc', name: 'Ikeja Electric' },
+  { id: 'ekedc', name: 'Eko Electric' },
+  { id: 'aedc', name: 'Abuja Electric' },
+  { id: 'phden', name: 'Port Harcourt PHED' },
+  { id: 'ibedc', name: 'Ibadan Disco' },
+  { id: 'kedco', name: 'Kano Disco' },
+];
 
 export class ProductService {
   private static _dynamicCache = { plans: [] as RawPlan[], fetchedAt: 0 };
@@ -210,37 +229,127 @@ export class ProductService {
     }
   }
 
+  /**
+   * Purchase-safe catalog: every product a customer could currently buy.
+   * Applies admin overrides (custom price/markup) and excludes anything
+   * an admin has disabled — but keeps "invisible" (unlisted) products
+   * resolvable here, since getProductById relies on this for purchases.
+   */
   static async getCatalog() {
-    const allPlans = await this.getAllPlans();
+    const [allPlans, overrides] = await Promise.all([
+      this.getAllPlans(),
+      ProductOverride.find(),
+    ]);
+    const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
 
-    return allPlans.map(plan => {
+    return allPlans
+      .map(plan => {
+        const category = plan.cat || 'data';
+        const override = overrideMap.get(plan.id);
+        const markupPct = override?.customMarkupPct ?? this.markup[category] ?? 10;
+        const computedPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
+        const sellingPrice = override?.customSellingPrice ?? computedPrice;
+
+        return {
+          id: plan.id,
+          name: plan.name,
+          category,
+          provider: plan.prov,
+          providerId: plan.providerId,
+          costPrice: plan.cost, // NOTE: only ever return this to admin-facing endpoints
+          sellingPrice,
+          validity: plan.validity,
+          planType: plan.planType,
+          isPromo: false,
+          enabled: override?.enabled ?? true,
+          visible: override?.visible ?? true,
+        };
+      })
+      .filter((p) => p.enabled);
+  }
+
+  static async getPublicCatalog() {
+    const catalog = await this.getCatalog();
+    // Strip internal cost price before it ever reaches the customer-facing client,
+    // and hide anything an admin has marked not-visible (unlisted, still directly purchasable).
+    return catalog.filter((p) => p.visible).map(({ costPrice, ...rest }) => rest);
+  }
+
+  static async getProductById(productId: string) {
+    const catalog = await this.getCatalog();
+    return catalog.find(p => p.id === productId);
+  }
+
+  // ============================================================
+  // Module 5 — Admin Product & Pricing Management
+  // ============================================================
+
+  /**
+   * Unfiltered catalog for the admin product management screen — includes
+   * disabled/invisible products (the admin needs to see and re-enable them),
+   * unlike getCatalog() which is purchase-safe and excludes disabled items.
+   */
+  static async getFullCatalogForAdmin(): Promise<Product[]> {
+    const [allPlans, overrides] = await Promise.all([
+      this.getAllPlans(),
+      ProductOverride.find(),
+    ]);
+    const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
+
+    const catalogProducts: Product[] = allPlans.map((plan) => {
       const category = plan.cat || 'data';
-      const markupPct = this.markup[category] ?? 10;
-      const sellingPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
-
+      const override = overrideMap.get(plan.id);
+      const markupPct = override?.customMarkupPct ?? this.markup[category] ?? 10;
+      const computedPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
       return {
         id: plan.id,
         name: plan.name,
         category,
         provider: plan.prov,
         providerId: plan.providerId,
-        costPrice: plan.cost, // NOTE: only ever return this to admin-facing endpoints
-        sellingPrice,
+        costPrice: plan.cost,
+        sellingPrice: override?.customSellingPrice ?? computedPrice,
         validity: plan.validity,
         planType: plan.planType,
         isPromo: false,
+        enabled: override?.enabled ?? true,
+        visible: override?.visible ?? true,
       };
     });
+
+    // Electricity has no fixed plan price (amount is user-chosen at purchase
+    // time), so it's represented here with costPrice/sellingPrice both 0 —
+    // the admin UI shows its markup % instead of a fixed price.
+    const electricityProducts: Product[] = ELECTRICITY_DISCOS.map((disco) => {
+      const productId = `electricity_${disco.id}`;
+      const override = overrideMap.get(productId);
+      return {
+        id: productId,
+        name: disco.name,
+        category: 'electricity',
+        provider: disco.id,
+        providerId: disco.id,
+        costPrice: 0,
+        sellingPrice: 0,
+        planType: 'electricity',
+        isPromo: false,
+        enabled: override?.enabled ?? true,
+        visible: override?.visible ?? true,
+      };
+    });
+
+    return [...catalogProducts, ...electricityProducts];
   }
 
-  static async getPublicCatalog() {
-    const catalog = await this.getCatalog();
-    // Strip internal cost price before it ever reaches the customer-facing client.
-    return catalog.map(({ costPrice, ...rest }) => rest);
+  /** Effective markup % for a given disco — a per-disco override if the admin set one, otherwise the global 'bills' category markup (identical to pre-Module-5 behavior). */
+  static async getElectricityMarkup(disco: string): Promise<number> {
+    const override = await ProductOverride.findOne({ productId: `electricity_${disco}` });
+    return override?.customMarkupPct ?? this.markup['bills'] ?? 8;
   }
 
-  static async getProductById(productId: string) {
-    const catalog = await this.getCatalog();
-    return catalog.find(p => p.id === productId);
+  /** Whether an admin has disabled purchases for a given disco. Defaults to enabled — identical to pre-Module-5 behavior when no override exists. */
+  static async isElectricityEnabled(disco: string): Promise<boolean> {
+    const override = await ProductOverride.findOne({ productId: `electricity_${disco}` });
+    return override?.enabled ?? true;
   }
 }

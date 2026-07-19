@@ -22,6 +22,21 @@ const UserSchema = new mongoose.Schema({
     default: 'active'
   },
 
+  // Distinct from `status`: status is a business decision (suspend for policy
+  // reasons); isLocked is a security gate an admin can apply independently
+  // (e.g. suspected compromise) without changing the account's business status.
+  isLocked: { type: Boolean, default: false },
+
+  // No KYC verification flow (ID capture, third-party verification) exists in
+  // this platform yet — this field honestly reflects that: every account
+  // starts and stays 'not_started' until a real verification flow is built.
+  // Not faked as 'verified' for anyone.
+  kycStatus: {
+    type: String,
+    enum: ['not_started', 'pending', 'verified', 'rejected'],
+    default: 'not_started'
+  },
+
   lastLogin: { type: Date },
   resetPasswordTokenHash: { type: String, select: false },
   resetPasswordExpires: { type: Date, select: false },

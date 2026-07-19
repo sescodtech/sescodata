@@ -329,4 +329,98 @@ export const emailTemplates = {
       }),
     };
   },
+
+  // ── Module 4: Retry & Manual Processing ──────────────────────
+  retryInitiated(name: string, product: string, ref: string) {
+    return {
+      subject: `We're retrying your order: ${product}`,
+      html: baseTemplate({
+        preheader: `Our team is re-attempting delivery of your ${product} order.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Retrying your order ${statusPill('In Progress', BRAND.warning)}</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;line-height:1.6;">
+            Hi ${escapeHtml(name)}, our team is re-attempting delivery of your order. We'll email you as soon as it completes.
+          </p>
+          ${infoTable([['Product', escapeHtml(product)], ['Reference', `<code>${escapeHtml(ref)}</code>`]])}`,
+      }),
+    };
+  },
+
+  retrySucceeded(name: string, txn: { product: string; amount: number; ref: string }) {
+    return {
+      subject: `Resolved: ${txn.product} delivered`,
+      html: baseTemplate({
+        preheader: `Good news — your ${txn.product} order was delivered on retry.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Order delivered ${statusPill('Success', BRAND.success)}</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;line-height:1.6;">
+            Hi ${escapeHtml(name)}, good news — we retried your order and it was delivered successfully.
+          </p>
+          ${infoTable([
+            ['Product', escapeHtml(txn.product)],
+            ['Amount', naira(txn.amount)],
+            ['Reference', `<code>${escapeHtml(txn.ref)}</code>`],
+          ])}`,
+        ctaLabel: 'View Receipt',
+        ctaUrl: `${APP_URL}/app/transactions`,
+      }),
+    };
+  },
+
+  retryFailedPermanently(name: string, txn: { product: string; amount: number; ref: string }) {
+    return {
+      subject: `Order could not be completed: ${txn.product}`,
+      html: baseTemplate({
+        preheader: `We were unable to deliver your ${txn.product} order after multiple attempts.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Order unsuccessful ${statusPill('Refunded', BRAND.danger)}</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;line-height:1.6;">
+            Hi ${escapeHtml(name)}, despite multiple attempts we were unable to deliver this order. <b>${naira(txn.amount)}</b> remains
+            safely in your wallet. Our team has been notified and may follow up if needed.
+          </p>
+          ${infoTable([['Product', escapeHtml(txn.product)], ['Reference', `<code>${escapeHtml(txn.ref)}</code>`]])}`,
+        ctaLabel: 'Contact Support',
+        ctaUrl: `${APP_URL}/app/support`,
+      }),
+    };
+  },
+
+  manualRefund(name: string, amount: number, reason: string) {
+    return {
+      subject: `Wallet refund: ${naira(amount)}`,
+      html: baseTemplate({
+        preheader: `${naira(amount)} was credited to your wallet by our support team.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Wallet refunded</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;line-height:1.6;">
+            Hi ${escapeHtml(name)}, our team has credited your wallet following a manual review.
+          </p>
+          ${infoTable([['Amount Refunded', `<span style="color:${BRAND.success}">+${naira(amount)}</span>`], ['Reason', escapeHtml(reason)]])}`,
+        ctaLabel: 'View Wallet',
+        ctaUrl: `${APP_URL}/app/wallet`,
+      }),
+    };
+  },
+
+  manualReviewCompleted(name: string, product: string, outcome: 'approved' | 'rejected' | 'completed', notes?: string) {
+    const outcomeMeta = {
+      approved: { label: 'Approved', color: BRAND.success },
+      completed: { label: 'Completed', color: BRAND.success },
+      rejected: { label: 'Rejected', color: BRAND.danger },
+    }[outcome];
+    return {
+      subject: `Review update: ${product}`,
+      html: baseTemplate({
+        preheader: `Your order has been manually reviewed.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Manual review completed ${statusPill(outcomeMeta.label, outcomeMeta.color)}</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;line-height:1.6;">
+            Hi ${escapeHtml(name)}, our team has finished reviewing your order "<b>${escapeHtml(product)}</b>".
+          </p>
+          ${notes ? `<p style="margin:12px 0 0;padding:14px;background:#fafafa;border-radius:10px;color:#333;font-size:14px;line-height:1.6;white-space:pre-line;">${escapeHtml(notes)}</p>` : ''}`,
+        ctaLabel: 'View Transactions',
+        ctaUrl: `${APP_URL}/app/transactions`,
+      }),
+    };
+  },
 };
