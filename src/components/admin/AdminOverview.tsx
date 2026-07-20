@@ -218,7 +218,7 @@ export default function AdminOverview() {
                 <YAxis tick={{ fontSize: 10, fill: '#8B93A7' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${v >= 1000 ? `${v / 1000}k` : v}`} />
                 <Tooltip
                   formatter={(v: any) => formatNaira(Number(v) || 0)}
-                  labelFormatter={(d) => formatDate(d)}
+                  labelFormatter={(d) => formatDate(String(d))}
                   contentStyle={{ borderRadius: 12, border: '1px solid #eee', fontSize: 12 }}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#revGradient)" />
