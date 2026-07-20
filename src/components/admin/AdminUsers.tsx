@@ -85,7 +85,7 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       {/* Filter bar */}
-      <div className="shb-card p-4 space-y-3">
+      <div className="admin-card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -148,7 +148,7 @@ export default function AdminUsers() {
       )}
 
       {/* Table */}
-      <div className="shb-card overflow-hidden">
+      <div className="admin-card overflow-hidden">
         {isLoading ? (
           <SkeletonList rows={8} />
         ) : users.length === 0 ? (

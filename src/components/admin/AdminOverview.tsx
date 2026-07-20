@@ -29,7 +29,7 @@ function KpiCard({ label, value, sub, icon: Icon, tone = 'blue' }: {
     navy: 'bg-admin-navy/5 text-admin-navy',
   };
   return (
-    <div className="shb-card p-5 group hover:-translate-y-0.5 transition-all">
+    <div className="admin-card p-5 group hover:-translate-y-0.5 transition-all">
       <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform', toneClasses[tone])}>
         <Icon size={20} />
       </div>
@@ -172,7 +172,7 @@ export default function AdminOverview() {
 
       {/* Chart + Providers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 shb-card p-5 sm:p-7">
+        <div className="lg:col-span-2 admin-card p-5 sm:p-7">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-extrabold text-gray-900 font-display">Revenue</h3>
@@ -227,7 +227,7 @@ export default function AdminOverview() {
           )}
         </div>
 
-        <div className="shb-card p-5 sm:p-7">
+        <div className="admin-card p-5 sm:p-7">
           <div className="flex items-center gap-2 mb-5">
             <Zap size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Provider Health</h3>
@@ -242,7 +242,7 @@ export default function AdminOverview() {
 
       {/* Recent Transactions + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 shb-card overflow-hidden">
+        <div className="lg:col-span-2 admin-card overflow-hidden">
           <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
             <h3 className="font-extrabold text-gray-900 font-display">Recent Transactions</h3>
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last 8</span>
@@ -270,7 +270,7 @@ export default function AdminOverview() {
           )}
         </div>
 
-        <div className="shb-card p-5 sm:p-7 space-y-3">
+        <div className="admin-card p-5 sm:p-7 space-y-3">
           <h3 className="font-extrabold text-gray-900 font-display mb-2">Quick Actions</h3>
           <button onClick={handleRefresh} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-admin-blue-soft hover:brightness-95 transition-all text-sm font-bold text-admin-blue">
             Refresh Dashboard <RefreshCw size={15} />

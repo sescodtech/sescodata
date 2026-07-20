@@ -48,7 +48,7 @@ export class AdminProductController {
     }
   }
 
-  static async getProviderMapping(req: any, res: Response) {
+  static async getProviderMapping(_req: any, res: Response) {
     try {
       const products = await ProductService.getFullCatalogForAdmin();
       const byProvider: Record<string, { count: number; categories: Set<string> }> = {};
@@ -182,7 +182,7 @@ export class AdminProductController {
   // IMPORT / EXPORT
   // ============================================================
 
-  static async exportPricing(req: any, res: Response) {
+  static async exportPricing(_req: any, res: Response) {
     try {
       const products = await ProductService.getFullCatalogForAdmin();
       const header = 'productId,name,category,provider,costPrice,sellingPrice,enabled,visible\n';
@@ -264,7 +264,7 @@ export class AdminProductController {
   // CATEGORY MARKUP (global) — reuses ProductService.markup, same as before
   // ============================================================
 
-  static async getCategories(req: any, res: Response) {
+  static async getCategories(_req: any, res: Response) {
     try {
       const products = await ProductService.getFullCatalogForAdmin();
       const categories = [...new Set(products.map((p) => p.category))];

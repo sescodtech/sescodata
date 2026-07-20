@@ -455,7 +455,7 @@ export class AdminOperationsController {
   // DASHBOARD WIDGETS
   // ============================================================
 
-  static async getOperationsStats(req: any, res: Response) {
+  static async getOperationsStats(_req: any, res: Response) {
     try {
       const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 

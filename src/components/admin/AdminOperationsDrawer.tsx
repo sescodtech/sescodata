@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
-  RefreshCw, CheckCircle2, XCircle, ShieldCheck, Wallet, ArrowDownLeft, ArrowUpRight,
+  RefreshCw, CheckCircle2, XCircle, ShieldCheck, ArrowDownLeft, ArrowUpRight,
   StickyNote, Clock, User as UserIcon, AlertCircle, Link as LinkIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';

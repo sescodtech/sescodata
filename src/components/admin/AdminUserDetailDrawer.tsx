@@ -133,6 +133,7 @@ export default function AdminUserDetailDrawer({
     const amt = Number(adjustAmount);
     if (!amt || amt <= 0) return toast.error('Enter a valid amount');
     if (!adjustReason.trim()) return toast.error('A reason is required');
+    if (!window.confirm(`${direction === 'credit' ? 'Credit' : 'Debit'} ${data.user.name}'s wallet by ${formatNaira(amt)}?\n\nReason: ${adjustReason.trim()}`)) return;
     setBusy('adjust');
     try {
       const fn = direction === 'credit' ? admin.creditWallet : admin.debitWallet;
@@ -211,10 +212,12 @@ export default function AdminUserDetailDrawer({
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-gray-50 rounded-xl overflow-x-auto">
+          <div role="tablist" aria-label="Customer profile sections" className="flex gap-1 p-1 bg-gray-50 rounded-xl overflow-x-auto">
             {TABS.map((t) => (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
                 onClick={() => setTab(t.id)}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide whitespace-nowrap transition-all',

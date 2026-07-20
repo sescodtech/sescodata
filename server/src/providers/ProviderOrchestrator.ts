@@ -2,13 +2,28 @@ import { IProvider, ProviderResponse } from './IProvider';
 import { JarapointProvider } from './JarapointProvider';
 import { CheapDataHubProvider } from './CheapDataHubProvider';
 import { GladTidingsProvider } from './GladTidingsProvider';
+import { ProviderCallLog } from '../models/ProviderCallLog';
 
 // Single-tenant platform: priority order is a static platform setting (env-overridable),
 // not per-tenant config pulled from a Tenant document.
+//
+// Module 6 note: DB-backed ProviderSettings.priorityOrder exists as a model
+// (see models/ProviderSettings.ts) but isn't read here yet — wiring that in,
+// plus honoring manualOverrideProvider/disabledProviders, is Module 6's job.
+// Today's failover order is unchanged: env var only.
 const DEFAULT_PRIORITY = (process.env.PROVIDER_PRIORITY || 'gladtidings,cheapdatahub,jarapoint')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
+
+/**
+ * Fire-and-forget call logging for future Provider Analytics (Module 6).
+ * Never awaited by executeWithFailover's control flow — a logging failure
+ * must never affect a real purchase attempt.
+ */
+function logProviderCall(entry: { provider: string; method: string; success: boolean; durationMs: number; error?: string; failReason?: string }) {
+  ProviderCallLog.create(entry).catch(() => {});
+}
 
 export class ProviderOrchestrator {
   private providers: Map<string, IProvider> = new Map();
@@ -70,13 +85,16 @@ export class ProviderOrchestrator {
       }
 
       // 2. Execute operation
+      const startedAt = Date.now();
       try {
         const result = await (provider as any)[serviceType](params);
+        logProviderCall({ provider: providerName, method: serviceType, success: !!result.success, durationMs: Date.now() - startedAt, error: result.success ? undefined : result.error });
         if (result.success) {
           return { ...result, usedProvider: providerName };
         }
         errors.push({ provider: providerName, error: result.error });
       } catch (e: any) {
+        logProviderCall({ provider: providerName, method: serviceType, success: false, durationMs: Date.now() - startedAt, error: e.message });
         errors.push({ provider: providerName, error: e.message });
       }
     }

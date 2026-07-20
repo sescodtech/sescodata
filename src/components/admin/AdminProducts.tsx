@@ -201,16 +201,16 @@ export default function AdminProducts() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => { setDialogProduct(p); setDialog(p.enabled ? 'disable' : 'enable'); }} title={p.enabled ? 'Disable' : 'Enable'}
+                            <button onClick={() => { setDialogProduct(p); setDialog(p.enabled ? 'disable' : 'enable'); }} title={p.enabled ? 'Disable' : 'Enable'} aria-label={p.enabled ? `Disable ${p.name}` : `Enable ${p.name}`}
                               className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
                               {p.enabled ? <XCircle size={15} /> : <CheckCircle2 size={15} />}
                             </button>
-                            <button onClick={() => { setDialogProduct(p); setDialog(p.visible ? 'hide' : 'show'); }} title={p.visible ? 'Hide' : 'Show'}
+                            <button onClick={() => { setDialogProduct(p); setDialog(p.visible ? 'hide' : 'show'); }} title={p.visible ? 'Hide' : 'Show'} aria-label={p.visible ? `Hide ${p.name}` : `Show ${p.name}`}
                               className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
                               {p.visible ? <Eye size={15} /> : <EyeOff size={15} />}
                             </button>
                             {p.category !== 'electricity' && (
-                              <button onClick={() => { setDialogProduct(p); setDialog('price'); }} title="Edit pricing"
+                              <button onClick={() => { setDialogProduct(p); setDialog('price'); }} title="Edit pricing" aria-label={`Edit pricing for ${p.name}`}
                                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-admin-blue">
                                 <Edit3 size={15} />
                               </button>

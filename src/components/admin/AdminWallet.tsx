@@ -78,6 +78,7 @@ export default function AdminWallet() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error('Enter a valid amount');
     if (!reason.trim()) return toast.error('A reason is required');
+    if (!window.confirm(`${direction === 'credit' ? 'Credit' : 'Debit'} ${selectedUser.name}'s wallet by ${formatNaira(amt)}?\n\nReason: ${reason.trim()}`)) return;
     setBusy(direction);
     try {
       const fn = direction === 'credit' ? admin.creditWallet : admin.debitWallet;
@@ -112,7 +113,7 @@ export default function AdminWallet() {
       </div>
 
       {/* Quick Credit/Debit */}
-      <div className="shb-card p-5 sm:p-7">
+      <div className="admin-card p-5 sm:p-7">
         <h3 className="font-extrabold text-gray-900 font-display mb-4">Credit / Debit a Wallet</h3>
 
         {selectedUser ? (
@@ -172,7 +173,7 @@ export default function AdminWallet() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Adjustment History */}
-        <div className="shb-card overflow-hidden">
+        <div className="admin-card overflow-hidden">
           <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
             <History size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Adjustment History</h3>
@@ -202,7 +203,7 @@ export default function AdminWallet() {
         </div>
 
         {/* Wallet Audit Trail */}
-        <div className="shb-card overflow-hidden">
+        <div className="admin-card overflow-hidden">
           <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
             <ShieldCheck size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Wallet Audit Trail</h3>

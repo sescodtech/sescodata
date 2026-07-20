@@ -118,13 +118,13 @@ export default function AdminOperations() {
       </div>
 
       {/* Queue tabs */}
-      <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit overflow-x-auto">
+      <div role="tablist" aria-label="Transaction queue" className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit overflow-x-auto">
         {([
           ['FAILED', 'Failed Queue', AlertOctagon],
           ['PENDING', 'Pending Queue', Clock],
           ['MANUAL_REVIEW', 'Manual Review', ShieldCheck],
         ] as [QueueTab, string, any][]).map(([id, label, Icon]) => (
-          <button key={id} onClick={() => setTab(id)}
+          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
             className={cn('flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap',
               tab === id ? 'bg-admin-blue text-white shadow-md' : 'text-gray-500 hover:text-admin-navy hover:bg-gray-50')}>
             <Icon size={13} /> {label}
