@@ -50,6 +50,15 @@ export class AuthService {
     if (user.status === 'suspended') throw new Error('This account has been suspended');
     if (user.isLocked) throw new Error('This account has been locked for security reasons. Contact support.');
 
+    // Defensive guard: a document reaching this point without a password hash
+    // means it wasn't created through AuthService.register/seed.ts (the only
+    // two paths in this codebase that set one) — most likely inserted
+    // directly into MongoDB, bypassing Mongoose's `required: true` validation,
+    // which only runs on create()/save(), not raw driver inserts. Without
+    // this check, bcrypt.compare(password, undefined) throws its own opaque
+    // "Illegal arguments: string, undefined" instead of a clean auth failure.
+    if (!user.password) throw new Error('Invalid email or password');
+
     const isMatch = await this.comparePassword(password, user.password);
     if (!isMatch) throw new Error('Invalid email or password');
 
