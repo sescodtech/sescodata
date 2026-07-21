@@ -56,8 +56,53 @@ async function apiFetch<T = any>(
     const t = token.get();
     if (t) headers['Authorization'] = `Bearer ${t}`;
   }
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-  const data = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  } catch (networkErr: any) {
+    // fetch() itself throws for DNS failures, CORS-blocked requests, or the
+    // backend being unreachable — this is distinct from an HTTP error status
+    // and had no error path before, so it surfaced as an unhandled rejection.
+    throw new Error(`Could not reach the server at ${BASE_URL}. Check your connection or try again shortly.`);
+  }
+
+  // Read the body once, as text, regardless of what it turns out to be —
+  // res.json() throws its own opaque "Unexpected end of JSON input" for an
+  // empty body (e.g. a 405 from a static-file host, a 204, or a blocked
+  // preflight) and a confusing parse error for an HTML error page (e.g. a
+  // misrouted request landing on index.html). Reading as text first lets us
+  // detect and report both cases clearly instead of throwing the generic
+  // browser-level JSON error.
+  const rawBody = await res.text();
+  const contentType = res.headers.get('content-type') || '';
+
+  if (!rawBody) {
+    throw new Error(
+      res.ok
+        ? 'Server returned an empty response.'
+        : `Request failed (HTTP ${res.status} ${res.statusText || ''}). The server returned no response body — this usually means the request never reached the API (wrong base URL, or the route doesn't accept this method).`.trim()
+    );
+  }
+
+  if (!contentType.includes('application/json')) {
+    // Most commonly: the SPA's index.html (or some other HTML error page)
+    // was returned instead of the API response — a routing/base-URL
+    // mismatch, not something the API itself produced.
+    const looksLikeHtml = /^\s*</.test(rawBody);
+    throw new Error(
+      looksLikeHtml
+        ? `Request failed (HTTP ${res.status}). Received an HTML page instead of a JSON API response — this endpoint is likely being served by the wrong host (check VITE_API_URL / vercel.json rewrites) rather than the API.`
+        : `Request failed (HTTP ${res.status}). Expected JSON but received: ${rawBody.slice(0, 200)}`
+    );
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    throw new Error(`Request failed (HTTP ${res.status}). Response was not valid JSON.`);
+  }
+
   if (!res.ok || data.success === false) {
     throw new Error(data.error || data.message || `HTTP ${res.status}`);
   }
