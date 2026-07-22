@@ -13,7 +13,7 @@ import crypto from 'crypto';
  * purchases now go through the wallet (see PurchaseController), and this
  * controller's only job is: verify a Paystack deposit, credit the wallet once.
  */
-async function creditIfPending(reference: string) {
+export async function creditIfPending(reference: string) {
   const txn = await Transaction.findOne({ paymentReference: reference, type: 'deposit', status: 'pending' });
   if (!txn) return { credited: false, reason: 'not_found_or_already_processed' };
 
@@ -82,7 +82,13 @@ export class PaymentController {
       }
 
       const event = req.body;
-      if (event.event === 'charge.success') {
+      // Any event that carries a reference we recognize is worth reconciling —
+      // creditIfPending() re-verifies directly with Paystack and is a no-op if
+      // the transaction is already resolved or doesn't exist, so calling it for
+      // charge.failed (declined card, abandoned checkout, etc.) as well as
+      // charge.success is safe and is what actually flips a dead-end deposit to
+      // 'failed' instead of leaving it 'pending' forever.
+      if (event.data?.reference) {
         await creditIfPending(event.data.reference);
       }
 

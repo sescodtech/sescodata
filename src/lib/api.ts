@@ -188,7 +188,7 @@ export interface ProductsResponse {
 
 export const products = {
   list: async () => {
-    const res = await apiFetch<ProductsResponse>('/api/products');
+    const res = await apiFetch<ProductsResponse>('/api/products', {}, true);
     // FIXED: backend returns `sellingPrice`, but every page in this app reads
     // `.price` — that mismatch meant prices rendered as NaN/blank everywhere.
     // Normalize once here instead of touching every call site.
@@ -575,6 +575,15 @@ export const admin = {
   setMarkup: (markup: Record<string, number>) =>
     apiFetch('/api/admin/markup', { method: 'PUT', body: JSON.stringify(markup) }, true),
   providerStatus: () => apiFetch<{ success: boolean; providers: ProviderHealth[] }>('/api/admin/providers/status', {}, true),
+
+  // Branding — primary brand color for the customer app
+  setBranding: (primaryColor: string) =>
+    apiFetch<{ success: boolean; primaryColor: string }>('/api/admin/branding', { method: 'PUT', body: JSON.stringify({ primaryColor }) }, true),
+};
+
+// Public — no auth required, since the color has to apply before login
+export const settings = {
+  getBranding: () => apiFetch<{ success: boolean; primaryColor: string }>('/api/settings/branding'),
 };
 
 // ============================================================

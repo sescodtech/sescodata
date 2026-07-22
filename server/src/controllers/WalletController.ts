@@ -2,6 +2,31 @@ import { Response } from 'express';
 import { Transaction } from '../models/Transaction';
 import { User } from '../models/User';
 import { paymentService } from '../services/PaymentService';
+import { creditIfPending } from './PaymentController';
+
+const STALE_PENDING_DEPOSIT_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * A deposit can only ever leave 'pending' via a Paystack webhook or the
+ * user's browser hitting /api/payment/callback. If the user closes the
+ * checkout tab without completing payment, neither happens, and the
+ * transaction is stuck showing 'pending' forever even though it actually
+ * failed or was abandoned. Re-verifying stale ones directly against Paystack
+ * whenever the user looks at their transactions closes that gap — genuinely
+ * in-flight payments (younger than the threshold) are left untouched.
+ */
+async function reconcileStalePendingDeposits(userId: string) {
+  const staleDeposits = await Transaction.find({
+    userId,
+    type: 'deposit',
+    status: 'pending',
+    createdAt: { $lt: new Date(Date.now() - STALE_PENDING_DEPOSIT_MS) },
+  }).select('paymentReference');
+
+  await Promise.all(
+    staleDeposits.map((d) => d.paymentReference ? creditIfPending(d.paymentReference).catch(() => {}) : Promise.resolve())
+  );
+}
 
 export class WalletController {
   /** GET /api/my/wallet */
@@ -28,6 +53,7 @@ export class WalletController {
   /** GET /api/my/transactions */
   static async getMyTransactions(req: any, res: Response) {
     try {
+      await reconcileStalePendingDeposits(req.user.id);
       const transactions = await Transaction.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(200);
       res.json({ success: true, transactions });
     } catch (e: any) {

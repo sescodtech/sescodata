@@ -15,9 +15,9 @@ export default function PublicFooter() {
             </div>
             <p className="text-gray-400">Nigeria's premium digital services platform. Data, Airtime, Cable TV, Bills, Exam PINs.</p>
             <div className="flex items-center gap-3 mt-5">
-              <a href="#" aria-label="Twitter" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-shb-navy flex items-center justify-center transition-colors"><Twitter size={16} /></a>
-              <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-shb-navy flex items-center justify-center transition-colors"><Instagram size={16} /></a>
-              <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-shb-navy flex items-center justify-center transition-colors"><Facebook size={16} /></a>
+              <a href="#" aria-label="Twitter" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-white flex items-center justify-center transition-colors"><Twitter size={16} /></a>
+              <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-white flex items-center justify-center transition-colors"><Instagram size={16} /></a>
+              <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full bg-white/5 hover:bg-shb-gold hover:text-white flex items-center justify-center transition-colors"><Facebook size={16} /></a>
             </div>
           </div>
 

@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, DollarSign, Building2,
   Smartphone, Tv, Wallet, Receipt, Sparkles, RotateCcw,
-  Database, GraduationCap, CreditCard, Zap, Package,
+  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { admin } from '../lib/api';
+import { admin, settings } from '../lib/api';
+import { applyBrandColor } from '../lib/theme';
 import { toast } from 'sonner';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 import AdminOverview from '../components/admin/AdminOverview';
@@ -22,6 +23,7 @@ const TABS = [
   { id: 'TRANSACTIONS', label: 'Transactions', icon: Receipt },
   { id: 'OPERATIONS', label: 'Operations', icon: RotateCcw },
   { id: 'PRICING', label: 'Pricing', icon: DollarSign },
+  { id: 'BRANDING', label: 'Branding', icon: Palette },
 ] as const;
 
 type Tab = (typeof TABS)[number]['id'];
@@ -30,10 +32,40 @@ export default function AdminDashboardPage() {
   useDocumentTitle('Business Control Center');
   const [activeTab, setActiveTab] = useState<Tab>('OVERVIEW');
   const [markup, setMarkup] = useState<Record<string, number>>({});
+  const [brandColor, setBrandColor] = useState('#2563EB');
+  const [savedBrandColor, setSavedBrandColor] = useState('#2563EB');
+  const [savingBrand, setSavingBrand] = useState(false);
 
   useEffect(() => {
     fetchMarkup();
+    fetchBranding();
   }, []);
+
+  async function fetchBranding() {
+    try {
+      const res = await settings.getBranding();
+      if (res.primaryColor) {
+        setBrandColor(res.primaryColor);
+        setSavedBrandColor(res.primaryColor);
+      }
+    } catch {
+      // Non-critical — leave the default and let the admin set one.
+    }
+  }
+
+  async function handleSaveBranding() {
+    setSavingBrand(true);
+    try {
+      await admin.setBranding(brandColor);
+      applyBrandColor(brandColor); // reflect instantly in this session too
+      setSavedBrandColor(brandColor);
+      toast.success('Brand color updated — live across the site now');
+    } catch (e: any) {
+      toast.error(`Couldn't save brand color: ${e.message}`);
+    } finally {
+      setSavingBrand(false);
+    }
+  }
 
   async function fetchMarkup() {
     const data = await admin.getMarkup();
@@ -175,6 +207,83 @@ export default function AdminDashboardPage() {
                 Enable/disable, hide, and override pricing for individual products — Airtime, Data, Cable, Electricity, and Exam PINs.
               </p>
               <AdminProducts />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'BRANDING' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <div className="admin-card p-6 sm:p-8 max-w-2xl">
+              <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
+                <Palette size={20} className="text-admin-blue" />
+                Brand Color
+              </h3>
+              <p className="text-sm text-gray-500 mb-8">
+                Sets the primary color used across the customer-facing app — buttons, links, active states, and highlights. Hover shades and soft backgrounds are generated automatically from this one color.
+              </p>
+
+              <div className="flex items-center gap-4 mb-6">
+                <label className="relative w-16 h-16 rounded-2xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer shrink-0">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="absolute inset-0 w-[150%] h-[150%] -translate-x-[8px] -translate-y-[8px] cursor-pointer border-none p-0"
+                    aria-label="Pick brand color"
+                  />
+                </label>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Hex value</label>
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={(e) => {
+                      const v = e.target.value.startsWith('#') ? e.target.value : `#${e.target.value}`;
+                      setBrandColor(v);
+                    }}
+                    placeholder="#2563EB"
+                    maxLength={7}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-admin-blue transition-all uppercase"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Preview</span>
+                <button
+                  type="button"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm"
+                  style={{ background: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#2563EB' }}
+                >
+                  Buy Data
+                </button>
+                <span
+                  className="px-3 py-1.5 rounded-full text-xs font-bold"
+                  style={{
+                    color: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#2563EB',
+                    background: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? `${brandColor}1A` : '#2563EB1A',
+                  }}
+                >
+                  Active tab
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveBranding}
+                  disabled={savingBrand || !/^#[0-9A-Fa-f]{6}$/.test(brandColor)}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-admin-blue text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <Check size={16} />
+                  {savingBrand ? 'Saving…' : 'Save & apply site-wide'}
+                </button>
+                {brandColor === savedBrandColor && (
+                  <span className="text-xs font-semibold text-gray-400">Currently live</span>
+                )}
+              </div>
+              {!/^#[0-9A-Fa-f]{6}$/.test(brandColor) && (
+                <p className="text-xs font-semibold text-red-500 mt-3">Enter a valid 6-digit hex color, e.g. #2563EB</p>
+              )}
             </div>
           </div>
         )}

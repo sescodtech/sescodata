@@ -1,6 +1,7 @@
 import { ReactNode, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useApplyBranding } from './lib/theme';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -111,6 +112,7 @@ function PaymentCallbackPage() {
 
 // ── App ──────────────────────────────────────────────────────
 export default function App() {
+  useApplyBranding();
   return (
     <AuthProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>

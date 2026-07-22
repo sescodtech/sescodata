@@ -2,6 +2,7 @@ import express from 'express';
 import { AdminController } from '../controllers/AdminController';
 import { AdminOperationsController } from '../controllers/AdminOperationsController';
 import { AdminProductController } from '../controllers/AdminProductController';
+import { SettingsController } from '../controllers/SettingsController';
 import { protect, authorize } from '../middlewares/authMiddleware';
 
 const router = express.Router();
@@ -60,5 +61,8 @@ router.post('/products/import', AdminProductController.importPricing);
 // Global category markup (unchanged from earlier modules)
 router.get('/markup', AdminController.getGlobalMarkup);
 router.put('/markup', AdminController.setGlobalMarkup);
+
+// Branding — primary brand color shown across the customer app
+router.put('/branding', SettingsController.setBranding);
 
 export default router;

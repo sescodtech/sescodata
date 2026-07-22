@@ -89,7 +89,7 @@ export class AuthService {
 
     user.resetPasswordTokenHash = tokenHash;
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
 
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
     return { rawToken, resetUrl };

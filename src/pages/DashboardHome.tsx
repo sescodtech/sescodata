@@ -185,7 +185,7 @@ export default function DashboardHome() {
             <p className="text-gray-300 text-sm mb-4">Our support team is available to help with any issue.</p>
             <Link
               to="/app/support"
-              className="bg-shb-gold text-shb-navy px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 group-hover:gap-3 transition-all"
+              className="bg-shb-gold text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 group-hover:gap-3 transition-all"
             >
               Contact Support <ChevronRight size={14} />
             </Link>

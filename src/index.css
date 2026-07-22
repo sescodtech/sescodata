@@ -13,16 +13,21 @@
   --color-shb-navy: #0B1220;
   --color-shb-navy-2: #121C2E;
   --color-shb-navy-3: #1A2740;
-  --color-shb-gold: #D4A73B;
-  --color-shb-gold-soft: #F2E4BB;
-  --color-shb-gold-dark: #B78B25;
+  /* Primary brand color is blue, matching the admin panel's royal blue for a
+     consistent brand across customer + admin surfaces. Variable names kept
+     as "shb-gold-*" so every existing bg-shb-gold / text-shb-gold-dark /
+     ring-shb-gold class across the app updates automatically — renaming the
+     tokens themselves would mean touching ~28 files for a cosmetic label. */
+  --color-shb-gold: #2563EB;
+  --color-shb-gold-soft: #DBEAFE;
+  --color-shb-gold-dark: #1D4ED8;
   --color-shb-success: #22C55E;
   --color-shb-danger: #EF4444;
   --color-shb-text: #F5F6F8;
   --color-shb-muted: #8B93A7;
 
   --shadow-card: 0 8px 24px rgba(11, 18, 32, 0.10);
-  --shadow-gold: 0 8px 24px rgba(212, 167, 59, 0.25);
+  --shadow-gold: 0 8px 24px rgba(37, 99, 235, 0.25);
 
   /* ============================================================
      Admin — Business Control Center design tokens
@@ -107,7 +112,7 @@
 
   .shb-btn-primary {
     background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
-    @apply text-shb-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-gold);
   }
 
