@@ -14,7 +14,7 @@ export class WalletService {
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
     user.walletBalance += amount;
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
     return user.walletBalance;
   }
 
@@ -25,7 +25,7 @@ export class WalletService {
       throw new Error('Insufficient wallet balance');
     }
     user.walletBalance -= amount;
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
     return user.walletBalance;
   }
 }

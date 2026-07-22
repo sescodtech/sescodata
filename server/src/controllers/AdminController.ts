@@ -466,10 +466,11 @@ export class AdminController {
       const before = user.walletBalance;
       const newBalance = await WalletService.credit(id, amt);
 
+      const reference = `ADJ-${Date.now()}`;
       const txn = await Transaction.create({
         userId: id, amount: amt, type: 'admin_adjustment', status: 'success', deliveryStatus: 'delivered',
         product: { name: 'Manual Wallet Credit', category: 'admin_adjustment' },
-        paymentReference: `ADJ-${Date.now()}`,
+        paymentReference: reference,
       });
 
       const actor = await getActor(req);
@@ -477,6 +478,7 @@ export class AdminController {
         admin: actor, action: 'wallet.credit', targetId: id, targetLabel: user.email,
         before: { walletBalance: before }, after: { walletBalance: newBalance, amount: amt }, reason, ip: AuditLogService.getClientIp(req),
       });
+      EmailService.sendWalletFunded(user, amt, newBalance, reference).catch((err) => console.error('[creditWallet] email failed:', err));
 
       res.json({ success: true, message: `${user.email} credited successfully`, newBalance, transaction: txn });
     } catch (e: any) {
@@ -511,6 +513,7 @@ export class AdminController {
         admin: actor, action: 'wallet.debit', targetId: id, targetLabel: user.email,
         before: { walletBalance: before }, after: { walletBalance: newBalance, amount: amt }, reason, ip: AuditLogService.getClientIp(req),
       });
+      EmailService.sendWalletDebited(user, amt, newBalance, reason).catch((err) => console.error('[debitWallet] email failed:', err));
 
       res.json({ success: true, message: `${user.email} debited successfully`, newBalance, transaction: txn });
     } catch (e: any) {

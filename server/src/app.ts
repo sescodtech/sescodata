@@ -25,7 +25,26 @@ const app = express();
 // policy, since this API serves no HTML/templates of its own — the SPA
 // frontend is a separate deployment with its own CSP concerns.
 app.use(helmet());
-app.use(cors());
+
+// Allowlist instead of the previous cors() (no options), which reflected
+// Access-Control-Allow-Origin: * for literally any site. Requests with no
+// Origin header (curl, Postman, server-to-server, mobile apps) are always
+// allowed through since they aren't subject to browser CORS anyway.
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // This project's own Vercel preview deployments (unique URL per branch/PR).
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 app.use(generalLimiter);
 

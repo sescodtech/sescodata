@@ -29,6 +29,11 @@ export class AuthController {
         ip: AuditLogService.getClientIp(req),
         userAgent: req.headers['user-agent'],
       }).catch(() => {});
+      EmailService.sendLoginAlert(result.user, {
+        ip: AuditLogService.getClientIp(req),
+        userAgent: req.headers['user-agent'],
+        time: new Date(),
+      }).catch((err) => console.error('[login] failed to send login alert:', err));
     } catch (e: any) {
       res.status(401).json({ success: false, error: e.message });
     }
@@ -64,6 +69,9 @@ export class AuthController {
   static async changePassword(req: any, res: Response) {
     try {
       const { currentPassword, newPassword } = req.body;
+      if (!newPassword || String(newPassword).length < 8) {
+        return res.status(400).json({ success: false, error: 'New password must be at least 8 characters' });
+      }
       const user = await User.findById(req.user.id);
       if (!user) throw new Error('User not found');
 
@@ -71,11 +79,20 @@ export class AuthController {
       if (!isMatch) throw new Error('Current password incorrect');
 
       user.password = await AuthService.hashPassword(newPassword);
-      await user.save();
+      await user.save({ validateModifiedOnly: true });
 
       res.json({ success: true, message: 'Password changed successfully' });
     } catch (e: any) {
-      res.status(400).json({ success: false, error: e.message });
+      // Only these two messages are ever safe to show a user directly — both
+      // are user-input problems, not internal failures. Anything else (DB
+      // errors, unexpected exceptions) is logged server-side and given a
+      // generic message instead of leaking internals to the client.
+      const safeMessages = ['User not found', 'Current password incorrect'];
+      if (safeMessages.includes(e.message)) {
+        return res.status(400).json({ success: false, error: e.message });
+      }
+      console.error('[changePassword] failed:', e);
+      res.status(500).json({ success: false, error: 'Something went wrong. Please try again.' });
     }
   }
 
@@ -97,11 +114,14 @@ export class AuthController {
       if (!user) return res.json(genericResponse);
 
       const { resetUrl } = await AuthService.generateResetToken(user);
-      EmailService.sendPasswordReset(user, resetUrl).catch(() => {});
+      EmailService.sendPasswordReset(user, resetUrl).catch((err) => {
+        console.error(`[requestReset] failed to send reset email to ${user.email}:`, err);
+      });
 
       res.json(genericResponse);
     } catch (e: any) {
-      res.status(500).json({ success: false, error: e.message });
+      console.error('[requestReset] failed:', e);
+      res.status(500).json({ success: false, error: 'Something went wrong. Please try again in a moment.' });
     }
   }
 
@@ -110,6 +130,9 @@ export class AuthController {
       const { token, email, newPassword } = req.body;
       if (!token || !email || !newPassword) {
         return res.status(400).json({ success: false, error: 'Token, email and new password are required' });
+      }
+      if (String(newPassword).length < 8) {
+        return res.status(400).json({ success: false, error: 'New password must be at least 8 characters' });
       }
 
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -126,12 +149,13 @@ export class AuthController {
       user.password = await AuthService.hashPassword(newPassword);
       user.resetPasswordTokenHash = undefined;
       user.resetPasswordExpires = undefined;
-      await user.save();
+      await user.save({ validateModifiedOnly: true });
 
       const token2 = AuthService.generateToken(user);
       res.json({ success: true, message: 'Password has been reset', token: token2, user });
     } catch (e: any) {
-      res.status(500).json({ success: false, error: e.message });
+      console.error('[resetPassword] failed:', e);
+      res.status(500).json({ success: false, error: 'Something went wrong. Please try again.' });
     }
   }
 }

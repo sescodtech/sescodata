@@ -29,3 +29,13 @@ export function SkeletonList({ rows = 5 }: { rows?: number }) {
     </div>
   );
 }
+
+/** Compact card-shaped skeleton — dashboard stat tiles, quick-action tiles, plan cards. */
+export function SkeletonCard({ className = '' }: { className?: string }) {
+  return (
+    <div className={`shb-card-sm space-y-3 ${className}`}>
+      <Skeleton className="h-4 w-16" />
+      <Skeleton className="h-6 w-24" />
+    </div>
+  );
+}

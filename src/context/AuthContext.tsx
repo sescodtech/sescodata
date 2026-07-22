@@ -44,16 +44,11 @@ function buildUser(raw: AuthUser): User {
   };
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 async function fetchMe(): Promise<AuthUser | null> {
   const t = tokenStore.get();
   if (!t) return null;
   try {
-    const res = await fetch(`${API_URL}/api/me`, {
-      headers: { 'Authorization': `Bearer ${t}` },
-    });
-    const data = await res.json();
+    const data = await authApi.me();
     if (!data.success || !data.user) return null;
 
     const user = data.user as AuthUser;

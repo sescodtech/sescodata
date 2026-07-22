@@ -113,7 +113,7 @@ export class AdminOperationsController {
 
       const actor = await getActor(req);
       txn.manualReview.notes.push({ adminName: actor.name, note: reason.trim() });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.flag_manual_review', targetType: 'transaction', targetId: id,
@@ -219,7 +219,7 @@ export class AdminOperationsController {
       const actor = await getActor(req);
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: reason.trim() });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.manual_approve', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,
@@ -249,7 +249,7 @@ export class AdminOperationsController {
       const actor = await getActor(req);
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: reason.trim() });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.manual_reject', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,
@@ -294,7 +294,7 @@ export class AdminOperationsController {
       const actor = await getActor(req);
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: reason.trim() });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.manual_complete', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,
@@ -337,7 +337,7 @@ export class AdminOperationsController {
       txn.manualReview = txn.manualReview || ({} as any);
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: `Manual refund of ${refundAmount}: ${reason.trim()}` });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.manual_refund', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,
@@ -379,13 +379,16 @@ export class AdminOperationsController {
       txn.manualReview = txn.manualReview || ({} as any);
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: `Manual reversal of ${reverseAmount}: ${reason.trim()}` });
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.manual_reverse', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,
         before: { reversedManually: false }, after: { reversedManually: true, amount: reverseAmount, newBalance }, reason: reason.trim(),
         ip: AuditLogService.getClientIp(req),
       });
+
+      const user = await User.findById(txn.userId);
+      if (user) EmailService.sendWalletDebited(user, reverseAmount, newBalance, reason.trim()).catch((err) => console.error('[reverseWallet] email failed:', err));
 
       res.json({ success: true, message: 'Wallet reversed successfully', newBalance, transaction: txn });
     } catch (e: any) {
@@ -407,7 +410,7 @@ export class AdminOperationsController {
       txn.manualReview.notes = txn.manualReview.notes || [];
       txn.manualReview.notes.push({ adminName: actor.name, note: note.trim() });
       if (evidenceUrl && evidenceUrl.trim()) txn.manualReview.evidenceUrl = evidenceUrl.trim();
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       AuditLogService.log({
         admin: actor, action: 'transaction.note_added', targetType: 'transaction', targetId: id, targetLabel: txn.paymentReference,

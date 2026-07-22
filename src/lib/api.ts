@@ -2,7 +2,15 @@
 // SescoHub API Service Layer
 // ============================================================
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Every call site below passes a path that already starts with '/api/...'.
+// If VITE_API_URL is set to something like 'https://sescodata.onrender.com/api'
+// (an easy mistake given the variable name), naively concatenating it with
+// those paths produces '.../api/api/products' — a 404 that looks like the
+// backend is broken when it's actually a one-character env var typo. Strip
+// any trailing '/api' (and trailing slashes) so BASE_URL is always just the
+// bare origin, no matter how the env var was set.
+const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api$/i, '');
 
 const normalizeProvider = (value?: string) =>
   String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
@@ -160,6 +168,8 @@ export const auth = {
       method: 'PUT',
       body: JSON.stringify({ currentPassword, newPassword }),
     }, true),
+
+  me: () => apiFetch<{ success: boolean; user: AuthUser }>('/api/me', {}, true),
 };
 
 // ============================================================

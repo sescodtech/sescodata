@@ -16,6 +16,14 @@ import mongoose from 'mongoose';
 import serverless from 'serverless-http';
 import { app } from '../server/src/app';
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error(
+    '\u26a0\ufe0f  CRITICAL: JWT_SECRET is not set. Falling back to the default secret ' +
+    'hardcoded in AuthService.ts — set a long random JWT_SECRET in Vercel project ' +
+    'environment variables immediately.'
+  );
+}
+
 // Serverless functions can be reused ("warm") across requests on the same
 // instance. Reconnecting to MongoDB on every single request would be slow
 // and would eventually exhaust your Atlas connection limit. We cache the

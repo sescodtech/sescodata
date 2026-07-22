@@ -2,7 +2,7 @@ import { formatNaira, formatDate, type Transaction } from './api';
 import type { ReceiptCustomer } from '../components/TransactionReceipt';
 
 const NAVY = '#0B1220';
-const GOLD = '#D4A73B';
+const GOLD = '#2563EB';
 const MUTED = '#8B93A7';
 
 /**
@@ -24,7 +24,7 @@ export async function downloadReceiptPdf(txn: Transaction, customer: ReceiptCust
   doc.rect(0, 0, pageWidth, 90, 'F');
   doc.setFillColor(GOLD);
   doc.roundedRect(margin, 24, 34, 34, 8, 8, 'F');
-  doc.setTextColor(NAVY);
+  doc.setTextColor('#FFFFFF');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.text('S', margin + 17, 47, { align: 'center' });

@@ -9,9 +9,9 @@
 const BRAND = {
   navy: '#0B1220',
   navyLight: '#121C2E',
-  gold: '#D4A73B',
-  goldDark: '#B78B25',
-  goldSoft: '#F2E4BB',
+  gold: '#2563EB',
+  goldDark: '#1D4ED8',
+  goldSoft: '#DBEAFE',
   success: '#22C55E',
   danger: '#EF4444',
   warning: '#F59E0B',
@@ -50,7 +50,7 @@ function baseTemplate(opts: { preheader?: string; bodyHtml: string; ctaLabel?: s
           <td style="background:linear-gradient(135deg, ${BRAND.navy}, ${BRAND.navyLight});padding:32px 28px;text-align:center;">
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
               <tr>
-                <td style="width:40px;height:40px;background:linear-gradient(135deg, ${BRAND.gold}, ${BRAND.goldDark});border-radius:12px;text-align:center;vertical-align:middle;font-weight:800;font-size:22px;color:${BRAND.navy};font-family:Georgia,serif;">S</td>
+                <td style="width:40px;height:40px;background:linear-gradient(135deg, ${BRAND.gold}, ${BRAND.goldDark});border-radius:12px;text-align:center;vertical-align:middle;font-weight:800;font-size:22px;color:#ffffff;font-family:Georgia,serif;">S</td>
                 <td style="padding-left:10px;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">SescoHub</td>
               </tr>
             </table>
@@ -63,7 +63,7 @@ function baseTemplate(opts: { preheader?: string; bodyHtml: string; ctaLabel?: s
             ${ctaLabel && ctaUrl ? `
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px auto 4px;">
               <tr><td style="border-radius:12px;background:linear-gradient(135deg, ${BRAND.gold}, ${BRAND.goldDark});">
-                <a href="${ctaUrl}" style="display:inline-block;padding:14px 32px;color:${BRAND.navy};font-weight:800;font-size:15px;text-decoration:none;">${escapeHtml(ctaLabel)}</a>
+                <a href="${ctaUrl}" style="display:inline-block;padding:14px 32px;color:#ffffff;font-weight:800;font-size:15px;text-decoration:none;">${escapeHtml(ctaLabel)}</a>
               </td></tr>
             </table>` : ''}
           </td>
@@ -150,6 +150,46 @@ export const emailTemplates = {
           ])}`,
         ctaLabel: 'View Wallet',
         ctaUrl: `${APP_URL}/app/wallet`,
+      }),
+    };
+  },
+
+  walletDebited(name: string, amount: number, newBalance: number, reason: string) {
+    return {
+      subject: `Wallet debited: ${naira(amount)}`,
+      html: baseTemplate({
+        preheader: `${naira(amount)} was deducted from your SescoHub wallet.`,
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Wallet debited</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">Hi ${escapeHtml(name)}, an adjustment was made to your wallet balance.</p>
+          ${infoTable([
+            ['Amount Deducted', `<span style="color:${BRAND.danger}">-${naira(amount)}</span>`],
+            ['New Balance', naira(newBalance)],
+            ['Reason', escapeHtml(reason || 'Not specified')],
+          ])}
+          <p style="margin:16px 0 0;color:${BRAND.muted};font-size:12px;">If you didn't expect this, contact support right away.</p>`,
+        ctaLabel: 'View Wallet',
+        ctaUrl: `${APP_URL}/app/wallet`,
+      }),
+    };
+  },
+
+  loginAlert(name: string, context: { ip?: string; userAgent?: string; time: Date }) {
+    return {
+      subject: 'New login to your SescoHub account',
+      html: baseTemplate({
+        preheader: 'We noticed a new login to your account.',
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">New login detected</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">Hi ${escapeHtml(name)}, your account was just signed into.</p>
+          ${infoTable([
+            ['Time', context.time.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })],
+            ['IP Address', escapeHtml(context.ip || 'Unknown')],
+            ['Device', escapeHtml((context.userAgent || 'Unknown').slice(0, 60))],
+          ])}
+          <p style="margin:16px 0 0;color:${BRAND.muted};font-size:12px;">Wasn't you? Reset your password immediately and contact support.</p>`,
+        ctaLabel: 'Not you? Reset Password',
+        ctaUrl: `${APP_URL}/reset-password`,
       }),
     };
   },

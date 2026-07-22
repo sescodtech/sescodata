@@ -3,10 +3,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Mail, Lock, User, Phone, Eye, EyeOff, Loader2, ArrowLeft, AlertCircle, CheckCircle2,
+  Mail, Lock, User, Phone, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { auth as authApi } from '../lib/api';
+import AuthLayout from '../components/ui/AuthLayout';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const location = useLocation();
@@ -31,6 +34,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const isValidEmail = email.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Matches the backend's 8-character minimum (AuthService.register/resetPassword/changePassword).
   const passwordStrength = (() => {
     if (!password) return null;
     let score = 0;
@@ -38,7 +42,7 @@ export default function LoginPage() {
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    if (password.length < 6) return { label: 'Too short', color: 'bg-red-400', width: '20%' };
+    if (password.length < 8) return { label: 'Too short', color: 'bg-red-400', width: '20%' };
     if (score <= 1) return { label: 'Weak', color: 'bg-red-400', width: '35%' };
     if (score <= 2) return { label: 'Fair', color: 'bg-amber-400', width: '60%' };
     if (score === 3) return { label: 'Good', color: 'bg-shb-gold', width: '80%' };
@@ -95,277 +99,173 @@ export default function LoginPage() {
   // Show loading indicator while auth state is being determined
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-shb-gold-soft/30 via-white to-shb-gold-soft/20 flex items-center justify-center">
-        <Loader2 className="animate-spin text-shb-gold-dark" size={40} />
+      <div className="min-h-screen bg-shb-bg flex items-center justify-center">
+        <Loader2 className="animate-spin text-shb-gold-dark" size={32} />
       </div>
     );
   }
 
+  const title = mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create your account' : 'Forgot password?';
+  const subtitle =
+    mode === 'login' ? 'Sign in to keep managing data, airtime and bills.'
+    : mode === 'register' ? 'One wallet for data, airtime, cable TV, electricity and exam PINs.'
+    : 'Enter your email and we\'ll send you a reset link.';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-shb-gold-soft/30 via-white to-shb-gold-soft/20 flex">
-      {/* Left Pane – Branding */}
-      <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 relative overflow-hidden">
-        <div className="max-w-md text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-gradient-to-br from-shb-gold to-shb-gold-dark shadow-2xl" style={{ boxShadow: 'var(--shadow-gold)' }}>
-                <span className="text-shb-navy font-extrabold text-4xl leading-none font-display">S</span>
+    <AuthLayout
+      title={title}
+      subtitle={subtitle}
+      footer={
+        <p className="text-gray-500 text-[13px]">
+          {mode === 'login' ? (
+            <>New to SescoHub?{' '}
+              <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Create a free account</button>
+            </>
+          ) : mode === 'register' ? (
+            <>Already have an account?{' '}
+              <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Sign in</button>
+            </>
+          ) : (
+            <>Remembered it?{' '}
+              <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Back to sign in</button>
+            </>
+          )}
+        </p>
+      }
+    >
+      <AnimatePresence mode="wait">
+        <motion.form
+          key={mode}
+          onSubmit={handleSubmit}
+          initial={{ opacity: 0, x: 8 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -8 }}
+          transition={{ duration: 0.18 }}
+          className="space-y-4"
+        >
+          {error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm flex items-start gap-2.5">
+              <AlertCircle size={17} className="shrink-0 mt-0.5" />
+              <span className="leading-snug">{error}</span>
+            </div>
+          )}
+          {successMsg && (
+            <div className="rounded-2xl border border-green-200 bg-green-50 text-green-700 px-4 py-3 text-sm flex items-start gap-2.5">
+              <CheckCircle2 size={17} className="shrink-0 mt-0.5" />
+              <span className="leading-snug">{successMsg}</span>
+            </div>
+          )}
+
+          {mode === 'register' && (
+            <Input
+              label="Full name"
+              icon={<User size={17} />}
+              type="text" value={name} onChange={(e) => setName(e.target.value)}
+              placeholder="Adebayo Samuel" required
+            />
+          )}
+
+          <Input
+            label="Email address"
+            icon={<Mail size={17} />}
+            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            error={!isValidEmail ? 'Enter a valid email address' : undefined}
+            placeholder="name@example.com" required
+          />
+
+          {mode === 'register' && (
+            <Input
+              label="Phone number"
+              icon={<Phone size={17} />}
+              type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+              placeholder="08012345678"
+            />
+          )}
+
+          {mode !== 'forgot' && (
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-[13px] font-bold text-gray-700">Password</label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('forgot'); setError(null); }}
+                    className="text-xs text-shb-gold-dark font-bold hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                )}
               </div>
-              <span className="font-extrabold text-4xl tracking-tight text-gray-900">SescoHub</span>
-            </div>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-4xl font-extrabold text-gray-900 mb-4"
-          >
-            Welcome Back
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-lg text-gray-600 mb-8"
-          >
-            One wallet for data, airtime, cable TV, electricity and exam PINs
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="grid grid-cols-2 gap-6 text-sm"
-          >
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 bg-shb-gold-soft/50">
-                <span className="text-shb-gold-dark font-bold text-lg">📱</span>
-              </div>
-              <p className="font-semibold text-gray-900">Data & Airtime</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 bg-shb-gold-soft/50">
-                <span className="text-shb-gold-dark font-bold text-lg">📺</span>
-              </div>
-              <p className="font-semibold text-gray-900">TV & Electricity</p>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-shb-gold/10 rounded-full -mr-48 -mt-48 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-shb-gold/15 rounded-full -ml-32 -mb-32 blur-3xl" />
-      </div>
-
-      {/* Right Pane – Form */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-12">
-        {/* Desktop back link */}
-        <Link to="/" className="hidden lg:inline-flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-8">
-          <ArrowLeft size={18} /> Back to home
-        </Link>
-
-        {/* Mobile branding header */}
-        <div className="lg:hidden text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-shb-gold to-shb-gold-dark shadow-lg" style={{ boxShadow: 'var(--shadow-gold)' }}>
-              <span className="text-shb-navy font-extrabold text-2xl leading-none font-display">S</span>
-            </div>
-            <span className="font-extrabold text-2xl tracking-tight text-gray-900 font-display">SescoHub</span>
-          </div>
-          <p className="text-gray-600 text-sm">One wallet for every digital service</p>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={mode}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="w-full max-w-md"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-                {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Reset Password'}
-              </h2>
-              <p className="text-gray-600 text-sm sm:text-base">
-                {mode === 'login'
-                  ? 'Welcome back! Please sign in to your account.'
-                  : mode === 'register'
-                  ? 'Join thousands of satisfied customers today.'
-                  : 'Enter your email to receive a password reset link.'
+              <Input
+                icon={<Lock size={17} />}
+                type={showPassword ? 'text' : 'password'}
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" required minLength={8}
+                trailing={
+                  <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="text-gray-400 hover:text-gray-600 p-1">
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
                 }
-              </p>
+              />
+              {mode === 'register' && passwordStrength && (
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`} style={{ width: passwordStrength.width }} />
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-500 shrink-0">{passwordStrength.label}</span>
+                </div>
+              )}
             </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-              {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm flex items-start gap-3">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
-              {successMsg && (
-                <div className="rounded-2xl border border-green-200 bg-green-50 text-green-700 px-4 py-3 text-sm flex items-start gap-3">
-                  <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
-                  <span>{successMsg}</span>
-                </div>
-              )}
+          {mode === 'register' && (
+            <Input
+              label="Confirm password"
+              icon={<Lock size={17} />}
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+              error={!passwordsMatch ? 'Passwords do not match' : undefined}
+              placeholder="••••••••" required minLength={8}
+              trailing={
+                <button type="button" onClick={() => setShowConfirmPassword(s => !s)} aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  className="text-gray-400 hover:text-gray-600 p-1">
+                  {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              }
+            />
+          )}
 
-              {mode === 'register' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 block">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="text" value={name} onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-4 sm:py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all text-base"
-                      placeholder="Adebayo Samuel" required
-                    />
-                  </div>
-                </div>
-              )}
+          {mode === 'register' && (
+            <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+              <input
+                type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-shb-gold-dark focus:ring-shb-gold shrink-0"
+              />
+              <span className="text-xs text-gray-500 leading-relaxed">
+                I agree to SescoHub's{' '}
+                <Link to="/terms" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Terms &amp; Conditions</Link>
+                {' '}and{' '}
+                <Link to="/privacy" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Privacy Policy</Link>
+              </span>
+            </label>
+          )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 block">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    aria-invalid={!isValidEmail}
-                    className={`w-full pl-10 pr-4 py-4 sm:py-3 bg-white border rounded-xl focus:ring-2 focus:border-transparent outline-none transition-all text-base ${isValidEmail ? 'border-gray-200 focus:ring-shb-gold' : 'border-red-300 focus:ring-red-400'}`}
-                    placeholder="name@example.com" required
-                  />
-                </div>
-                {!isValidEmail && (
-                  <p className="text-xs text-red-500 font-medium flex items-center gap-1">
-                    <AlertCircle size={12} /> Enter a valid email address
-                  </p>
-                )}
-              </div>
-
-              {mode === 'register' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 block">Phone Number <span className="text-gray-400 font-normal">(optional)</span></label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-4 sm:py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all text-base"
-                      placeholder="08012345678"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {mode !== 'forgot' && (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-gray-700">Password</label>
-                    {mode === 'login' && (
-                      <button
-                        type="button"
-                        onClick={() => { setMode('forgot'); setError(null); }}
-                        className="text-xs text-shb-gold-dark font-bold hover:underline"
-                      >
-                        Forgot password?
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password} onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-12 py-4 sm:py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all text-base"
-                      placeholder="••••••••" required minLength={6}
-                    />
-                    <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  {mode === 'register' && passwordStrength && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`} style={{ width: passwordStrength.width }} />
-                      </div>
-                      <span className="text-[11px] font-bold text-gray-500 shrink-0">{passwordStrength.label}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {mode === 'register' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 block">Confirm Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                      aria-invalid={!passwordsMatch}
-                      className={`w-full pl-10 pr-12 py-4 sm:py-3 bg-white border rounded-xl focus:ring-2 focus:border-transparent outline-none transition-all text-base ${passwordsMatch ? 'border-gray-200 focus:ring-shb-gold' : 'border-red-300 focus:ring-red-400'}`}
-                      placeholder="••••••••" required minLength={6}
-                    />
-                    <button type="button" onClick={() => setShowConfirmPassword(s => !s)} aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
-                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  {!passwordsMatch && (
-                    <p className="text-xs text-red-500 font-medium flex items-center gap-1">
-                      <AlertCircle size={12} /> Passwords do not match
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {mode === 'register' && (
-                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
-                  <input
-                    type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-shb-gold-dark focus:ring-shb-gold shrink-0"
-                  />
-                  <span className="text-xs text-gray-600 leading-relaxed">
-                    I agree to SescoHub's{' '}
-                    <Link to="/terms" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Terms &amp; Conditions</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy" target="_blank" className="text-shb-gold-dark font-bold hover:underline">Privacy Policy</Link>
-                  </span>
-                </label>
-              )}
-
-              <button
-                type="submit" disabled={isLoading || (mode === 'register' && (!passwordsMatch || !agreedToTerms || !isValidEmail))}
-                className="shb-btn-primary w-full py-4 sm:py-3 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-base touch-manipulation"
-              >
-                {isLoading ? (
-                  <><Loader2 className="animate-spin" size={20} /> {mode === 'login' ? 'Signing in...' : mode === 'register' ? 'Creating account...' : 'Sending reset link...'}</>
-                ) : (
-                  mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Free Account' : 'Send Reset Link'
-                )}
-              </button>
-            </form>
-
-            <p className="mt-6 sm:mt-8 text-center text-gray-600 text-sm px-4">
-              {mode === 'login' ? (
-                <>Don't have an account? <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Create one free</button></>
-              ) : mode === 'register' ? (
-                <>Already have an account? <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Sign in</button></>
-              ) : (
-                <>Remember your password? <button onClick={switchMode} className="text-shb-gold-dark font-bold hover:underline touch-manipulation">Sign in</button></>
-              )}
-            </p>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={isLoading}
+            disabled={mode === 'register' && (!passwordsMatch || !agreedToTerms || !isValidEmail)}
+            icon={!isLoading ? <ArrowRight size={18} /> : undefined}
+            className="!flex-row-reverse mt-2"
+          >
+            {isLoading
+              ? (mode === 'login' ? 'Signing in…' : mode === 'register' ? 'Creating account…' : 'Sending link…')
+              : (mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create free account' : 'Send reset link')}
+          </Button>
+        </motion.form>
+      </AnimatePresence>
+    </AuthLayout>
   );
 }

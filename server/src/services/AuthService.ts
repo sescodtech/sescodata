@@ -27,14 +27,22 @@ export class AuthService {
   static async register(userData: any) {
     const { email, password, role, ...rest } = userData;
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      throw new Error('Please enter a valid email address');
+    }
+    if (!password || String(password).length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) throw new Error('Email already registered');
 
     const hashedPassword = await this.hashPassword(password);
     // Public registration can never grant admin — that's set manually in the DB / by an existing admin.
     const user = await User.create({
       ...rest,
-      email: email.toLowerCase(),
+      email: cleanEmail,
       password: hashedPassword,
       role: 'customer'
     });
@@ -63,7 +71,7 @@ export class AuthService {
     if (!isMatch) throw new Error('Invalid email or password');
 
     user.lastLogin = new Date();
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
 
     const token = this.generateToken(user);
     return { user, token };

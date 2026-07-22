@@ -55,6 +55,27 @@
 }
 
 @layer base {
+  /* Dark-mode scaffold — Phase 2 makes the customer app "dark-mode ready"
+     per the design brief without shipping a toggle yet. Every shb-* surface
+     token gets a dark counterpart here; wiring an actual switch (add/remove
+     `dark` class on <html>, persist the choice) is a small follow-up once
+     product wants to ship it — no component rewrites needed at that point. */
+  :root.dark {
+    --color-shb-bg: #0B1220;
+    --color-shb-surface: #121C2E;
+    --color-shb-surface-alt: #1A2740;
+    --color-shb-text: #F5F6F8;
+    --color-shb-muted: #8B93A7;
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  :root {
+    --color-shb-bg: #F8FAFC;
+    --color-shb-surface: #FFFFFF;
+    --color-shb-surface-alt: #F8FAFC;
+  }
+}
+
+@layer base {
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -123,6 +144,39 @@
   .shb-skeleton {
     @apply animate-pulse bg-gray-100 rounded-xl;
   }
+
+  /* ── Premium primitives (Phase 2) ────────────────────────── */
+  .shb-card-sm {
+    @apply bg-white rounded-2xl border border-gray-100 p-4;
+    box-shadow: var(--shadow-card);
+  }
+
+  .shb-input {
+    @apply w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none transition-all text-[15px] text-gray-900 placeholder:text-gray-400;
+  }
+  .shb-input:focus {
+    @apply bg-white border-transparent;
+    box-shadow: 0 0 0 2px var(--color-shb-gold);
+  }
+  .shb-input.shb-input-error {
+    @apply border-red-300 bg-red-50/40;
+  }
+  .shb-input.shb-input-error:focus {
+    box-shadow: 0 0 0 2px var(--color-shb-danger);
+  }
+
+  .shb-btn-ghost {
+    @apply font-bold rounded-xl px-5 py-3 text-shb-navy hover:bg-gray-100 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .shb-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold;
+  }
+  .shb-badge-success { @apply bg-green-50 text-green-700; }
+  .shb-badge-danger  { @apply bg-red-50 text-red-600; }
+  .shb-badge-warning { @apply bg-amber-50 text-amber-700; }
+  .shb-badge-info    { @apply bg-shb-gold-soft/60 text-shb-gold-dark; }
+  .shb-badge-muted   { @apply bg-gray-100 text-gray-500; }
 
   /* ── Admin component classes ─────────────────────────────── */
   .admin-card {

@@ -31,7 +31,7 @@ export async function creditIfPending(reference: string) {
 
   if (!verification.success) {
     txn.status = 'failed';
-    await txn.save();
+    await txn.save({ validateModifiedOnly: true });
     return { credited: false, reason: 'verification_failed' };
   }
 
@@ -39,11 +39,11 @@ export async function creditIfPending(reference: string) {
   if (!user) return { credited: false, reason: 'user_not_found' };
 
   user.walletBalance += txn.amount;
-  await user.save();
+  await user.save({ validateModifiedOnly: true });
 
   txn.status = 'success';
   txn.deliveryStatus = 'delivered';
-  await txn.save();
+  await txn.save({ validateModifiedOnly: true });
 
   EmailService.sendWalletFunded(user, txn.amount, user.walletBalance, reference).catch(() => {});
 

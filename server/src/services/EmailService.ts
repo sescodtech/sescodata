@@ -71,6 +71,16 @@ export class EmailService {
     await deliver(user.email, subject, html);
   }
 
+  static async sendWalletDebited(user: { name: string; email: string }, amount: number, newBalance: number, reason: string) {
+    const { subject, html } = emailTemplates.walletDebited(user.name, amount, newBalance, reason);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendLoginAlert(user: { name: string; email: string }, context: { ip?: string; userAgent?: string; time: Date }) {
+    const { subject, html } = emailTemplates.loginAlert(user.name, context);
+    await deliver(user.email, subject, html);
+  }
+
   static async sendPurchaseSuccess(user: { name: string; email: string }, txn: { product: string; recipient?: string; amount: number; ref: string }) {
     const { subject, html } = emailTemplates.purchaseSuccess(user.name, txn);
     await deliver(user.email, subject, html);

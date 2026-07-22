@@ -102,7 +102,7 @@ export class RetryService {
           providerUsed: result.usedProvider, reason,
         });
         txn.isRetryLocked = false;
-        await txn.save();
+        await txn.save({ validateModifiedOnly: true });
 
         User.findById(txn.userId).then((user) => {
           if (user) EmailService.sendRetrySucceeded(user, { product: txn.product?.name || 'your order', amount: userPrice, ref: txn.paymentReference }).catch(() => {});
@@ -122,7 +122,7 @@ export class RetryService {
         reason, error: result.error,
       });
       txn.isRetryLocked = false;
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
 
       const permanentlyFailed = txn.retryCount >= MAX_RETRY_ATTEMPTS;
       if (permanentlyFailed) {
@@ -147,7 +147,7 @@ export class RetryService {
         });
       }
       txn.isRetryLocked = false;
-      await txn.save();
+      await txn.save({ validateModifiedOnly: true });
       throw e;
     }
   }
