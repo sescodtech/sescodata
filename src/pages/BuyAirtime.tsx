@@ -3,7 +3,7 @@ import { Smartphone, ArrowLeft, Loader2, AlertCircle, Wallet, Clock } from 'luci
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
-import { products as productsApi, matchesProvider, purchase, NETWORKS, formatNaira, type Product } from '../lib/api';
+import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers } from '../lib/localPrefs';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -21,6 +21,8 @@ export default function BuyAirtime() {
   const [step, setStep] = useState(0);
   const [airtimePlans, setAirtimePlans] = useState<Product[]>([]);
   const [recents] = useState<string[]>(recentNumbers.get());
+  const [quickPhone, setQuickPhone] = useState('');
+  const detectedNetworkId = quickPhone.replace(/\s/g, '').length >= 4 ? detectNetworkId(quickPhone) : null;
 
   const isValidPhone  = /^(07|08|09)\d{9}$/.test(phoneNumber.replace(/\s/g, ''));
   const isValidAmount = Number(amount) >= 50 && Number(amount) <= 50000;
@@ -74,12 +76,34 @@ export default function BuyAirtime() {
     <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8 content-reveal">
       <PageHeader title="Buy Airtime" description="Top up any network instantly." icon={Smartphone} backTo="/app" />
 
-      <div className="shb-card p-4 sm:p-6 md:p-10">
+      <div className="shb-card p-4 sm:p-6">
         <AnimatePresence mode="wait">
 
           {step === 0 && (
             <motion.div key="net" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h2 className="text-lg font-extrabold text-gray-900 mb-6 font-display">Select Network</h2>
+              <h2 className="shb-section-title mb-4">Select Network</h2>
+
+              <div className="mb-5 p-3.5 rounded-2xl bg-shb-gold-soft/10 border border-shb-gold-soft/40">
+                <label className="text-xs font-bold text-gray-600 mb-2 block">Or type your number — we'll detect the network</label>
+                <div className="relative">
+                  <input
+                    type="tel" inputMode="tel" value={quickPhone} onChange={(e) => setQuickPhone(e.target.value)}
+                    placeholder="08012345678" className="shb-input pl-4 pr-28 py-2.5 text-sm"
+                  />
+                  <AnimatePresence>
+                    {detectedNetworkId && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                        onClick={() => { setPhoneNumber(quickPhone); handleNetworkSelect(NETWORKS.find((n) => n.id === detectedNetworkId)!); }}
+                        className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-xl bg-shb-navy text-white text-xs font-bold flex items-center gap-1"
+                      >
+                        {NETWORKS.find((n) => n.id === detectedNetworkId)?.name.split(' ')[0]}
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {NETWORKS.map((net) => (
                   <button

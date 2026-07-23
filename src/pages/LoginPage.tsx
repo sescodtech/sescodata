@@ -3,12 +3,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Mail, Lock, User, Phone, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, ArrowRight,
+  Mail, Lock, User, Phone, Loader2, AlertCircle, CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { auth as authApi } from '../lib/api';
 import AuthLayout from '../components/ui/AuthLayout';
 import Input from '../components/ui/Input';
+import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
 
 export default function LoginPage() {
@@ -24,8 +25,6 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +161,8 @@ export default function LoginPage() {
               icon={<User size={17} />}
               type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="Adebayo Samuel" required
+              autoComplete="name"
+              autoFocus
             />
           )}
 
@@ -171,6 +172,10 @@ export default function LoginPage() {
             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
             error={!isValidEmail ? 'Enter a valid email address' : undefined}
             placeholder="name@example.com" required
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoFocus={mode !== 'register'}
           />
 
           {mode === 'register' && (
@@ -179,6 +184,8 @@ export default function LoginPage() {
               icon={<Phone size={17} />}
               type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
               placeholder="08012345678"
+              autoComplete="tel"
+              inputMode="tel"
             />
           )}
 
@@ -196,17 +203,11 @@ export default function LoginPage() {
                   </button>
                 )}
               </div>
-              <Input
+              <PasswordInput
                 icon={<Lock size={17} />}
-                type={showPassword ? 'text' : 'password'}
                 value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" required minLength={8}
-                trailing={
-                  <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="text-gray-400 hover:text-gray-600 p-1">
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
-                }
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               />
               {mode === 'register' && passwordStrength && (
                 <div className="flex items-center gap-2 pt-2">
@@ -220,19 +221,13 @@ export default function LoginPage() {
           )}
 
           {mode === 'register' && (
-            <Input
+            <PasswordInput
               label="Confirm password"
               icon={<Lock size={17} />}
-              type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
               error={!passwordsMatch ? 'Passwords do not match' : undefined}
               placeholder="••••••••" required minLength={8}
-              trailing={
-                <button type="button" onClick={() => setShowConfirmPassword(s => !s)} aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                  className="text-gray-400 hover:text-gray-600 p-1">
-                  {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              }
+              autoComplete="new-password"
             />
           )}
 

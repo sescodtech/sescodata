@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock } from 'lucide-react';
+import { Smartphone, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { products as productsApi, matchesProvider, purchase, NETWORKS, formatNaira, type Product } from '../lib/api';
+import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers, favoritePlans } from '../lib/localPrefs';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
@@ -23,6 +23,9 @@ export default function BuyDataFlow() {
   const [selectedPlan, setSelectedPlan] = useState<Product | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'sme' | 'gifting' | 'corporate' | 'favorites'>('all');
+  const [planSearch, setPlanSearch] = useState('');
+  const [quickPhone, setQuickPhone] = useState('');
+  const [detectedNetworkId, setDetectedNetworkId] = useState<string | null>(null);
 
   // API state
   const [allPlans, setAllPlans] = useState<Product[]>([]);
@@ -72,13 +75,33 @@ export default function BuyDataFlow() {
     ? allPlans.filter((p) => matchesProvider(p, selectedNetwork.id))
     : [];
 
-  const filteredPlans = planFilter === 'all'
+  const filteredPlans = (planFilter === 'all'
     ? networkPlans
     : planFilter === 'favorites'
     ? networkPlans.filter((p) => favorites.includes(p.id))
-    : networkPlans.filter((p) => p.planType === planFilter);
+    : networkPlans.filter((p) => p.planType === planFilter)
+  ).filter((p) => !planSearch.trim() || `${p.name} ${p.validity || ''}`.toLowerCase().includes(planSearch.toLowerCase()));
 
   const availableFilters = ['all', ...Array.from(new Set(networkPlans.map((p) => p.planType).filter(Boolean)))] as string[];
+
+  // Auto network detection — suggests a network from a typed number using
+  // real NCC-allocated prefix ranges; the user still explicitly confirms by
+  // tapping the suggestion, nothing is auto-submitted.
+  useEffect(() => {
+    const clean = quickPhone.replace(/\s/g, '');
+    if (clean.length >= 4) {
+      setDetectedNetworkId(detectNetworkId(clean));
+    } else {
+      setDetectedNetworkId(null);
+    }
+  }, [quickPhone]);
+
+  const handleUseDetectedNetwork = () => {
+    const network = NETWORKS.find((n) => n.id === detectedNetworkId);
+    if (!network) return;
+    setPhoneNumber(quickPhone);
+    handleNetworkSelect(network);
+  };
 
   // Phone validation
   const isValidPhone = /^(07|08|09)\d{9}$/.test(phoneNumber.replace(/\s/g, ''));
@@ -197,6 +220,31 @@ export default function BuyDataFlow() {
                 </div>
               )}
 
+              <div className="mb-5 sm:mb-6 p-3.5 rounded-2xl bg-shb-gold-soft/10 border border-shb-gold-soft/40">
+                <label className="text-xs font-bold text-gray-600 mb-2 block">Or type your number — we'll detect the network</label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={quickPhone}
+                    onChange={(e) => setQuickPhone(e.target.value)}
+                    placeholder="08012345678"
+                    className="shb-input pl-4 pr-28 py-2.5 text-sm"
+                  />
+                  <AnimatePresence>
+                    {detectedNetworkId && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                        onClick={handleUseDetectedNetwork}
+                        className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-xl bg-shb-navy text-white text-xs font-bold flex items-center gap-1"
+                      >
+                        {NETWORKS.find((n) => n.id === detectedNetworkId)?.name.split(' ')[0]} <ChevronRight size={12} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {NETWORKS.map((net) => {
                   const count = allPlans.filter((p) => matchesProvider(p, net.id)).length;
@@ -238,6 +286,18 @@ export default function BuyDataFlow() {
                 </div>
               </div>
 
+              {/* Search plans */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  type="text"
+                  value={planSearch}
+                  onChange={(e) => setPlanSearch(e.target.value)}
+                  placeholder="Search plans (e.g. 2GB, 30 days)..."
+                  className="shb-input pl-10 py-2.5 text-sm"
+                />
+              </div>
+
               {/* Plan type filter tabs */}
               <div className="flex gap-2 p-1 bg-gray-50 rounded-xl mb-6 overflow-x-auto">
                 {favorites.length > 0 && (
@@ -269,9 +329,9 @@ export default function BuyDataFlow() {
                 <div className="text-center py-12 text-gray-400">
                   <Database size={40} className="mx-auto mb-3 opacity-40" />
                   <p className="font-semibold">
-                    {planFilter === 'favorites' ? 'No favorite plans yet' : `No ${planFilter !== 'all' ? planFilter : ''} plans for ${selectedNetwork.name}`}
+                    {planSearch ? `No plans match "${planSearch}"` : planFilter === 'favorites' ? 'No favorite plans yet' : `No ${planFilter !== 'all' ? planFilter : ''} plans for ${selectedNetwork.name}`}
                   </p>
-                  <button onClick={() => setPlanFilter('all')} className="mt-2 text-sm text-shb-gold-dark hover:underline">Show all plans</button>
+                  <button onClick={() => { setPlanFilter('all'); setPlanSearch(''); }} className="mt-2 text-sm text-shb-gold-dark hover:underline">Show all plans</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">

@@ -728,6 +728,25 @@ export const NETWORKS = [
   { id: '9mobile', name: '9Mobile',      shortColor: '#065F46', bg: 'bg-emerald-900', textColor: 'text-white' },
 ] as const;
 
+// Real Nigerian carrier prefix ranges (as allocated by the NCC) — used only
+// to suggest a network from a typed number; never changes what the user can
+// actually select or submit.
+const NETWORK_PREFIXES: Record<string, string[]> = {
+  mtn: ['0803', '0806', '0703', '0706', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916'],
+  glo: ['0805', '0807', '0811', '0815', '0905', '0915'],
+  airtel: ['0802', '0808', '0812', '0708', '0701', '0902', '0901', '0904', '0907', '0912'],
+  '9mobile': ['0809', '0817', '0818', '0908', '0909'],
+};
+
+export function detectNetworkId(phone: string): string | null {
+  const clean = phone.replace(/\s/g, '');
+  const prefix = clean.slice(0, 4);
+  for (const [network, prefixes] of Object.entries(NETWORK_PREFIXES)) {
+    if (prefixes.includes(prefix)) return network;
+  }
+  return null;
+}
+
 export const CABLE_PROVIDERS = [
   { id: 'dstv_subscription', name: 'DSTV', bg: 'bg-blue-700',    textColor: 'text-white' },
   { id: 'gotv_subscription', name: 'GOTV', bg: 'bg-orange-500',  textColor: 'text-white' },

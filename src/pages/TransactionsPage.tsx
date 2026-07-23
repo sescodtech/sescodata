@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, ArrowDownLeft, ShoppingCart, Smartphone, Tv, Zap, GraduationCap, Download, RefreshCw, AlertCircle, ChevronRight, Check, Printer, Share2, Loader2 } from 'lucide-react';
+import { Search, ArrowDownLeft, ShoppingCart, Smartphone, Tv, Zap, GraduationCap, Download, RefreshCw, AlertCircle, ChevronRight, Check, Printer, Share2, Loader2, TrendingUp, CheckCircle2, Clock3 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { transactions as txnApi, formatNaira, formatDate, type Transaction } from '../lib/api';
@@ -86,6 +86,10 @@ export default function TransactionsPage() {
     return true;
   }), [txns, searchTerm, filter]);
 
+  const totalSpent = useMemo(() => txns.filter((t) => resolvedStatus(t) === 'delivered' && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0), [txns]);
+  const deliveredCount = useMemo(() => txns.filter((t) => resolvedStatus(t) === 'delivered').length, [txns]);
+  const pendingCount = useMemo(() => txns.filter((t) => resolvedStatus(t) === 'pending').length, [txns]);
+
   return (
     <div className="space-y-6 content-reveal">
       <PageHeader
@@ -112,6 +116,24 @@ export default function TransactionsPage() {
           </>
         }
       />
+
+      {/* Analytics strip */}
+      {!isLoading && txns.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="shb-card-sm">
+            <p className="shb-eyebrow mb-1 flex items-center gap-1"><TrendingUp size={11} /> Total Spent</p>
+            <p className="text-base sm:text-lg font-extrabold text-gray-900">{formatNaira(totalSpent)}</p>
+          </div>
+          <div className="shb-card-sm">
+            <p className="shb-eyebrow mb-1 flex items-center gap-1"><CheckCircle2 size={11} /> Delivered</p>
+            <p className="text-base sm:text-lg font-extrabold text-green-600">{deliveredCount}</p>
+          </div>
+          <div className="shb-card-sm">
+            <p className="shb-eyebrow mb-1 flex items-center gap-1"><Clock3 size={11} /> Pending</p>
+            <p className="text-base sm:text-lg font-extrabold text-amber-500">{pendingCount}</p>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="shb-card p-4 flex flex-col md:flex-row gap-4">

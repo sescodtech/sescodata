@@ -38,11 +38,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
+        aria-busy={loading || undefined}
         className={`${VARIANT_CLASSES[variant]} ${size !== 'md' ? SIZE_CLASSES[size] : ''} ${fullWidth ? 'w-full' : ''} inline-flex items-center justify-center gap-2 touch-manipulation ${className}`}
         {...props}
       >
-        {loading ? <Loader2 className="animate-spin shrink-0" size={size === 'sm' ? 14 : 18} /> : icon}
-        {children}
+        {loading ? <Loader2 className="animate-spin shrink-0" size={size === 'sm' ? 14 : 18} aria-hidden="true" /> : icon}
+        <span>{children}</span>
       </button>
     );
   },

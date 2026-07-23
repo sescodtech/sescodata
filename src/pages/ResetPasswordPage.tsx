@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, ArrowRight, KeyRound } from 'lucide-react';
+import { Lock, Loader2, AlertCircle, CheckCircle2, ArrowRight, KeyRound } from 'lucide-react';
 import { auth as authApi } from '../lib/api';
 import { token as tokenStore } from '../lib/api';
 import AuthLayout from '../components/ui/AuthLayout';
 import Input from '../components/ui/Input';
+import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/EmptyState';
 
@@ -15,8 +16,6 @@ export default function ResetPasswordPage() {
   const email = params.get('email');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -99,21 +98,16 @@ export default function ResetPasswordPage() {
         )}
 
         <div>
-          <Input
+          <PasswordInput
             label="New password"
             icon={<KeyRound size={17} />}
-            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
             minLength={8}
-            trailing={
-              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="text-gray-400 hover:text-gray-600 p-1">
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            }
+            autoComplete="new-password"
+            autoFocus
           />
           {strength && (
             <div className="flex items-center gap-2 pt-2">
@@ -125,22 +119,16 @@ export default function ResetPasswordPage() {
           )}
         </div>
 
-        <Input
+        <PasswordInput
           label="Confirm new password"
           icon={<Lock size={17} />}
-          type={showConfirm ? 'text' : 'password'}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           error={confirmPassword && confirmPassword !== password ? 'Passwords do not match' : undefined}
           placeholder="••••••••"
           required
           minLength={8}
-          trailing={
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Hide password' : 'Show password'}
-              className="text-gray-400 hover:text-gray-600 p-1">
-              {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
-            </button>
-          }
+          autoComplete="new-password"
         />
 
         <Button type="submit" fullWidth size="lg" loading={isLoading} icon={!isLoading ? <ArrowRight size={18} /> : undefined} className="!flex-row-reverse mt-2">

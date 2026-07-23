@@ -26,8 +26,10 @@
   --color-shb-text: #F5F6F8;
   --color-shb-muted: #8B93A7;
 
-  --shadow-card: 0 8px 24px rgba(11, 18, 32, 0.10);
-  --shadow-gold: 0 8px 24px rgba(37, 99, 235, 0.25);
+  --shadow-card: 0 2px 10px rgba(11, 18, 32, 0.05), 0 8px 24px rgba(11, 18, 32, 0.06);
+  --shadow-gold: 0 6px 16px rgba(37, 99, 235, 0.18);
+  --shadow-pop: 0 12px 32px rgba(11, 18, 32, 0.12);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ============================================================
      Admin — Business Control Center design tokens
@@ -103,7 +105,8 @@
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--color-shb-gold), 0 0 0 4px rgba(212, 167, 59, 0.25);
+    box-shadow: 0 0 0 2px var(--color-shb-gold), 0 0 0 4px rgba(37, 99, 235, 0.25);
+    transition: box-shadow 0.15s var(--ease-premium);
   }
 
   html {
@@ -127,32 +130,49 @@
 
 @layer components {
   .shb-card {
-    @apply bg-white rounded-2xl border border-gray-100;
+    @apply bg-white rounded-2xl border border-gray-100 transition-shadow duration-300;
     box-shadow: var(--shadow-card);
   }
 
   .shb-btn-primary {
     background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
-    @apply text-white font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-bold rounded-xl px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-gold);
+    transition: transform 0.15s var(--ease-premium), box-shadow 0.2s var(--ease-premium), filter 0.2s ease;
+  }
+  .shb-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.26);
+    transform: translateY(-1px);
+  }
+  .shb-btn-primary:active:not(:disabled) {
+    transform: scale(0.98) translateY(0);
+    filter: brightness(0.98);
   }
 
   .shb-btn-secondary {
-    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:bg-shb-navy hover:text-white active:scale-[0.98];
+    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 0.2s var(--ease-premium), color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
+  .shb-btn-secondary:hover:not(:disabled) { @apply bg-shb-navy text-white; }
+  .shb-btn-secondary:active:not(:disabled) { transform: scale(0.98); }
 
   .shb-skeleton {
-    @apply animate-pulse bg-gray-100 rounded-xl;
+    @apply rounded-xl relative overflow-hidden;
+    background: linear-gradient(90deg, #F1F2F4 25%, #F8F9FA 37%, #F1F2F4 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
   }
 
   /* ── Premium primitives (Phase 2) ────────────────────────── */
   .shb-card-sm {
-    @apply bg-white rounded-2xl border border-gray-100 p-4;
+    @apply bg-white rounded-2xl border border-gray-100 p-4 transition-shadow duration-300;
     box-shadow: var(--shadow-card);
   }
 
   .shb-input {
-    @apply w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none transition-all text-[15px] text-gray-900 placeholder:text-gray-400;
+    @apply w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-[15px] text-gray-900 placeholder:text-gray-400;
+    transition: background-color 0.2s var(--ease-premium), border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
   }
   .shb-input:focus {
     @apply bg-white border-transparent;
@@ -166,7 +186,8 @@
   }
 
   .shb-btn-ghost {
-    @apply font-bold rounded-xl px-5 py-3 text-shb-navy hover:bg-gray-100 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply font-bold rounded-xl px-5 py-3 text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
 
   .shb-badge {
@@ -218,6 +239,18 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Typography hierarchy — used consistently across every redesigned page
+   instead of ad-hoc text-2xl/text-xl choices per file. */
+.shb-page-title { @apply text-[22px] sm:text-[26px] font-extrabold text-gray-900 font-display tracking-tight leading-tight; }
+.shb-section-title { @apply text-[15px] font-extrabold text-gray-900 font-display tracking-tight; }
+.shb-eyebrow { @apply text-[11px] font-black uppercase tracking-wider text-shb-muted; }
+.shb-body { @apply text-[14px] text-gray-500 leading-relaxed; }
 
 /* Print isolation for digital receipts — everything except the receipt
    itself is hidden when the user prints from the transaction details drawer. */

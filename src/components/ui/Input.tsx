@@ -18,6 +18,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, icon, error, hint, trailing, className = '', id, ...props }, ref) => {
     const autoId = useId();
     const inputId = id || autoId;
+    const descId = `${inputId}-desc`;
     return (
       <div className="space-y-1.5">
         {label && (
@@ -35,6 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             aria-invalid={!!error}
+            aria-describedby={error || hint ? descId : undefined}
             className={`shb-input ${icon ? 'pl-11' : 'pl-4'} ${trailing ? 'pr-12' : ''} ${error ? 'shb-input-error' : ''} ${className}`}
             {...props}
           />
@@ -42,8 +44,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</span>
           )}
         </div>
-        {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
-        {!error && hint && <div className="text-xs text-gray-400">{hint}</div>}
+        {error && <p id={descId} role="alert" className="text-xs text-red-500 font-semibold">{error}</p>}
+        {!error && hint && <div id={descId} className="text-xs text-gray-400">{hint}</div>}
       </div>
     );
   },

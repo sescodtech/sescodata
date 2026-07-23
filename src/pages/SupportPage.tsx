@@ -7,6 +7,8 @@ import { support, formatDate, type SupportTicket } from '../lib/api';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import { SkeletonList } from '../components/Skeleton';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const FAQS = [
@@ -57,14 +59,16 @@ export default function SupportPage() {
   const [error, setError] = useState('');
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
+  const [ticketsError, setTicketsError] = useState('');
 
   const loadTickets = async () => {
     setIsLoadingTickets(true);
+    setTicketsError('');
     try {
       const res = await support.myTickets();
       setTickets(res.tickets);
     } catch {
-      // fail silently — empty state covers it
+      setTicketsError('Could not load your tickets right now.');
     } finally {
       setIsLoadingTickets(false);
     }
@@ -104,12 +108,12 @@ export default function SupportPage() {
             href={c.href}
             target={c.external ? '_blank' : undefined}
             rel={c.external ? 'noopener noreferrer' : undefined}
-            className="shb-card p-6 flex flex-col items-center text-center group hover:border-shb-gold border-2 border-transparent transition-all"
+            className="shb-card-sm !p-5 flex flex-col items-center text-center group hover:border-shb-gold border-2 border-transparent transition-all duration-200 active:scale-[0.98]"
           >
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-shb-gold-soft/50 text-shb-gold-dark">
-              <c.icon size={26} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200 bg-shb-gold-soft/50 text-shb-gold-dark">
+              <c.icon size={22} />
             </div>
-            <h3 className="font-extrabold text-gray-900 mb-1">{c.title}</h3>
+            <h3 className="font-bold text-gray-900 text-sm mb-1">{c.title}</h3>
             <p className="text-xs text-gray-500 font-medium mb-3">{c.sub}</p>
             <span className="text-shb-navy font-bold text-sm">{c.value}</span>
           </a>
@@ -138,8 +142,8 @@ export default function SupportPage() {
       {/* FAQ */}
       <div className="shb-card overflow-hidden">
         <div className="p-5 sm:p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 md:items-center justify-between">
-          <h3 className="font-extrabold text-gray-900 flex items-center gap-2 text-lg font-display">
-            <HelpCircle size={22} className="text-shb-gold-dark" />
+          <h3 className="shb-section-title flex items-center gap-2 text-base">
+            <HelpCircle size={18} className="text-shb-gold-dark" />
             Frequently Asked Questions
           </h3>
           <div className="relative w-full md:w-64">
@@ -181,8 +185,8 @@ export default function SupportPage() {
       </div>
 
       {/* Ticket Form */}
-      <div className="shb-card p-6 sm:p-8">
-        <h3 className="font-extrabold text-gray-900 text-lg mb-2 font-display">Raise a Support Ticket</h3>
+      <div className="shb-card p-4 sm:p-5">
+        <h3 className="shb-section-title mb-1.5">Raise a Support Ticket</h3>
         <p className="text-gray-500 text-sm mb-6">Can't find your answer above? Open a ticket and we'll get back to you by email.</p>
 
         {submitted ? (
@@ -201,33 +205,38 @@ export default function SupportPage() {
                 <AlertCircle size={15} /> {error}
               </div>
             )}
+            <Input
+              label="Subject" required value={form.subject}
+              onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+              placeholder="Brief summary of your issue"
+            />
             <div className="space-y-1.5">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block">Subject</label>
-              <input type="text" required value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                placeholder="Brief summary of your issue"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-shb-gold transition-all" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block">Message</label>
+              <label className="text-[13px] font-bold text-gray-700 block">Message</label>
               <textarea required rows={4} value={form.message} onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 placeholder="Describe your issue. Include your transaction reference if applicable..."
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-shb-gold resize-none transition-all" />
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:bg-white focus:border-transparent resize-none transition-all"
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-shb-gold)'}
+                onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
+              />
             </div>
-            <button type="submit" disabled={isSubmitting} className="shb-btn-primary w-full flex items-center justify-center gap-2">
-              {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Submitting...</> : <><Send size={18} /> Raise Ticket</>}
-            </button>
+            <Button type="submit" loading={isSubmitting} fullWidth icon={!isSubmitting ? <Send size={17} /> : undefined}>
+              {isSubmitting ? 'Submitting…' : 'Raise Ticket'}
+            </Button>
           </form>
         )}
       </div>
 
       {/* Ticket History */}
       <div className="shb-card overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
-          <Ticket size={18} className="text-shb-gold-dark" />
-          <h3 className="font-extrabold text-gray-900 font-display">Your Tickets</h3>
+        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50 flex items-center gap-2">
+          <Ticket size={16} className="text-shb-gold-dark" />
+          <h3 className="shb-section-title">Your Tickets</h3>
         </div>
         {isLoadingTickets ? (
           <SkeletonList rows={2} />
+        ) : ticketsError ? (
+          <EmptyState icon={AlertCircle} variant="error" title={ticketsError} action={<Button size="sm" onClick={loadTickets} className="mt-1">Try again</Button>} />
         ) : tickets.length === 0 ? (
           <EmptyState icon={Ticket} title="No support tickets yet" description="Tickets you raise will show up here." />
         ) : (

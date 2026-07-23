@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { CreditCard, ArrowDownLeft, ArrowUpRight, Wallet, ShieldCheck, Loader2, AlertCircle, RefreshCw, ShoppingCart, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { CreditCard, ArrowDownLeft, ArrowUpRight, Wallet, ShieldCheck, Loader2, AlertCircle, RefreshCw, ShoppingCart, Sparkles, CheckCircle2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,7 @@ export default function WalletPage() {
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [topUpAmount, setTopUpAmount]       = useState('');
   const [topUpError, setTopUpError]         = useState('');
+  const [ledgerSearch, setLedgerSearch]     = useState('');
 
   const loadData = async () => {
     setIsLoading(true);
@@ -81,6 +82,13 @@ export default function WalletPage() {
   const totalSpent    = txns.filter((t) => t.deliveryStatus === 'delivered').reduce((s, t) => s + Math.abs(t.amount), 0);
   const successCount  = txns.filter((t) => t.deliveryStatus === 'delivered').length;
   const pendingCount  = txns.filter((t) => t.deliveryStatus === 'pending').length;
+  const successRate   = txns.length > 0 ? Math.round((successCount / txns.length) * 100) : 0;
+
+  const filteredLedger = useMemo(() => {
+    if (!ledgerSearch.trim()) return ledger;
+    const q = ledgerSearch.toLowerCase();
+    return ledger.filter((e) => e.description?.toLowerCase().includes(q));
+  }, [ledger, ledgerSearch]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 content-reveal pb-8">
@@ -120,7 +128,7 @@ export default function WalletPage() {
       </AnimatePresence>
 
       {/* Balance Card — premium gold/navy */}
-      <div className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3">
+      <div className="rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3" style={{ boxShadow: 'var(--shadow-pop)' }}>
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-shb-gold/15 rounded-full blur-3xl" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-shb-gold/10 rounded-full blur-2xl" />
         <div className="relative z-10">
@@ -138,27 +146,28 @@ export default function WalletPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <div className="shb-card p-4 sm:p-6 relative overflow-hidden group">
-          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Total Spent</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>
-          <p className="text-xs text-gray-500 mt-1">Across {txns.length} transaction{txns.length !== 1 ? 's' : ''}</p>
-          <div className="absolute -top-8 -right-8 w-24 h-24 bg-shb-gold-soft/40 rounded-full blur-2xl group-hover:scale-150 transition-all" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="shb-card-sm relative overflow-hidden">
+          <p className="shb-eyebrow mb-1.5">Total Spent</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>
+          <div className="absolute -top-8 -right-8 w-20 h-20 bg-shb-gold-soft/40 rounded-full blur-2xl" />
         </div>
-        <div className="shb-card p-4 sm:p-6">
-          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Successful</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-green-600 tracking-tight">{successCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Delivered transactions</p>
+        <div className="shb-card-sm">
+          <p className="shb-eyebrow mb-1.5">Successful</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-green-600 tracking-tight">{successCount}</p>
         </div>
-        <div className="shb-card p-4 sm:p-6">
-          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Pending</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-amber-500 tracking-tight">{pendingCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Awaiting delivery</p>
+        <div className="shb-card-sm">
+          <p className="shb-eyebrow mb-1.5">Pending</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-amber-500 tracking-tight">{pendingCount}</p>
+        </div>
+        <div className="shb-card-sm">
+          <p className="shb-eyebrow mb-1.5">Success Rate</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-shb-gold-dark tracking-tight">{successRate}%</p>
         </div>
       </div>
 
       {/* Fund Wallet */}
-      <div className="shb-card p-4 sm:p-6 md:p-8">
+      <div className="shb-card p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-shb-gold-soft/50">
             <ArrowDownLeft size={20} className="text-shb-gold-dark" />
@@ -225,21 +234,35 @@ export default function WalletPage() {
 
       {/* Wallet Ledger — Funding History */}
       <div className="shb-card overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
-          <Sparkles size={16} className="text-shb-gold-dark" />
-          <div>
-            <h3 className="font-extrabold text-gray-900 font-display">Wallet Activity</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Last 30 entries</p>
+        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={15} className="text-shb-gold-dark" />
+            <div>
+              <h3 className="shb-section-title">Wallet Activity</h3>
+              <p className="text-[11px] text-gray-400">Last 30 entries</p>
+            </div>
           </div>
+          {ledger.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+              <input
+                type="text"
+                placeholder="Search wallet activity..."
+                value={ledgerSearch}
+                onChange={(e) => setLedgerSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-shb-gold transition-all text-xs"
+              />
+            </div>
+          )}
         </div>
         {isLoading ? (
           <SkeletonList rows={3} />
-        ) : ledger.length === 0 ? (
-          <EmptyState icon={Sparkles} title="No wallet activity yet" description="Fund your wallet to see activity here." />
+        ) : filteredLedger.length === 0 ? (
+          <EmptyState icon={Sparkles} title={ledgerSearch ? 'No matching activity' : 'No wallet activity yet'} description={ledgerSearch ? undefined : 'Fund your wallet to see activity here.'} />
         ) : (
           <div className="divide-y divide-gray-50">
-            {ledger.map((entry, i) => (
-              <div key={i} className="flex items-center justify-between px-5 sm:px-6 py-4">
+            {filteredLedger.map((entry, i) => (
+              <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
                     entry.type === 'credit' ? 'bg-green-100' : 'bg-red-100')}>
@@ -248,16 +271,16 @@ export default function WalletPage() {
                       : <ArrowUpRight size={16} className="text-red-600" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{entry.description}</p>
-                    <p className="text-xs text-gray-400">{formatDate(entry.date)}</p>
+                    <p className="text-[13px] font-semibold text-gray-800 truncate">{entry.description}</p>
+                    <p className="text-[11px] text-gray-400">{formatDate(entry.date)}</p>
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-3">
-                  <p className={cn('font-bold text-sm', entry.type === 'credit' ? 'text-green-600' : 'text-red-600')}>
+                  <p className={cn('font-bold text-[13px]', entry.type === 'credit' ? 'text-green-600' : 'text-red-600')}>
                     {entry.type === 'credit' ? '+' : '-'}{formatNaira(entry.amount)}
                   </p>
                   {entry.balance !== undefined && (
-                    <p className="text-xs text-gray-400">Bal: {formatNaira(entry.balance)}</p>
+                    <p className="text-[11px] text-gray-400">Bal: {formatNaira(entry.balance)}</p>
                   )}
                 </div>
               </div>
@@ -268,10 +291,10 @@ export default function WalletPage() {
 
       {/* Recent Transactions */}
       <div className="shb-card overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900 font-display">Recent Purchases</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Your last transactions</p>
+            <h3 className="shb-section-title">Recent Purchases</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Your last transactions</p>
           </div>
         </div>
 
@@ -282,7 +305,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {txns.slice(0, 10).map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between px-5 sm:px-6 py-4">
+              <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-shb-gold-soft/50">
                     <CreditCard size={16} className="text-shb-gold-dark" />
