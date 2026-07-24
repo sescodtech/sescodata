@@ -73,7 +73,7 @@ export default function AdminOperationsDrawer({
         ) : !txn ? (
           <EmptyState tone="admin" icon={AlertCircle} title="Couldn't load this transaction" />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start justify-between pb-4 border-b border-gray-100">
               <div className="min-w-0">

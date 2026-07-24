@@ -52,7 +52,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="shb-card p-8 sm:p-10">
+        <div className="shb-card p-6 sm:p-8">
           <h2 className="text-xl font-extrabold text-gray-900 font-display mb-6">Every account includes</h2>
           <ul className="space-y-3">
             {INCLUDED.map((item) => (

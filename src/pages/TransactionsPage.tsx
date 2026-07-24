@@ -189,12 +189,12 @@ export default function TransactionsPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-6 py-4">Transaction</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Recipient</th>
-                    <th className="px-6 py-4 text-right">Date</th>
-                    <th className="px-6 py-4" />
+                    <th className="px-5 py-3">Transaction</th>
+                    <th className="px-5 py-3">Amount</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Recipient</th>
+                    <th className="px-5 py-3 text-right">Date</th>
+                    <th className="px-5 py-3" />
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-gray-50">
@@ -202,7 +202,7 @@ export default function TransactionsPage() {
                     const Icon = txIcon(tx.category, tx.amount);
                     return (
                       <tr key={tx.id} onClick={() => setSelected(tx)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
                             <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
                               <Icon size={18} />
@@ -213,15 +213,15 @@ export default function TransactionsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-3">
                           <span className={cn('font-bold', tx.amount > 0 ? 'text-green-600' : 'text-gray-900')}>
                             {tx.amount > 0 ? '+' : ''}{formatNaira(Math.abs(tx.amount))}
                           </span>
                         </td>
-                        <td className="px-6 py-4"><StatusBadge status={resolvedStatus(tx)} /></td>
-                        <td className="px-6 py-4"><span className="font-mono text-xs text-gray-600">{tx.recipient || '—'}</span></td>
-                        <td className="px-6 py-4 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.date)}</td>
-                        <td className="px-6 py-4"><ChevronRight size={16} className="text-gray-300" /></td>
+                        <td className="px-5 py-3"><StatusBadge status={resolvedStatus(tx)} /></td>
+                        <td className="px-5 py-3"><span className="font-mono text-xs text-gray-600">{tx.recipient || '—'}</span></td>
+                        <td className="px-5 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.date)}</td>
+                        <td className="px-5 py-3"><ChevronRight size={16} className="text-gray-300" /></td>
                       </tr>
                     );
                   })}
@@ -258,7 +258,7 @@ export default function TransactionsPage() {
         )}
 
         {!isLoading && !error && filteredTxns.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-50 text-xs text-gray-400 font-medium">
+          <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400 font-medium">
             Showing {filteredTxns.length} of {txns.length} transactions
           </div>
         )}

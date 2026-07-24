@@ -136,7 +136,7 @@
 
   .shb-btn-primary {
     background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
-    @apply text-white font-bold rounded-xl px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-bold rounded-xl px-5 py-2.5 text-[14.5px] disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-gold);
     transition: transform 0.15s var(--ease-premium), box-shadow 0.2s var(--ease-premium), filter 0.2s ease;
   }
@@ -151,7 +151,7 @@
   }
 
   .shb-btn-secondary {
-    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-2.5 text-[14.5px] disabled:opacity-50 disabled:cursor-not-allowed;
     transition: background-color 0.2s var(--ease-premium), color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
   .shb-btn-secondary:hover:not(:disabled) { @apply bg-shb-navy text-white; }
@@ -166,12 +166,12 @@
 
   /* ── Premium primitives (Phase 2) ────────────────────────── */
   .shb-card-sm {
-    @apply bg-white rounded-2xl border border-gray-100 p-4 transition-shadow duration-300;
+    @apply bg-white rounded-2xl border border-gray-100 p-3.5 transition-shadow duration-300;
     box-shadow: var(--shadow-card);
   }
 
   .shb-input {
-    @apply w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-[15px] text-gray-900 placeholder:text-gray-400;
+    @apply w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-[14.5px] text-gray-900 placeholder:text-gray-400;
     transition: background-color 0.2s var(--ease-premium), border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
   }
   .shb-input:focus {
@@ -186,7 +186,7 @@
   }
 
   .shb-btn-ghost {
-    @apply font-bold rounded-xl px-5 py-3 text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply font-bold rounded-xl px-4 py-2.5 text-[14.5px] text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
     transition: background-color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
 
@@ -207,12 +207,12 @@
 
   .admin-btn-primary {
     background: linear-gradient(135deg, var(--color-admin-blue), var(--color-admin-blue-dark));
-    @apply text-white font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-bold rounded-xl px-5 py-2.5 text-[14.5px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-admin-blue);
   }
 
   .admin-btn-secondary {
-    @apply border-2 border-admin-navy text-admin-navy font-bold rounded-xl px-5 py-3 transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
+    @apply border-2 border-admin-navy text-admin-navy font-bold rounded-xl px-5 py-2.5 text-[14.5px] transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
   }
 
   .admin-skeleton {
@@ -247,10 +247,10 @@
 
 /* Typography hierarchy — used consistently across every redesigned page
    instead of ad-hoc text-2xl/text-xl choices per file. */
-.shb-page-title { @apply text-[22px] sm:text-[26px] font-extrabold text-gray-900 font-display tracking-tight leading-tight; }
-.shb-section-title { @apply text-[15px] font-extrabold text-gray-900 font-display tracking-tight; }
-.shb-eyebrow { @apply text-[11px] font-black uppercase tracking-wider text-shb-muted; }
-.shb-body { @apply text-[14px] text-gray-500 leading-relaxed; }
+.shb-page-title { @apply text-[20px] sm:text-[24px] font-extrabold text-gray-900 font-display tracking-tight leading-[1.15]; }
+.shb-section-title { @apply text-[14px] font-extrabold text-gray-900 font-display tracking-tight leading-snug; }
+.shb-eyebrow { @apply text-[10.5px] font-black uppercase tracking-wider text-shb-muted; }
+.shb-body { @apply text-[13.5px] text-gray-500 leading-snug; }
 
 /* Print isolation for digital receipts — everything except the receipt
    itself is hidden when the user prints from the transaction details drawer. */

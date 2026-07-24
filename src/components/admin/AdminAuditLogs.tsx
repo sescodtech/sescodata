@@ -149,7 +149,7 @@ export default function AdminAuditLogs() {
 
             <div className="md:hidden divide-y divide-gray-50">
               {logs.map((l) => (
-                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-start gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-start gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
                   <div className="w-8 h-8 rounded-full bg-admin-blue-soft text-admin-blue flex items-center justify-center shrink-0"><UserIcon size={14} /></div>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-gray-900 text-[13px]">{l.adminName}</p>

@@ -106,7 +106,7 @@ export default function DashboardHome() {
 
       {/* Wallet + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Link to="/app/wallet" className="lg:col-span-2 rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden block bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3 group" style={{ boxShadow: 'var(--shadow-pop)' }}>
+        <Link to="/app/wallet" className="lg:col-span-2 rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden block bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3 group transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.99]" style={{ boxShadow: 'var(--shadow-pop)' }}>
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-shb-gold/15 rounded-full blur-3xl" />
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1.5">
@@ -140,7 +140,7 @@ export default function DashboardHome() {
               <Link
                 key={action.title}
                 to={action.to}
-                className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-shb-gold-soft/20 transition-colors duration-200 group border border-transparent hover:border-shb-gold-soft touch-manipulation"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl hover:bg-shb-gold-soft/20 active:scale-95 transition-all duration-200 group border border-transparent hover:border-shb-gold-soft touch-manipulation"
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5 bg-shb-gold-soft/50 text-shb-gold-dark group-hover:scale-110 transition-transform duration-200">
                   <action.icon size={16} />
@@ -205,7 +205,7 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="shb-card overflow-hidden">
-            <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
               <h3 className="shb-section-title flex items-center gap-1.5">
                 <Clock size={14} className="text-shb-gold-dark" /> Recent Purchases
               </h3>
@@ -224,7 +224,7 @@ export default function DashboardHome() {
             ) : (
               <div className="divide-y divide-gray-50">
                 {recentTxns.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-gray-50 transition-colors duration-150">
+                  <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
                         {tx.amount > 0 ? <ArrowDownLeft size={16} /> : <ShoppingCart size={16} />}

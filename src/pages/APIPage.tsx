@@ -88,7 +88,7 @@ export default function APIPage() {
 
       {/* Endpoints Table */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-         <div className="p-8 border-b border-gray-50 flex justify-between items-center">
+         <div className="p-5 sm:p-6 border-b border-gray-50 flex justify-between items-center">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
                <Terminal size={20} className="text-blue-600" />
                API Endpoints
@@ -99,30 +99,30 @@ export default function APIPage() {
             <table className="w-full text-left">
                <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                     <th className="px-8 py-4">Method</th>
-                     <th className="px-8 py-4">Endpoint</th>
-                     <th className="px-8 py-4">Auth</th>
-                     <th className="px-8 py-4">Description</th>
+                     <th className="px-5 py-3">Method</th>
+                     <th className="px-5 py-3">Endpoint</th>
+                     <th className="px-5 py-3">Auth</th>
+                     <th className="px-5 py-3">Description</th>
                   </tr>
                </thead>
                <tbody className="text-sm">
                   {endpoints.map(ep => (
                      <tr key={ep.path} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer group">
-                        <td className="px-8 py-5">
+                        <td className="px-5 py-4">
                            <span className={cn(
                               "px-2 py-0.5 rounded text-[10px] font-black tracking-widest",
                               ep.method === 'POST' ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
                            )}>{ep.method}</span>
                         </td>
-                        <td className="px-8 py-5 font-mono text-xs text-gray-600 font-bold group-hover:text-blue-600 transition-colors">{ep.path}</td>
-                        <td className="px-8 py-5 text-gray-400 text-[10px] font-bold uppercase tracking-widest">{ep.auth}</td>
-                        <td className="px-8 py-5 text-gray-500 font-medium text-xs">{ep.desc}</td>
+                        <td className="px-5 py-4 font-mono text-xs text-gray-600 font-bold group-hover:text-blue-600 transition-colors">{ep.path}</td>
+                        <td className="px-5 py-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">{ep.auth}</td>
+                        <td className="px-5 py-4 text-gray-500 font-medium text-xs">{ep.desc}</td>
                      </tr>
                   ))}
                </tbody>
             </table>
          </div>
-         <div className="p-8 bg-gray-50/50 border-t border-gray-100">
+         <div className="p-5 sm:p-6 bg-gray-50/50 border-t border-gray-100">
             <div className="bg-gray-900 rounded-2xl p-6 relative overflow-hidden group shadow-xl">
                <div className="flex justify-between items-center mb-4 text-white">
                   <p className="text-[10px] font-black tracking-widest uppercase text-gray-500">Request Example (Node.js)</p>

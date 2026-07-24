@@ -76,7 +76,7 @@ export default function BecomeAgentPage() {
             </Link>
           </div>
 
-          <div className="shb-card p-6 sm:p-8">
+          <div className="shb-card p-5 sm:p-6">
             <h3 className="font-extrabold text-gray-900 mb-1">Want a dedicated agent line?</h3>
             <p className="text-sm text-gray-500 mb-6">Tell us a bit about your business and we'll reach out.</p>
 

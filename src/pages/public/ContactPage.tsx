@@ -47,7 +47,7 @@ export default function ContactPage() {
         ))}
       </div>
 
-      <div className="shb-card p-6 sm:p-10 max-w-2xl mx-auto">
+      <div className="shb-card p-5 sm:p-8 max-w-2xl mx-auto">
         <h2 className="text-xl font-extrabold text-gray-900 font-display mb-1">Send us a message</h2>
         <p className="text-sm text-gray-500 mb-6">We typically respond within a few hours.</p>
 

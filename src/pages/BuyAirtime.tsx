@@ -90,7 +90,7 @@ export default function BuyAirtime() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8 content-reveal">
+    <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6 content-reveal">
       <PageHeader title="Buy Airtime" description="Top up any network instantly." icon={Smartphone} backTo="/app" />
 
       <div className="shb-card p-4 sm:p-6">
@@ -140,7 +140,7 @@ export default function BuyAirtime() {
 
           {step === 1 && selectedNetwork && (
             <motion.div key="details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="flex items-center gap-3 mb-8">
+              <div className="flex items-center gap-3 mb-5">
                 <button onClick={() => { setStep(0); setError(''); }} className="p-2 hover:bg-gray-50 rounded-xl">
                   <ArrowLeft size={18} className="text-gray-500" />
                 </button>
@@ -195,7 +195,7 @@ export default function BuyAirtime() {
               </div>
 
               {recents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
+                <div className="flex flex-wrap gap-2 mb-5">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 mr-1">
                     <Clock size={11} /> Recent:
                   </span>

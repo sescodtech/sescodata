@@ -161,7 +161,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
-              <motion.div key={f.title} {...fadeUp((i % 3) * 0.08)} className="shb-card p-7 sm:p-8 hover:-translate-y-1 transition-all">
+              <motion.div key={f.title} {...fadeUp((i % 3) * 0.08)} className="shb-card p-5 sm:p-6 hover:-translate-y-1 transition-all">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 bg-shb-gold-soft/50 text-shb-gold-dark">
                   <f.icon size={24} />
                 </div>
@@ -195,7 +195,7 @@ export default function LandingPage() {
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {TESTIMONIALS.map((t, i) => (
-              <motion.div key={t.name} {...fadeUp(i * 0.1)} className="shb-card p-7 sm:p-8">
+              <motion.div key={t.name} {...fadeUp(i * 0.1)} className="shb-card p-5 sm:p-6">
                 <div className="flex mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
                     <Star key={j} size={16} className="text-shb-gold fill-shb-gold" />

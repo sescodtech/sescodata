@@ -179,7 +179,7 @@ export default function BuyDataFlow() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 content-reveal px-4 sm:px-0">
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 content-reveal px-4 sm:px-0">
       <PageHeader
         title="Buy Mobile Data"
         description="Cheap data plans for all networks."
@@ -188,7 +188,7 @@ export default function BuyDataFlow() {
       />
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-6 sm:mb-8 px-2 sm:px-4">
+      <div className="flex items-center justify-between mb-5 sm:mb-6 px-2 sm:px-4">
         {STEPS.map((step, idx) => (
           <div key={step} className="flex flex-col items-center relative flex-1 max-w-[80px] sm:max-w-none">
             <div className={cn(
@@ -213,17 +213,17 @@ export default function BuyDataFlow() {
         ))}
       </div>
 
-      <div className="shb-card p-4 sm:p-6 md:p-10 relative overflow-hidden">
+      <div className="shb-card p-4 sm:p-5 md:p-6 relative overflow-hidden">
         <AnimatePresence mode="wait">
 
           {/* STEP 0: Network Selection */}
           {currentStep === 0 && (
             <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-2 font-display">Select Network</h2>
-              <p className="text-sm text-gray-500 mb-6 sm:mb-8">Which network do you want to buy data for?</p>
+              <h2 className="text-base sm:text-lg font-extrabold text-gray-900 mb-1.5 font-display">Select Network</h2>
+              <p className="text-sm text-gray-500 mb-4 sm:mb-5">Which network do you want to buy data for?</p>
 
               {isLoadingPlans && (
-                <div className="flex items-center gap-3 text-gray-500 py-6 sm:py-8">
+                <div className="flex items-center gap-3 text-gray-500 py-5 sm:py-6">
                   <Loader2 className="animate-spin" size={20} /> Loading plans from providers...
                 </div>
               )}
@@ -290,12 +290,12 @@ export default function BuyDataFlow() {
           {/* STEP 1: Plan Selection */}
           {currentStep === 1 && selectedNetwork && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
                 <button onClick={() => setCurrentStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors touch-manipulation">
                   <ArrowLeft size={18} className="text-gray-500" />
                 </button>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 font-display">Choose a Plan</h2>
+                  <h2 className="text-base sm:text-lg font-extrabold text-gray-900 font-display">Choose a Plan</h2>
                   <p className="text-sm text-gray-500">{selectedNetwork.name}</p>
                 </div>
                 <div className={cn('ml-auto w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-sm sm:text-lg', selectedNetwork.bg, selectedNetwork.textColor)}>

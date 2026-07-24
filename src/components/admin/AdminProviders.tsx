@@ -548,7 +548,7 @@ function LogsTab({ providerNames }: { providerNames: string[] }) {
 
             <div className="md:hidden divide-y divide-gray-50">
               {visibleLogs.map((l) => (
-                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
                   <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', l.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600')}>
                     {l.success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
                   </div>

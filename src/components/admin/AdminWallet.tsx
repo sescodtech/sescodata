@@ -94,9 +94,9 @@ export default function AdminWallet() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Wallet Overview */}
-      <div className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden bg-gradient-to-br from-admin-navy to-admin-navy-2">
+      <div className="rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden bg-gradient-to-br from-admin-navy to-admin-navy-2">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-admin-blue/15 rounded-full blur-3xl" />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
@@ -171,10 +171,10 @@ export default function AdminWallet() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Adjustment History */}
         <div className="admin-card overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
+          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
             <History size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Adjustment History</h3>
           </div>
@@ -187,7 +187,7 @@ export default function AdminWallet() {
               {adjustments.map((a) => {
                 const user = typeof a.userId === 'object' ? a.userId : null;
                 return (
-                  <div key={a._id} className="flex items-center justify-between px-5 sm:px-6 py-3">
+                  <div key={a._id} className="flex items-center justify-between px-4 sm:px-5 py-3">
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{user?.name || user?.email || 'Customer'}</p>
                       <p className="text-[11px] text-gray-400">{formatDate(a.createdAt)}</p>
@@ -204,7 +204,7 @@ export default function AdminWallet() {
 
         {/* Wallet Audit Trail */}
         <div className="admin-card overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
+          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
             <ShieldCheck size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Wallet Audit Trail</h3>
           </div>
@@ -215,7 +215,7 @@ export default function AdminWallet() {
           ) : (
             <div className="divide-y divide-gray-50">
               {auditTrail.map((log) => (
-                <div key={log._id} className="px-5 sm:px-6 py-3">
+                <div key={log._id} className="px-4 sm:px-5 py-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-gray-900">{log.action === 'wallet.credit' ? 'Credit' : 'Debit'} · {log.targetLabel}</p>
                     <p className="text-[11px] text-gray-400">{formatDate(log.createdAt)}</p>

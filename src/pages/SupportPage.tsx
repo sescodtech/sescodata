@@ -189,7 +189,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 content-reveal pb-12">
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 content-reveal pb-12">
       <PageHeader title="Support Center" description="We're here to help with any issue on your account." />
 
       {/* Contact Cards */}
@@ -279,10 +279,10 @@ export default function SupportPage() {
       {/* Ticket Form */}
       <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-1.5">Raise a Support Ticket</h3>
-        <p className="text-gray-500 text-sm mb-6">Can't find your answer above? Open a ticket and we'll get back to you by email.</p>
+        <p className="text-gray-500 text-sm mb-5">Can't find your answer above? Open a ticket and we'll get back to you by email.</p>
 
         {submitted ? (
-          <div className="flex flex-col items-center text-center py-8">
+          <div className="flex flex-col items-center text-center py-6">
             <CheckCircle2 size={48} className="text-green-500 mb-4" />
             <h4 className="font-extrabold text-gray-900 mb-2">Ticket created</h4>
             <p className="text-gray-500 text-sm max-w-sm">We've emailed you a confirmation. For urgent issues, please use WhatsApp.</p>
@@ -321,7 +321,7 @@ export default function SupportPage() {
 
       {/* Ticket History */}
       <div className="shb-card overflow-hidden">
-        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50 flex items-center gap-2">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
           <Ticket size={16} className="text-shb-gold-dark" />
           <h3 className="shb-section-title">Your Tickets</h3>
         </div>
@@ -334,7 +334,7 @@ export default function SupportPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {tickets.map((t) => (
-              <button key={t._id} onClick={() => setOpenTicketId(t._id)} className="w-full text-left px-5 sm:px-6 py-4 hover:bg-gray-50 transition-colors">
+              <button key={t._id} onClick={() => setOpenTicketId(t._id)} className="w-full text-left px-4 sm:px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">{t.subject}</p>

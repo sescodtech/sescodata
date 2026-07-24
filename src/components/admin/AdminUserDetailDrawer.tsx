@@ -191,7 +191,7 @@ export default function AdminUserDetailDrawer({
       ) : !data ? (
         <EmptyState tone="admin" icon={UserIcon} title="Couldn't load this user" />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Identity header */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
@@ -231,7 +231,7 @@ export default function AdminUserDetailDrawer({
 
           {/* OVERVIEW TAB */}
           {tab === 'overview' && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <section>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Account Information</p>
                 <dl className="space-y-2 text-sm">
@@ -314,8 +314,8 @@ export default function AdminUserDetailDrawer({
 
           {/* WALLET TAB */}
           {tab === 'wallet' && (
-            <div className="space-y-5">
-              <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-admin-navy to-admin-navy-2">
+            <div className="space-y-4">
+              <div className="rounded-2xl p-4 text-white bg-gradient-to-br from-admin-navy to-admin-navy-2">
                 <p className="text-admin-gold text-xs font-bold uppercase tracking-widest mb-1">Wallet Balance</p>
                 <p className="text-2xl font-extrabold font-display">{formatNaira(data.user.walletBalance)}</p>
               </div>
@@ -361,7 +361,7 @@ export default function AdminUserDetailDrawer({
 
           {/* ACTIVITY TAB — login history + admin action timeline */}
           {tab === 'activity' && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <section>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><MapPin size={11} /> Login History</p>
                 {data.loginHistory.length === 0 ? (

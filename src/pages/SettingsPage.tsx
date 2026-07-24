@@ -85,7 +85,7 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all duration-200',
+                'flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all duration-200',
                 activeTab === tab.id ? 'bg-shb-navy text-white' : 'text-gray-500 hover:bg-white hover:text-gray-900',
               )}
               style={activeTab === tab.id ? { boxShadow: 'var(--shadow-pop)' } : undefined}
@@ -100,8 +100,8 @@ export default function SettingsPage() {
           <div className="shb-card overflow-hidden">
             <AnimatePresence mode="wait">
               {activeTab === 'profile' && (
-                <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-4 sm:p-6">
-                  <div className="flex flex-col items-center md:items-start mb-7">
+                <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-4 sm:p-5">
+                  <div className="flex flex-col items-center md:items-start mb-5">
                     <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black border-4 border-white bg-gradient-to-br from-shb-gold to-shb-gold-dark" style={{ boxShadow: 'var(--shadow-gold)' }}>
                       {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>

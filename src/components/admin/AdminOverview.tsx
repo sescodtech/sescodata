@@ -29,12 +29,12 @@ function KpiCard({ label, value, sub, icon: Icon, tone = 'blue' }: {
     navy: 'bg-admin-navy/5 text-admin-navy',
   };
   return (
-    <div className="admin-card p-5 group hover:-translate-y-0.5 transition-all">
-      <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform', toneClasses[tone])}>
-        <Icon size={20} />
+    <div className="admin-card p-4 group hover:-translate-y-0.5 transition-all">
+      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform', toneClasses[tone])}>
+        <Icon size={18} />
       </div>
-      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-2xl font-extrabold text-gray-900 tracking-tight font-display">{value}</p>
+      <p className="text-[10.5px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-xl font-extrabold text-gray-900 tracking-tight font-display">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
@@ -114,7 +114,7 @@ export default function AdminOverview() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
@@ -134,7 +134,7 @@ export default function AdminOverview() {
   if (!stats) return null;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-5">
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">Live data — refreshed on load.</p>
@@ -171,7 +171,7 @@ export default function AdminOverview() {
       </div>
 
       {/* Chart + Providers */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 admin-card p-5 sm:p-7">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -241,9 +241,9 @@ export default function AdminOverview() {
       </div>
 
       {/* Recent Transactions + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 admin-card overflow-hidden">
-          <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
             <h3 className="font-extrabold text-gray-900 font-display">Recent Transactions</h3>
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last 8</span>
           </div>
@@ -252,7 +252,7 @@ export default function AdminOverview() {
           ) : (
             <div className="divide-y divide-gray-50">
               {recentTxns.map((tx) => (
-                <div key={tx._id || tx.id} className="flex items-center justify-between px-5 sm:px-6 py-3.5">
+                <div key={tx._id || tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                       tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>

@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="admin-shell -m-4 md:-m-8 p-4 md:p-8 min-h-[calc(100vh-4rem)]" style={{ background: 'var(--color-admin-bg)' }}>
-      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-12 max-w-[1600px] mx-auto">
+      <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-500 pb-12 max-w-[1600px] mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'PRICING' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-6 sm:p-8">
+            <div className="admin-card p-4 sm:p-6">
               <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
                 <DollarSign size={20} className="text-admin-blue" />
                 Global Category Markup
@@ -245,7 +245,7 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'BRANDING' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-6 sm:p-8 max-w-2xl">
+            <div className="admin-card p-5 sm:p-6 max-w-2xl">
               <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
                 <Palette size={20} className="text-admin-blue" />
                 Brand Color

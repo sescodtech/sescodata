@@ -89,7 +89,7 @@ export default function AdminProducts() {
   }, {} as Record<string, AdminProduct[]>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Filter bar */}
       <div className="admin-card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -153,7 +153,7 @@ export default function AdminProducts() {
           const Icon = meta.icon;
           return (
             <div key={cat} className="admin-card overflow-hidden">
-              <div className="px-5 sm:px-6 py-4 border-b border-gray-50 flex items-center gap-2">
+              <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
                 <Icon size={16} className="text-admin-blue" />
                 <h3 className="font-extrabold text-admin-navy font-display">{meta.label}</h3>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-auto">{items.length} product{items.length !== 1 ? 's' : ''}</span>
@@ -226,7 +226,7 @@ export default function AdminProducts() {
               {/* Mobile card list */}
               <div className="md:hidden divide-y divide-gray-50">
                 {items.map((p) => (
-                  <div key={p.id} className="flex items-start gap-3 px-4 py-3.5">
+                  <div key={p.id} className="flex items-start gap-3 px-4 py-3">
                     <input
                       type="checkbox" checked={selected.includes(p.id)}
                       onChange={() => setSelected((s) => s.includes(p.id) ? s.filter((id) => id !== p.id) : [...s, p.id])}

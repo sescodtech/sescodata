@@ -86,7 +86,7 @@ export default function AdminTransactions() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Filter bar */}
       <div className="admin-card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -187,7 +187,7 @@ export default function AdminTransactions() {
               {txns.map((tx) => {
                 const user = typeof tx.userId === 'object' ? tx.userId : null;
                 return (
-                  <button key={tx._id} onClick={() => setSelected(tx)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                  <button key={tx._id} onClick={() => setSelected(tx)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
                     <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
                       {tx.amount > 0 ? <ArrowDownLeft size={15} /> : <ShoppingCart size={15} />}
                     </div>

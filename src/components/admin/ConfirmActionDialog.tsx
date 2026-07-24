@@ -66,7 +66,7 @@ export default function ConfirmActionDialog({
             className="fixed inset-0 z-[61] flex items-center justify-center p-4"
           >
             <div className="admin-shell bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="flex items-start justify-between p-5 border-b border-gray-100">
+              <div className="flex items-start justify-between p-4 border-b border-gray-100">
                 <div className="flex items-start gap-3">
                   <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
                     tone === 'danger' ? 'bg-red-50 text-red-600' : 'bg-admin-blue-soft text-admin-blue')}>
@@ -80,7 +80,7 @@ export default function ConfirmActionDialog({
                 <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600 p-1"><X size={18} /></button>
               </div>
 
-              <div className="p-5 space-y-3">
+              <div className="p-4 space-y-3">
                 {extraFields.map((f) => (
                   <div key={f.key}>
                     <label className="text-xs font-bold text-gray-600 block mb-1">{f.label}{f.required && ' *'}</label>
@@ -104,7 +104,7 @@ export default function ConfirmActionDialog({
                 {error && <p className="text-xs text-red-600 font-semibold">{error}</p>}
               </div>
 
-              <div className="flex gap-2 p-5 pt-0">
+              <div className="flex gap-2 p-4 pt-0">
                 <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                   Cancel
                 </button>

@@ -163,7 +163,7 @@ export default function NotificationsPage() {
                   const Icon = meta.icon;
                   const isUnread = !readIds.includes(tx.id);
                   return (
-                    <div key={tx.id} className={cn('flex items-start gap-3 px-4 sm:px-5 py-3.5 relative transition-colors', isUnread && 'bg-shb-gold-soft/10')}>
+                    <div key={tx.id} className={cn('flex items-start gap-3 px-4 sm:px-5 py-3 relative transition-colors', isUnread && 'bg-shb-gold-soft/10')}>
                       {isUnread && <span className="absolute left-2 top-6 w-1.5 h-1.5 rounded-full bg-shb-gold" />}
                       <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', meta.color)}>
                         <Icon size={16} />

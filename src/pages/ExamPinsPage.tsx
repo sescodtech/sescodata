@@ -127,7 +127,7 @@ export default function ExamPinsPage() {
 
           {step === 1 && selectedPlan && (
             <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-5">
                 <button onClick={() => setStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
                   <ArrowLeft size={18} className="text-gray-500" />
                 </button>
@@ -135,7 +135,7 @@ export default function ExamPinsPage() {
               </div>
 
               <label className="text-[13px] font-bold text-gray-700 block mb-3">Quantity</label>
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-4 mb-5">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   aria-label="Decrease quantity"
@@ -153,7 +153,7 @@ export default function ExamPinsPage() {
                 </button>
               </div>
 
-              <div className="rounded-2xl p-5 mb-6 border bg-shb-gold-soft/20 border-shb-gold-soft">
+              <div className="rounded-2xl p-5 mb-5 border bg-shb-gold-soft/20 border-shb-gold-soft">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-gray-900">Total</span>
                   <span className="text-2xl font-extrabold text-shb-navy">{formatNaira(total)}</span>

@@ -10,7 +10,7 @@ export default function AdminPagination({
   const end = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-gray-50">
+    <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-t border-gray-50">
       <p className="text-xs text-gray-400 font-medium">
         Showing <span className="font-bold text-gray-600">{start}-{end}</span> of <span className="font-bold text-gray-600">{total}</span>
       </p>

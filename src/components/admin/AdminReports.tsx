@@ -96,7 +96,7 @@ function KpiCard({ label, value, icon: Icon, tone = 'blue', onClick }: {
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="admin-card p-5 sm:p-6">
+    <div className="admin-card p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-extrabold text-gray-900">{title}</h3>
         {action}
@@ -475,7 +475,7 @@ function DashboardView({ filters, onDrilldown }: { filters: ReportFilters; onDri
 
   const k = data.kpis;
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard label="Total Revenue" value={formatNaira(k.totalRevenue)} icon={DollarSign} tone="blue" onClick={() => onDrilldown('Total Revenue', { status: 'delivered' })} />
         <KpiCard label="Net Profit" value={formatNaira(k.netProfit)} icon={TrendingUp} tone="green" onClick={() => onDrilldown('Net Profit', { status: 'delivered' })} />
@@ -538,7 +538,7 @@ function ReportsView({ filters, onDrilldown }: { filters: ReportFilters; onDrill
   if (loading || !data) return <Skeleton className="h-96 w-full rounded-2xl" />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard label="Revenue" value={formatNaira(data.kpis.totalRevenue)} icon={DollarSign} tone="blue" />
         <KpiCard label="Net Profit" value={formatNaira(data.kpis.netProfit)} icon={TrendingUp} tone="green" />

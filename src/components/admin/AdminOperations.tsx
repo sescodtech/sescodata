@@ -100,7 +100,7 @@ export default function AdminOperations() {
   const eligibleSelected = txns.filter((t) => selected.includes(t._id) && (t.retryEligibility?.eligible ?? tab === 'FAILED'));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Dashboard widgets */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {isLoadingStats || !stats ? (
@@ -256,7 +256,7 @@ export default function AdminOperations() {
               {txns.map((tx) => {
                 const user = typeof tx.userId === 'object' ? tx.userId : null;
                 return (
-                  <button key={tx._id} onClick={() => setDetailId(tx._id)} className="w-full flex items-start gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                  <button key={tx._id} onClick={() => setDetailId(tx._id)} className="w-full flex items-start gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
                     {tab === 'FAILED' && (
                       <input
                         type="checkbox" checked={selected.includes(tx._id)}

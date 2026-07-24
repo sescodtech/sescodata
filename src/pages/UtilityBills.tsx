@@ -198,7 +198,7 @@ export default function UtilityBills() {
 
           {step === 1 && activeProvider && (
             <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-5">
                 <button onClick={() => setStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
                   <ArrowLeft size={18} className="text-gray-500" />
                 </button>
@@ -284,14 +284,14 @@ export default function UtilityBills() {
 
           {step === 2 && activeProvider && (
             <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-5">
                 <button onClick={() => setStep(1)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
                   <ArrowLeft size={18} className="text-gray-500" />
                 </button>
                 <h2 className="shb-section-title">Confirm Order</h2>
               </div>
 
-              <div className="rounded-2xl p-5 mb-6 border bg-shb-gold-soft/20 border-shb-gold-soft">
+              <div className="rounded-2xl p-5 mb-5 border bg-shb-gold-soft/20 border-shb-gold-soft">
                 <p className="shb-eyebrow mb-4 text-shb-gold-dark">Order Summary</p>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">

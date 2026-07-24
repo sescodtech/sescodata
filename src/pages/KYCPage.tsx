@@ -67,7 +67,7 @@ export default function KYCPage() {
   const canSubmit = false; // No backend endpoint exists yet — see banner + requirements doc.
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 content-reveal pb-12">
+    <div className="max-w-3xl mx-auto space-y-5 content-reveal pb-12">
       <PageHeader
         title="Identity Verification"
         description="Verify your identity to unlock higher transaction limits."
@@ -80,7 +80,7 @@ export default function KYCPage() {
         }
       />
 
-      <div className="shb-card p-4 sm:p-6 flex items-start gap-3 bg-shb-gold-soft/10 border-shb-gold-soft/40">
+      <div className="shb-card p-4 sm:p-5 flex items-start gap-3 bg-shb-gold-soft/10 border-shb-gold-soft/40">
         <Info size={18} className="text-shb-gold-dark shrink-0 mt-0.5" />
         <div className="text-sm text-gray-600">
           <p className="font-bold text-gray-800 mb-1">This page is a preview of the verification flow.</p>
@@ -93,7 +93,7 @@ export default function KYCPage() {
       </div>
 
       {/* Profile photo */}
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-4 flex items-center gap-2">
           <Camera size={16} className="text-shb-gold-dark" /> Profile Photo
         </h3>
@@ -111,7 +111,7 @@ export default function KYCPage() {
       </div>
 
       {/* Personal details */}
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-4 flex items-center gap-2">
           <UserIcon size={16} className="text-shb-gold-dark" /> Personal Details
         </h3>
@@ -134,7 +134,7 @@ export default function KYCPage() {
       </div>
 
       {/* Address */}
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-4 flex items-center gap-2">
           <MapPin size={16} className="text-shb-gold-dark" /> Residential Address
         </h3>
@@ -154,7 +154,7 @@ export default function KYCPage() {
       </div>
 
       {/* Next of kin */}
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-4 flex items-center gap-2">
           <Users size={16} className="text-shb-gold-dark" /> Next of Kin
         </h3>
@@ -166,7 +166,7 @@ export default function KYCPage() {
       </div>
 
       {/* Government ID */}
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-4 sm:p-5">
         <h3 className="shb-section-title mb-4 flex items-center gap-2">
           <CreditCard size={16} className="text-shb-gold-dark" /> Government Identification
         </h3>

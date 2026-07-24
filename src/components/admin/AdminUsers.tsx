@@ -83,7 +83,7 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Filter bar */}
       <div className="admin-card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -210,7 +210,7 @@ export default function AdminUsers() {
             {/* Mobile card list — real adapted layout, not a shrunken table */}
             <div className="md:hidden divide-y divide-gray-50">
               {users.map((u) => (
-                <button key={u._id} onClick={() => setDetailUserId(u._id)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                <button key={u._id} onClick={() => setDetailUserId(u._id)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
                     {u.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>

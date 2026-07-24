@@ -91,7 +91,7 @@ export default function WalletPage() {
   }, [ledger, ledgerSearch]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 content-reveal pb-8">
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 content-reveal pb-8">
       <PageHeader
         title="Wallet"
         description="Fund your wallet and track spending."
@@ -234,7 +234,7 @@ export default function WalletPage() {
 
       {/* Wallet Ledger — Funding History */}
       <div className="shb-card overflow-hidden">
-        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-50">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles size={15} className="text-shb-gold-dark" />
             <div>
@@ -262,7 +262,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {filteredLedger.map((entry, i) => (
-              <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3.5">
+              <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
                     entry.type === 'credit' ? 'bg-green-100' : 'bg-red-100')}>
@@ -291,7 +291,7 @@ export default function WalletPage() {
 
       {/* Recent Transactions */}
       <div className="shb-card overflow-hidden">
-        <div className="px-4 sm:px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
           <div>
             <h3 className="shb-section-title">Recent Purchases</h3>
             <p className="text-[11px] text-gray-400 mt-0.5">Your last transactions</p>
@@ -305,7 +305,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {txns.slice(0, 10).map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3.5">
+              <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-shb-gold-soft/50">
                     <CreditCard size={16} className="text-shb-gold-dark" />
