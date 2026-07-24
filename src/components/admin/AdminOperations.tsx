@@ -200,7 +200,7 @@ export default function AdminOperations() {
           <EmptyState tone="admin" icon={ShoppingCart} title="Nothing in this queue" description="Transactions matching your filters will show up here." />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left min-w-[760px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
@@ -249,6 +249,45 @@ export default function AdminOperations() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-gray-50">
+              {txns.map((tx) => {
+                const user = typeof tx.userId === 'object' ? tx.userId : null;
+                return (
+                  <button key={tx._id} onClick={() => setDetailId(tx._id)} className="w-full flex items-start gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                    {tab === 'FAILED' && (
+                      <input
+                        type="checkbox" checked={selected.includes(tx._id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => setSelected((s) => s.includes(tx._id) ? s.filter((id) => id !== tx._id) : [...s, tx._id])}
+                        className="rounded mt-1 shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 text-[13px] truncate">{tx.product?.name || tx.type}</p>
+                      <p className="text-[10px] text-gray-400 font-mono truncate">{tx.paymentReference}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{user?.email || '—'}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <StatusBadge status={tx.deliveryStatus} />
+                        {tab === 'FAILED' && <span className="text-[10px] font-bold text-gray-400">{tx.retryCount || 0} retries</span>}
+                        {tab === 'MANUAL_REVIEW' && (
+                          <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
+                            tx.manualReview.status === 'approved' || tx.manualReview.status === 'completed' ? 'bg-green-50 text-green-700' :
+                            tx.manualReview.status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700')}>
+                            {tx.manualReview.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-gray-900 text-xs">{formatNaira(Math.abs(tx.amount))}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">{formatDate(tx.createdAt)}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             <AdminPagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
           </>

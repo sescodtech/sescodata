@@ -31,6 +31,40 @@ async function getActor(req: any): Promise<{ id: string; name: string }> {
   return { id: req.user.id, name: admin?.name || req.user.email || 'Unknown Admin' };
 }
 
+/**
+ * Shared transaction filter builder — the single source of truth for how
+ * admin transaction queries (status/category/date/user/search) are shaped.
+ * Extracted so Module 7's Reports & Analytics drill-down and CSV export can
+ * reuse the exact same filtering rules as listTransactions below, instead of
+ * re-implementing them. Adds `provider` (upstream API provider — the same
+ * value ProviderCallLog and Transaction.provider.name use) and `productId`
+ * (exact product SKU) on top of the original fields, additive only — every
+ * existing caller with none of the new params behaves exactly as before.
+ */
+export function buildTransactionFilter(query: Record<string, any>): any {
+  const { status, category, userId, search, dateFrom, dateTo, provider, productId } = query;
+
+  const filter: any = {};
+  if (status) filter.deliveryStatus = status;
+  if (category) filter['product.category'] = category;
+  if (userId) filter.userId = userId;
+  if (provider) filter['provider.name'] = provider;
+  if (productId) filter['product.productId'] = productId;
+  if (dateFrom || dateTo) {
+    filter.createdAt = {};
+    if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+    if (dateTo) filter.createdAt.$lte = new Date(dateTo);
+  }
+  if (search) {
+    filter.$or = [
+      { paymentReference: { $regex: search, $options: 'i' } },
+      { 'product.name': { $regex: search, $options: 'i' } },
+      { 'product.recipient': { $regex: search, $options: 'i' } },
+    ];
+  }
+  return filter;
+}
+
 export class AdminController {
   // ============================================================
   // MODULE 1 — DASHBOARD (unchanged, preserved as-is)
@@ -428,13 +462,46 @@ export class AdminController {
     }
   }
 
+  /**
+   * GET /api/admin/audit-logs — originally a simple targetId/action/limit
+   * lookup (used by the user-detail drawer's activity tab and the wallet
+   * tab's recent-actions list). Extended here to also support the full
+   * admin Audit Log page: pagination, free-text search, target type, and
+   * date range — all additive, so existing callers passing just
+   * {targetId, action, limit} keep working exactly as before.
+   */
   static async listAuditLogs(req: Request, res: Response) {
     try {
-      const { targetId, action } = req.query as Record<string, string>;
-      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+      const { targetId, action, targetType } = req.query as Record<string, string>;
       const filter: any = {};
       if (targetId) filter.targetId = targetId;
       if (action) filter.action = action.includes(',') ? { $in: action.split(',') } : action;
+      if (targetType) filter.targetType = targetType;
+      if (req.query.adminId) filter.adminId = req.query.adminId;
+      if (req.query.search) {
+        const re = new RegExp(String(req.query.search), 'i');
+        filter.$or = [{ adminName: re }, { targetLabel: re }, { action: re }, { reason: re }];
+      }
+      if (req.query.dateFrom || req.query.dateTo) {
+        filter.createdAt = {};
+        if (req.query.dateFrom) filter.createdAt.$gte = new Date(req.query.dateFrom as string);
+        if (req.query.dateTo) filter.createdAt.$lte = new Date(req.query.dateTo as string);
+      }
+
+      // Two modes: legacy `limit`-only callers get a flat capped list (unchanged
+      // behavior); anything passing `page` gets full pagination + metadata.
+      if (req.query.page) {
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 25));
+        const [logs, total, distinctActions] = await Promise.all([
+          AuditLog.find(filter).sort({ createdAt: -1 }).skip((page - 1) * pageSize).limit(pageSize),
+          AuditLog.countDocuments(filter),
+          AuditLog.distinct('action'),
+        ]);
+        return res.json({ success: true, logs, total, page, pageSize, totalPages: Math.ceil(total / pageSize), distinctActions });
+      }
+
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
       const logs = await AuditLog.find(filter).sort({ createdAt: -1 }).limit(limit);
       res.json({ success: true, logs });
     } catch (e: any) {
@@ -531,24 +598,7 @@ export class AdminController {
       const page = Math.max(parseInt(req.query.page as string) || 1, 1);
       const usingPagination = !!req.query.page;
       const limit = Math.min(parseInt(req.query.limit as string) || (usingPagination ? 25 : 500), 500);
-      const { status, category, userId, search, dateFrom, dateTo } = req.query as Record<string, string>;
-
-      const filter: any = {};
-      if (status) filter.deliveryStatus = status;
-      if (category) filter['product.category'] = category;
-      if (userId) filter.userId = userId;
-      if (dateFrom || dateTo) {
-        filter.createdAt = {};
-        if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
-        if (dateTo) filter.createdAt.$lte = new Date(dateTo);
-      }
-      if (search) {
-        filter.$or = [
-          { paymentReference: { $regex: search, $options: 'i' } },
-          { 'product.name': { $regex: search, $options: 'i' } },
-          { 'product.recipient': { $regex: search, $options: 'i' } },
-        ];
-      }
+      const filter = buildTransactionFilter(req.query as Record<string, string>);
 
       const query = Transaction.find(filter).sort({ createdAt: -1 });
       if (usingPagination) query.skip((page - 1) * limit);

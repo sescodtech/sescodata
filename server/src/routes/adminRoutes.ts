@@ -2,6 +2,8 @@ import express from 'express';
 import { AdminController } from '../controllers/AdminController';
 import { AdminOperationsController } from '../controllers/AdminOperationsController';
 import { AdminProductController } from '../controllers/AdminProductController';
+import { AdminProviderController } from '../controllers/AdminProviderController';
+import { AdminReportsController } from '../controllers/AdminReportsController';
 import { SettingsController } from '../controllers/SettingsController';
 import { protect, authorize } from '../middlewares/authMiddleware';
 
@@ -64,5 +66,19 @@ router.put('/markup', AdminController.setGlobalMarkup);
 
 // Branding — primary brand color shown across the customer app
 router.put('/branding', SettingsController.setBranding);
+
+// Module 6 — Provider Control Center
+router.get('/providers', AdminProviderController.getDashboard);
+router.put('/providers/settings', AdminProviderController.updateSettings);
+router.post('/providers/:name/test', AdminProviderController.testConnection);
+router.get('/providers/logs', AdminProviderController.getLogs);
+
+// Module 7 — Reports & Analytics
+router.get('/reports/dashboard', AdminReportsController.getDashboard);
+router.get('/reports/summary', AdminReportsController.getReport);
+router.get('/reports/charts', AdminReportsController.getChart);
+router.get('/reports/export/transactions.csv', AdminReportsController.exportTransactionsCsv);
+router.get('/reports/export/summary.csv', AdminReportsController.exportSummaryCsv);
+router.post('/reports/export/log', AdminReportsController.logExport);
 
 export default router;

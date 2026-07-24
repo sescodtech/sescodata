@@ -155,7 +155,7 @@ export default function AdminUsers() {
           <EmptyState tone="admin" icon={UsersIcon} title="No users match your filters" />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left min-w-[720px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
@@ -205,6 +205,35 @@ export default function AdminUsers() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile card list — real adapted layout, not a shrunken table */}
+            <div className="md:hidden divide-y divide-gray-50">
+              {users.map((u) => (
+                <button key={u._id} onClick={() => setDetailUserId(u._id)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
+                    {u.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-900 text-[13px] truncate flex items-center gap-1.5">
+                      {u.name}
+                      {u.isLocked && <Lock size={10} className="text-red-500 shrink-0" />}
+                      {u.role === 'admin' && <span className="text-[9px] font-black bg-admin-gold text-admin-navy px-1.5 py-0.5 rounded shrink-0">ADMIN</span>}
+                    </p>
+                    <p className="text-[11px] text-gray-400 truncate">{u.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase', u.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700')}>
+                        {u.status}
+                      </span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">{u.kycStatus.replace('_', ' ')}</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-gray-900 text-xs">{formatNaira(u.walletBalance)}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(u.createdAt)}</p>
+                  </div>
+                </button>
+              ))}
             </div>
             <AdminPagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
           </>

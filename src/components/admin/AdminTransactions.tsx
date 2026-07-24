@@ -144,7 +144,7 @@ export default function AdminTransactions() {
           <EmptyState tone="admin" icon={Receipt} title="No transactions match your filters" />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left min-w-[720px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
@@ -180,6 +180,30 @@ export default function AdminTransactions() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-gray-50">
+              {txns.map((tx) => {
+                const user = typeof tx.userId === 'object' ? tx.userId : null;
+                return (
+                  <button key={tx._id} onClick={() => setSelected(tx)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors">
+                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
+                      {tx.amount > 0 ? <ArrowDownLeft size={15} /> : <ShoppingCart size={15} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 text-[13px] truncate">{tx.product?.name || tx.type}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{user?.email || '—'}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-gray-900 text-xs">{formatNaira(Math.abs(tx.amount))}</p>
+                      <div className="flex items-center gap-1.5 mt-1 justify-end">
+                        <StatusBadge status={tx.deliveryStatus} />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             <AdminPagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onChange={setPage} />
           </>

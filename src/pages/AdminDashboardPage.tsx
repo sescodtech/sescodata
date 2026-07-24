@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, DollarSign, Building2,
   Smartphone, Tv, Wallet, Receipt, Sparkles, RotateCcw,
-  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check,
+  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { admin, settings } from '../lib/api';
@@ -15,6 +15,9 @@ import AdminWallet from '../components/admin/AdminWallet';
 import AdminTransactions from '../components/admin/AdminTransactions';
 import AdminOperations from '../components/admin/AdminOperations';
 import AdminProducts from '../components/admin/AdminProducts';
+import AdminProviders from '../components/admin/AdminProviders';
+import AdminReports from '../components/admin/AdminReports';
+import AdminAuditLogs from '../components/admin/AdminAuditLogs';
 
 const TABS = [
   { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
@@ -23,6 +26,9 @@ const TABS = [
   { id: 'TRANSACTIONS', label: 'Transactions', icon: Receipt },
   { id: 'OPERATIONS', label: 'Operations', icon: RotateCcw },
   { id: 'PRICING', label: 'Pricing', icon: DollarSign },
+  { id: 'PROVIDERS', label: 'Providers', icon: Radio },
+  { id: 'REPORTS', label: 'Reports', icon: BarChart3 },
+  { id: 'AUDIT', label: 'Audit Logs', icon: ScrollText },
   { id: 'BRANDING', label: 'Branding', icon: Palette },
 ] as const;
 
@@ -208,6 +214,24 @@ export default function AdminDashboardPage() {
               </p>
               <AdminProducts />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'PROVIDERS' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminProviders />
+          </div>
+        )}
+
+        {activeTab === 'REPORTS' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminReports />
+          </div>
+        )}
+
+        {activeTab === 'AUDIT' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminAuditLogs />
           </div>
         )}
 

@@ -158,7 +158,7 @@ export default function AdminProducts() {
                 <h3 className="font-extrabold text-admin-navy font-display">{meta.label}</h3>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-auto">{items.length} product{items.length !== 1 ? 's' : ''}</span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left min-w-[720px]">
                   <thead>
                     <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
@@ -221,6 +221,49 @@ export default function AdminProducts() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="md:hidden divide-y divide-gray-50">
+                {items.map((p) => (
+                  <div key={p.id} className="flex items-start gap-3 px-4 py-3.5">
+                    <input
+                      type="checkbox" checked={selected.includes(p.id)}
+                      onChange={() => setSelected((s) => s.includes(p.id) ? s.filter((id) => id !== p.id) : [...s, p.id])}
+                      className="rounded mt-1 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 text-[13px] truncate">{p.name}</p>
+                      <p className="text-[10px] text-gray-400 font-mono truncate">{p.id}</p>
+                      <p className="text-[11px] text-gray-500 capitalize mt-0.5">{p.provider}</p>
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold uppercase', p.enabled ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700')}>
+                          {p.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        {!p.visible && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-500">Hidden</span>}
+                      </div>
+                      <p className="font-bold text-xs text-gray-900 mt-1.5">
+                        {p.category === 'electricity' ? 'Amount-based' : formatNaira(p.sellingPrice)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button onClick={() => { setDialogProduct(p); setDialog(p.enabled ? 'disable' : 'enable'); }} aria-label={p.enabled ? `Disable ${p.name}` : `Enable ${p.name}`}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+                        {p.enabled ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                      </button>
+                      <button onClick={() => { setDialogProduct(p); setDialog(p.visible ? 'hide' : 'show'); }} aria-label={p.visible ? `Hide ${p.name}` : `Show ${p.name}`}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+                        {p.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                      </button>
+                      {p.category !== 'electricity' && (
+                        <button onClick={() => { setDialogProduct(p); setDialog('price'); }} aria-label={`Edit pricing for ${p.name}`}
+                          className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-admin-blue">
+                          <Edit3 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           );

@@ -571,8 +571,8 @@ export const admin = {
     apiFetch<{ success: boolean; note: AdminNoteEntry }>(`/api/admin/users/${userId}/notes`, { method: 'POST', body: JSON.stringify({ note }) }, true),
   notifyUser: (userId: string, title: string, message: string) =>
     apiFetch<{ success: boolean; message: string }>(`/api/admin/users/${userId}/notify`, { method: 'POST', body: JSON.stringify({ title, message }) }, true),
-  auditLogs: (params: { targetId?: string; action?: string; limit?: number } = {}) =>
-    apiFetch<{ success: boolean; logs: AuditLogEntry[] }>(`/api/admin/audit-logs${toQueryString({ limit: 100, ...params } as any)}`, {}, true),
+  auditLogs: (params: AuditLogFilters & { targetId?: string; limit?: number } = {}) =>
+    apiFetch<AuditLogsResponse & { logs: AuditLogEntry[] }>(`/api/admin/audit-logs${toQueryString(params as any)}`, {}, true),
 
   // Wallet (Module 3)
   creditWallet: (userId: string, amount: number, reason: string) =>
@@ -586,10 +586,95 @@ export const admin = {
     apiFetch('/api/admin/markup', { method: 'PUT', body: JSON.stringify(markup) }, true),
   providerStatus: () => apiFetch<{ success: boolean; providers: ProviderHealth[] }>('/api/admin/providers/status', {}, true),
 
+  // Module 6 — Provider Control Center
+  providersDashboard: () => apiFetch<ProviderDashboardResponse>('/api/admin/providers', {}, true),
+  updateProviderSettings: (settings: Partial<ProviderSettingsPayload> & { reason?: string }) =>
+    apiFetch<{ success: boolean; settings: ProviderSettingsPayload }>('/api/admin/providers/settings', { method: 'PUT', body: JSON.stringify(settings) }, true),
+  testProviderConnection: (name: string) =>
+    apiFetch<{ success: boolean; provider: string; result: { success: boolean; balance?: number; error?: string; durationMs: number } }>(`/api/admin/providers/${name}/test`, { method: 'POST' }, true),
+  providerLogs: (filters: ProviderLogFilters = {}) =>
+    apiFetch<ProviderLogsResponse>(`/api/admin/providers/logs${toQueryString(filters as any)}`, {}, true),
+
   // Branding — primary brand color for the customer app
   setBranding: (primaryColor: string) =>
     apiFetch<{ success: boolean; primaryColor: string }>('/api/admin/branding', { method: 'PUT', body: JSON.stringify({ primaryColor }) }, true),
 };
+
+export interface ProviderStats {
+  totalCalls30d: number;
+  successRate: number | null;
+  failureRate: number | null;
+  avgResponseMs: number | null;
+  dailyCalls: number;
+  monthlyCalls: number;
+  lastSyncAt: string | null;
+  lastError: string | null;
+}
+export interface ProviderDashboardItem {
+  name: string;
+  status: 'healthy' | 'low_balance' | 'offline' | 'unconfigured';
+  balance: number;
+  healthy: boolean;
+  disabled: boolean;
+  minBalance?: number;
+  error?: string;
+  priorityPosition: number;
+  isManualOverride: boolean;
+  stats: ProviderStats;
+}
+export interface ProviderDailyPoint {
+  date: string;
+  provider: string;
+  total: number;
+  success: number;
+  failed: number;
+  successRate: number;
+  avgResponseMs: number;
+}
+export interface ProviderSettingsPayload {
+  priorityOrder: string[];
+  manualOverrideProvider: string | null;
+  disabledProviders: string[];
+  minBalanceThreshold: number;
+}
+export interface ProviderDashboardResponse {
+  success: boolean;
+  providers: ProviderDashboardItem[];
+  alerts: { severity: 'critical' | 'warning' | 'info'; message: string; provider: string }[];
+  dailySeries: ProviderDailyPoint[];
+  settings: ProviderSettingsPayload;
+  availableProviderTypes: string[];
+}
+export interface ProviderCallLogEntry {
+  _id: string;
+  provider: string;
+  method: string;
+  success: boolean;
+  durationMs: number;
+  error?: string;
+  failReason?: string;
+  createdAt: string;
+}
+export interface ProviderLogFilters { page?: number; pageSize?: number; provider?: string; success?: string; method?: string; dateFrom?: string; dateTo?: string }
+export interface ProviderLogsResponse {
+  success: boolean;
+  logs: ProviderCallLogEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AuditLogFilters { page?: number; pageSize?: number; action?: string; adminId?: string; targetType?: string; search?: string; dateFrom?: string; dateTo?: string }
+export interface AuditLogsResponse {
+  success: boolean;
+  logs: AuditLogEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  distinctActions: string[];
+}
 
 // Public — no auth required, since the color has to apply before login
 export const settings = {
@@ -769,3 +854,127 @@ export function formatDate(dateStr: string) {
     return dateStr;
   }
 }
+
+// ============================================================
+// MODULE 7 — Reports & Analytics
+// ============================================================
+
+export type ReportPeriod = 'today' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom' | 'all';
+
+/** Shared by every Module 7 endpoint — period selector plus the same drill-down filters as the Transactions table. */
+export interface ReportFilters {
+  period?: ReportPeriod;
+  dateFrom?: string;
+  dateTo?: string;
+  category?: string;   // Service
+  productId?: string;  // Product
+  provider?: string;    // Upstream provider (gladtidings/cheapdatahub/jarapoint)
+  userId?: string;      // User
+  status?: string;      // deliveryStatus
+}
+
+export interface ReportKpis {
+  totalRevenue: number;
+  netProfit: number;
+  grossSales: number;
+  walletFloat: number;
+  totalTransactions: number;
+  successfulTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  successRate: number;
+  failureRate: number;
+  newUsers: number;
+  activeUsers: number;
+  returningCustomers: number;
+  avgTransactionValue: number;
+}
+
+export interface TopListEntry { name: string; revenue: number; count: number }
+export interface ReportProviderPerformance { provider: string; totalCalls: number; successRate: number; avgResponseMs: number | null }
+
+export interface ReportLists {
+  topProducts: TopListEntry[];
+  topNetworks: TopListEntry[];
+  topBillers: TopListEntry[];
+  providerPerformance: ReportProviderPerformance[];
+}
+
+export interface DashboardResponse {
+  success: boolean;
+  period: ReportPeriod;
+  range: { from: string | null; to: string };
+  kpis: ReportKpis;
+  topProducts: TopListEntry[];
+  topNetworks: TopListEntry[];
+  topBillers: TopListEntry[];
+  providerPerformance: ReportProviderPerformance[];
+}
+
+export interface ReportBreakdownRow {
+  bucket: string;
+  revenue: number;
+  profit: number;
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+}
+
+export interface ReportSummaryResponse extends DashboardResponse {
+  granularity: 'hour' | 'day' | 'week' | 'month';
+  breakdown: ReportBreakdownRow[];
+}
+
+export type ChartMetric =
+  | 'revenueTrend' | 'profitTrend' | 'transactionTrend' | 'userGrowth' | 'providerPerformance'
+  | 'walletFlow' | 'productPerformance' | 'serviceDistribution' | 'failureTrend' | 'successTrend';
+
+export interface ChartResponse {
+  success: boolean;
+  metric: ChartMetric;
+  period: ReportPeriod;
+  range: { from: string | null; to: string };
+  granularity: 'hour' | 'day' | 'week' | 'month';
+  series: any[];
+}
+
+export const reports = {
+  dashboard: (filters: ReportFilters = {}) =>
+    apiFetch<DashboardResponse>(`/api/admin/reports/dashboard${toQueryString(filters as any)}`, {}, true),
+  summary: (filters: ReportFilters = {}) =>
+    apiFetch<ReportSummaryResponse>(`/api/admin/reports/summary${toQueryString(filters as any)}`, {}, true),
+  chart: (metric: ChartMetric, filters: ReportFilters = {}) =>
+    apiFetch<ChartResponse>(`/api/admin/reports/charts${toQueryString({ ...filters, metric } as any)}`, {}, true),
+
+  /** Both exports bypass apiFetch's JSON parsing (same reasoning as adminProducts.exportPricingCsv) and stream a real file download using the same bearer token. */
+  exportTransactionsCsv: async (filters: ReportFilters = {}) => {
+    const res = await fetch(`${BASE_URL}/api/admin/reports/export/transactions.csv${toQueryString(filters as any)}`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export transactions');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  exportSummaryCsv: async (filters: ReportFilters = {}) => {
+    const res = await fetch(`${BASE_URL}/api/admin/reports/export/summary.csv${toQueryString(filters as any)}`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export summary');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-report-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  /** Notifies the backend so client-generated PDF/print exports still land in the audit log, same as server-side CSV exports. */
+  logExport: (type: 'pdf' | 'print', period?: string) =>
+    apiFetch<{ success: boolean }>('/api/admin/reports/export/log', { method: 'POST', body: JSON.stringify({ type, period }) }, true),
+};
