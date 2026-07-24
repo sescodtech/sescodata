@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Wallet, ReceiptText, ShoppingCart,
   Settings, ShieldCheck, LogOut, Menu, X, Zap,
-  Tv, Smartphone, MessageSquare, GraduationCap, Bell,
+  Tv, Smartphone, MessageSquare, GraduationCap, Bell, BadgeCheck,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,7 @@ const USER_LINKS = [
   { name: 'Wallet',        to: '/app/wallet',       icon: Wallet },
   { name: 'Transactions',  to: '/app/transactions', icon: ReceiptText },
   { name: 'Support',       to: '/app/support',      icon: MessageSquare },
+  { name: 'Verification',  to: '/app/verification', icon: BadgeCheck },
   { name: 'Settings',      to: '/app/settings',     icon: Settings },
 ];
 

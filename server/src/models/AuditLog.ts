@@ -10,7 +10,7 @@ const AuditLogSchema = new mongoose.Schema({
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   adminName: { type: String, required: true }, // denormalized so old logs still read fine if the admin account is later deleted
   action: { type: String, required: true }, // e.g. 'user.suspend', 'wallet.credit', 'user.password_reset'
-  targetType: { type: String, enum: ['user', 'transaction', 'system'], default: 'user' },
+  targetType: { type: String, enum: ['user', 'transaction', 'system', 'ticket'], default: 'user' },
   targetId: { type: mongoose.Schema.Types.ObjectId },
   targetLabel: { type: String }, // denormalized target name/email for quick display
   before: { type: mongoose.Schema.Types.Mixed },

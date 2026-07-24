@@ -4,7 +4,7 @@ export class AuditLogService {
   static async log(opts: {
     admin: { id: string; name: string };
     action: string;
-    targetType?: 'user' | 'transaction' | 'system';
+    targetType?: 'user' | 'transaction' | 'system' | 'ticket';
     targetId?: string;
     targetLabel?: string;
     before?: any;

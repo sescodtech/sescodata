@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search } from 'lucide-react';
+import { Smartphone, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search, PartyPopper } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -33,6 +33,7 @@ export default function BuyDataFlow() {
   const [plansError, setPlansError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [justPaid, setJustPaid] = useState(false);
 
   // Convenience state (client-side only, non-breaking)
   const [favorites, setFavorites] = useState<string[]>(favoritePlans.get());
@@ -145,7 +146,8 @@ export default function BuyDataFlow() {
 
       // Refresh user balance and redirect to transactions
       await refreshUser();
-      window.location.href = '/app/transactions';
+      setJustPaid(true);
+      setTimeout(() => { window.location.href = '/app/transactions'; }, 1400);
     } catch (err: any) {
       setPaymentError(err.message || 'Purchase failed. Please try again.');
       setIsProcessing(false);
@@ -160,6 +162,21 @@ export default function BuyDataFlow() {
     setPlanFilter('all');
     setPaymentError('');
   };
+
+  if (justPaid) {
+    return (
+      <div className="max-w-md mx-auto py-16">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <div className="w-16 h-16 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+            <PartyPopper size={28} className="text-green-500" />
+          </div>
+          <h2 className="shb-page-title mb-1.5">Payment sent!</h2>
+          <p className="shb-body">Taking you to your receipt…</p>
+          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-5" size={20} />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 content-reveal px-4 sm:px-0">

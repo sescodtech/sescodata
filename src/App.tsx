@@ -30,6 +30,7 @@ const SupportPage = lazy(() => import('./pages/SupportPage'));
 const APIPage = lazy(() => import('./pages/APIPage'));
 const ExamPinsPage = lazy(() => import('./pages/ExamPinsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const KYCPage = lazy(() => import('./pages/KYCPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
 
 function RouteFallback() {
@@ -153,6 +154,7 @@ export default function App() {
             <Route path="wallet" element={<WalletPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="verification" element={<KYCPage />} />
             <Route path="support" element={<SupportPage />} />
             <Route path="api" element={<APIPage />} />
 

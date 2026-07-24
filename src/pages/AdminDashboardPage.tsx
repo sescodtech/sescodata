@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, DollarSign, Building2,
   Smartphone, Tv, Wallet, Receipt, Sparkles, RotateCcw,
-  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3,
+  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3, Headset,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { admin, settings } from '../lib/api';
@@ -17,6 +17,7 @@ import AdminOperations from '../components/admin/AdminOperations';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminProviders from '../components/admin/AdminProviders';
 import AdminReports from '../components/admin/AdminReports';
+import AdminSupport from '../components/admin/AdminSupport';
 import AdminAuditLogs from '../components/admin/AdminAuditLogs';
 
 const TABS = [
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'PRICING', label: 'Pricing', icon: DollarSign },
   { id: 'PROVIDERS', label: 'Providers', icon: Radio },
   { id: 'REPORTS', label: 'Reports', icon: BarChart3 },
+  { id: 'SUPPORT', label: 'Support', icon: Headset },
   { id: 'AUDIT', label: 'Audit Logs', icon: ScrollText },
   { id: 'BRANDING', label: 'Branding', icon: Palette },
 ] as const;
@@ -226,6 +228,12 @@ export default function AdminDashboardPage() {
         {activeTab === 'REPORTS' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
             <AdminReports />
+          </div>
+        )}
+
+        {activeTab === 'SUPPORT' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminSupport />
           </div>
         )}
 

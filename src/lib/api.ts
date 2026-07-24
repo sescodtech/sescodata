@@ -127,6 +127,7 @@ export interface AuthUser {
   phone: string;
   role: 'customer' | 'admin';
   walletBalance?: number;
+  kycStatus?: 'not_started' | 'pending' | 'verified' | 'rejected';
 }
 
 export interface AuthResponse {
@@ -394,13 +395,30 @@ export const agent = {
     }),
 };
 
+export interface SupportReply { from: 'customer' | 'admin'; message: string; adminName?: string; createdAt: string }
+export interface TicketTimelineEvent { type: string; label: string; actorName: string; createdAt: string }
+export interface InternalNote { _id: string; adminId: string; adminName: string; note: string; createdAt: string }
+export interface TicketAttachment { url: string; name: string; uploadedAt: string }
+
 export interface SupportTicket {
   _id: string;
+  userId?: string;
+  name: string;
+  email: string;
   subject: string;
   message: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: 'billing' | 'technical' | 'account' | 'transaction' | 'general';
+  assignedAdminId?: string | null;
+  assignedAdminName?: string | null;
+  replies: SupportReply[];
+  internalNotes?: InternalNote[];
+  timeline?: TicketTimelineEvent[];
+  attachments?: TicketAttachment[];
+  lastReplyAt?: string | null;
   createdAt: string;
-  replies: { from: 'customer' | 'admin'; message: string; createdAt: string }[];
+  updatedAt?: string;
 }
 
 export const support = {
@@ -412,6 +430,89 @@ export const support = {
 
   myTickets: () =>
     apiFetch<{ success: boolean; tickets: SupportTicket[] }>('/api/support/tickets', {}, true),
+
+  getTicket: (id: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/support/tickets/${id}`, {}, true),
+
+  reply: (id: string, message: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/support/tickets/${id}/reply`, {
+      method: 'POST', body: JSON.stringify({ message }),
+    }, true),
+};
+
+// ============================================================
+// MODULE 8 — Admin Support Center
+// ============================================================
+
+export interface SupportDashboardStats {
+  totalTickets: number;
+  openTickets: number;
+  pendingTickets: number;
+  resolvedTickets: number;
+  closedTickets: number;
+  highPriority: number;
+  avgResponseTimeMinutes: number;
+  todayTickets: number;
+  weekTickets: number;
+  monthTickets: number;
+}
+
+export interface SupportTicketListFilters {
+  page?: number; pageSize?: number;
+  status?: string; priority?: string; category?: string;
+  userId?: string; assignedAdminId?: string; search?: string;
+  dateFrom?: string; dateTo?: string;
+  sortBy?: 'createdAt' | 'lastReplyAt' | 'priority' | 'status'; sortDir?: 'asc' | 'desc';
+}
+
+export interface CustomerSupportContext {
+  user: { _id: string; name: string; email: string; walletBalance: number; lastLogin?: string; createdAt: string; kycStatus: string; status: string };
+  accountAgeDays: number;
+  walletBalance: number;
+  lastLogin?: string;
+  totalTransactions: number;
+  successfulTransactions: number;
+  failedTransactions: number;
+  recentPurchases: AdminTransaction[];
+}
+
+export interface PreviousTicketSummary { _id: string; subject: string; status: string; priority: string; createdAt: string }
+
+export const adminSupport = {
+  dashboard: () => apiFetch<{ success: boolean; stats: SupportDashboardStats }>('/api/admin/support/dashboard', {}, true),
+
+  list: (filters: SupportTicketListFilters = {}) =>
+    apiFetch<{ success: boolean; tickets: SupportTicket[]; total: number; page: number; pageSize: number; totalPages: number }>(
+      `/api/admin/support/tickets${toQueryString(filters as any)}`, {}, true,
+    ),
+
+  listAdmins: () => apiFetch<{ success: boolean; admins: { _id: string; name: string; email: string }[]; isSuperAdmin: boolean }>('/api/admin/support/admins', {}, true),
+
+  detail: (id: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket; customer: CustomerSupportContext | null; previousTickets: PreviousTicketSummary[] }>(
+      `/api/admin/support/tickets/${id}`, {}, true,
+    ),
+
+  reply: (id: string, message: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }, true),
+
+  addNote: (id: string, note: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/notes`, { method: 'POST', body: JSON.stringify({ note }) }, true),
+
+  changeStatus: (id: string, status: SupportTicket['status']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }, true),
+
+  changePriority: (id: string, priority: SupportTicket['priority']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }, true),
+
+  changeCategory: (id: string, category: SupportTicket['category']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/category`, { method: 'POST', body: JSON.stringify({ category }) }, true),
+
+  assign: (id: string, adminId: string | null) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/assign`, { method: 'POST', body: JSON.stringify({ adminId }) }, true),
+
+  deleteTicket: (id: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/support/tickets/${id}`, { method: 'DELETE' }, true),
 };
 
 // ============================================================

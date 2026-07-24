@@ -25,6 +25,47 @@ async function revenueSince(date: Date | null) {
   return agg[0]?.total || 0;
 }
 
+/**
+ * Builds the same "who is this customer" snapshot used on the User Detail
+ * drawer (wallet, transaction counts, login history, notes, recent orders)
+ * so Module 8's ticket detail view can show identical Customer History
+ * without re-deriving it — single source of truth for "know the customer
+ * before you reply".
+ */
+export async function buildCustomerSnapshot(userId: any) {
+  const user = await User.findById(userId).select('-password');
+  if (!user) return null;
+
+  const [txnStats, recentTxns, loginHistory, notes, recentAudit, deliveredCount, failedCount, pendingCount] = await Promise.all([
+    Transaction.aggregate([
+      { $match: { userId: user._id, type: 'purchase', status: 'success', deliveryStatus: 'delivered' } },
+      { $group: { _id: null, totalSpent: { $sum: { $abs: '$amount' } }, count: { $sum: 1 } } },
+    ]),
+    Transaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(10),
+    LoginEvent.find({ userId: user._id }).sort({ createdAt: -1 }).limit(10),
+    AdminNote.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20),
+    AuditLog.find({ targetId: user._id }).sort({ createdAt: -1 }).limit(20),
+    Transaction.countDocuments({ userId: user._id, deliveryStatus: 'delivered' }),
+    Transaction.countDocuments({ userId: user._id, deliveryStatus: 'failed' }),
+    Transaction.countDocuments({ userId: user._id, deliveryStatus: 'pending' }),
+  ]);
+
+  return {
+    user,
+    transactionSummary: {
+      totalSpent: txnStats[0]?.totalSpent || 0,
+      totalOrders: txnStats[0]?.count || 0,
+      delivered: deliveredCount,
+      failed: failedCount,
+      pending: pendingCount,
+    },
+    recentTransactions: recentTxns,
+    loginHistory,
+    adminNotes: notes,
+    recentActivity: recentAudit,
+  };
+}
+
 /** Every admin mutation needs the acting admin's name for the audit log — one lookup helper instead of repeating it. */
 async function getActor(req: any): Promise<{ id: string; name: string }> {
   const admin = await User.findById(req.user.id).select('name');
@@ -276,41 +317,9 @@ export class AdminController {
   static async getUserDetail(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = await User.findById(id).select('-password');
-      if (!user) return res.status(404).json({ success: false, error: 'User not found' });
-
-      const [
-        txnStats, recentTxns, loginHistory, notes, recentAudit,
-      ] = await Promise.all([
-        Transaction.aggregate([
-          { $match: { userId: user._id, type: 'purchase', status: 'success', deliveryStatus: 'delivered' } },
-          { $group: { _id: null, totalSpent: { $sum: { $abs: '$amount' } }, count: { $sum: 1 } } },
-        ]),
-        Transaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(10),
-        LoginEvent.find({ userId: user._id }).sort({ createdAt: -1 }).limit(10),
-        AdminNote.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20),
-        AuditLog.find({ targetId: user._id }).sort({ createdAt: -1 }).limit(20),
-      ]);
-
-      const deliveredCount = await Transaction.countDocuments({ userId: user._id, deliveryStatus: 'delivered' });
-      const failedCount = await Transaction.countDocuments({ userId: user._id, deliveryStatus: 'failed' });
-      const pendingCount = await Transaction.countDocuments({ userId: user._id, deliveryStatus: 'pending' });
-
-      res.json({
-        success: true,
-        user,
-        transactionSummary: {
-          totalSpent: txnStats[0]?.totalSpent || 0,
-          totalOrders: txnStats[0]?.count || 0,
-          delivered: deliveredCount,
-          failed: failedCount,
-          pending: pendingCount,
-        },
-        recentTransactions: recentTxns,
-        loginHistory,
-        adminNotes: notes,
-        recentActivity: recentAudit,
-      });
+      const snapshot = await buildCustomerSnapshot(id);
+      if (!snapshot) return res.status(404).json({ success: false, error: 'User not found' });
+      res.json({ success: true, ...snapshot });
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });
     }

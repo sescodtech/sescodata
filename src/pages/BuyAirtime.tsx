@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Smartphone, ArrowLeft, Loader2, AlertCircle, Wallet, Clock } from 'lucide-react';
+import { Smartphone, ArrowLeft, Loader2, AlertCircle, Wallet, Clock, PartyPopper } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,7 @@ export default function BuyAirtime() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(0);
+  const [justPaid, setJustPaid] = useState(false);
   const [airtimePlans, setAirtimePlans] = useState<Product[]>([]);
   const [recents] = useState<string[]>(recentNumbers.get());
   const [quickPhone, setQuickPhone] = useState('');
@@ -65,12 +66,28 @@ export default function BuyAirtime() {
 
       recentNumbers.add(phoneNumber);
       await refreshUser();
-      window.location.href = '/app/transactions';
+      setJustPaid(true);
+      setTimeout(() => { window.location.href = '/app/transactions'; }, 1400);
     } catch (err: any) {
       setError(err.message || 'Payment failed. Please try again.');
       setIsProcessing(false);
     }
   };
+
+  if (justPaid) {
+    return (
+      <div className="max-w-md mx-auto py-16">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <div className="w-16 h-16 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+            <PartyPopper size={28} className="text-green-500" />
+          </div>
+          <h2 className="shb-page-title mb-1.5">Payment sent!</h2>
+          <p className="shb-body">Taking you to your receipt…</p>
+          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-5" size={20} />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8 content-reveal">

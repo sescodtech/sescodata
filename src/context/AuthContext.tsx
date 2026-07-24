@@ -14,6 +14,7 @@ interface User {
   role: UIRole;
   walletBalance: number;
   backendRole: AuthUser['role'];
+  kycStatus: AuthUser['kycStatus'];
 }
 
 interface AuthContextType {
@@ -41,6 +42,7 @@ function buildUser(raw: AuthUser): User {
     role: mapRole(raw.role),
     walletBalance: raw.walletBalance ?? 0,
     backendRole: raw.role,
+    kycStatus: raw.kycStatus ?? 'not_started',
   };
 }
 

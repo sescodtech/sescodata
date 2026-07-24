@@ -4,6 +4,7 @@ import { AdminOperationsController } from '../controllers/AdminOperationsControl
 import { AdminProductController } from '../controllers/AdminProductController';
 import { AdminProviderController } from '../controllers/AdminProviderController';
 import { AdminReportsController } from '../controllers/AdminReportsController';
+import { AdminSupportController } from '../controllers/AdminSupportController';
 import { SettingsController } from '../controllers/SettingsController';
 import { protect, authorize } from '../middlewares/authMiddleware';
 
@@ -80,5 +81,18 @@ router.get('/reports/charts', AdminReportsController.getChart);
 router.get('/reports/export/transactions.csv', AdminReportsController.exportTransactionsCsv);
 router.get('/reports/export/summary.csv', AdminReportsController.exportSummaryCsv);
 router.post('/reports/export/log', AdminReportsController.logExport);
+
+// Module 8 — Support Center
+router.get('/support/dashboard', AdminSupportController.getDashboard);
+router.get('/support/tickets', AdminSupportController.listTickets);
+router.get('/support/admins', AdminSupportController.listAdmins);
+router.get('/support/tickets/:id', AdminSupportController.getTicketDetail);
+router.post('/support/tickets/:id/reply', AdminSupportController.reply);
+router.post('/support/tickets/:id/notes', AdminSupportController.addNote);
+router.post('/support/tickets/:id/status', AdminSupportController.changeStatus);
+router.post('/support/tickets/:id/priority', AdminSupportController.changePriority);
+router.post('/support/tickets/:id/category', AdminSupportController.changeCategory);
+router.post('/support/tickets/:id/assign', AdminSupportController.assign);
+router.delete('/support/tickets/:id', AdminSupportController.deleteTicket);
 
 export default router;

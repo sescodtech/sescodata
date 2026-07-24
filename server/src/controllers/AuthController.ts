@@ -45,7 +45,7 @@ export class AuthController {
       if (!user) return res.status(404).json({ success: false, error: 'User not found' });
       res.json({
         success: true,
-        user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, walletBalance: user.walletBalance }
+        user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, walletBalance: user.walletBalance, kycStatus: user.kycStatus }
       });
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });

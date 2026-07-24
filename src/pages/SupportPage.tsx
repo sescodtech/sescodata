@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Mail, Phone, HelpCircle, ChevronDown, Send, CheckCircle2, Search, AlertCircle, Loader2, Ticket } from 'lucide-react';
+import { MessageCircle, Mail, Phone, HelpCircle, ChevronDown, Send, CheckCircle2, Search, AlertCircle, Loader2, Ticket, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ import EmptyState from '../components/EmptyState';
 import { SkeletonList } from '../components/Skeleton';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import Drawer from '../components/Drawer';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const FAQS = [
@@ -48,6 +49,96 @@ const CHANNELS = [
   { href: `tel:+234${SUPPORT_PHONE.slice(1)}`, icon: Phone, title: 'Phone Call', sub: 'Mon \u2013 Sun, 8AM \u2013 10PM', value: SUPPORT_PHONE },
 ];
 
+/** Chat-style thread for a single ticket — customer messages on the left, admin replies on the right, matching the admin Support Center's conversation view. */
+function TicketConversationDrawer({ ticketId, onClose, onUpdated }: { ticketId: string | null; onClose: () => void; onUpdated: () => void }) {
+  const [ticket, setTicket] = useState<SupportTicket | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const load = () => {
+    if (!ticketId) return;
+    setLoading(true);
+    support.getTicket(ticketId)
+      .then((res) => setTicket(res.ticket))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [ticketId]);
+
+  const handleSend = async () => {
+    if (!ticketId || !msg.trim()) return;
+    setSending(true);
+    try {
+      const res = await support.reply(ticketId, msg);
+      setTicket(res.ticket);
+      setMsg('');
+      onUpdated();
+    } catch {
+      /* best-effort — the textarea keeps the draft so the user can retry */
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const messages = ticket ? [...ticket.replies].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) : [];
+
+  return (
+    <Drawer open={!!ticketId} onClose={onClose} title={ticket?.subject || 'Ticket'}>
+      {loading || !ticket ? (
+        <SkeletonList rows={3} />
+      ) : (
+        <div className="flex flex-col h-full">
+          <span className={cn(
+            'w-fit px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border mb-4',
+            ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-green-50 text-green-700 border-green-200' :
+            ticket.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+            'bg-blue-50 text-blue-700 border-blue-200',
+          )}>
+            {ticket.status.replace('_', ' ')}
+          </span>
+
+          <div className="flex-1 space-y-3 mb-4">
+            <div className="flex justify-end">
+              <div className="max-w-[85%] bg-shb-gold-soft/50 rounded-2xl rounded-tr-sm px-4 py-2.5">
+                <p className="text-xs text-gray-800 whitespace-pre-line">{ticket.message}</p>
+                <p className="text-[10px] text-gray-400 mt-1">You · {formatDate(ticket.createdAt)}</p>
+              </div>
+            </div>
+            {messages.map((r, i) => (
+              <div key={i} className={cn('flex', r.from === 'admin' ? 'justify-start' : 'justify-end')}>
+                <div className={cn(
+                  'max-w-[85%] rounded-2xl px-4 py-2.5',
+                  r.from === 'admin' ? 'bg-gray-100 text-gray-800 rounded-tl-sm' : 'bg-shb-gold-soft/50 text-gray-800 rounded-tr-sm'
+                )}>
+                  <p className="text-xs whitespace-pre-line">{r.message}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{r.from === 'admin' ? (r.adminName || 'Support Team') : 'You'} · {formatDate(r.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-end gap-2 pt-3 border-t border-gray-100 sticky bottom-0 bg-white">
+            <textarea
+              value={msg} onChange={(e) => setMsg(e.target.value)}
+              placeholder="Type a reply…" rows={2}
+              className="flex-1 text-xs font-medium border border-gray-200 rounded-xl px-3 py-2.5 resize-none outline-none focus:border-shb-gold"
+            />
+            <button
+              onClick={handleSend}
+              disabled={sending || !msg.trim()}
+              className="w-10 h-10 rounded-xl bg-shb-navy hover:opacity-90 text-white flex items-center justify-center transition-opacity disabled:opacity-40 shrink-0"
+            >
+              {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+            </button>
+          </div>
+        </div>
+      )}
+    </Drawer>
+  );
+}
+
 export default function SupportPage() {
   useDocumentTitle('Support');
   useAuth();
@@ -60,6 +151,7 @@ export default function SupportPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
   const [ticketsError, setTicketsError] = useState('');
+  const [openTicketId, setOpenTicketId] = useState<string | null>(null);
 
   const loadTickets = async () => {
     setIsLoadingTickets(true);
@@ -242,7 +334,7 @@ export default function SupportPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {tickets.map((t) => (
-              <div key={t._id} className="px-5 sm:px-6 py-4">
+              <button key={t._id} onClick={() => setOpenTicketId(t._id)} className="w-full text-left px-5 sm:px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">{t.subject}</p>
@@ -259,13 +351,15 @@ export default function SupportPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-2 line-clamp-2">{t.message}</p>
                 {t.replies.length > 0 && (
-                  <p className="text-[11px] text-shb-gold-dark font-bold mt-2">{t.replies.length} repl{t.replies.length === 1 ? 'y' : 'ies'}</p>
+                  <p className="text-[11px] text-shb-gold-dark font-bold mt-2 flex items-center gap-1"><MessageSquare size={11} /> {t.replies.length} repl{t.replies.length === 1 ? 'y' : 'ies'}</p>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
+
+      <TicketConversationDrawer ticketId={openTicketId} onClose={() => setOpenTicketId(null)} onUpdated={loadTickets} />
     </div>
   );
 }

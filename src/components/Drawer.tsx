@@ -7,11 +7,13 @@ export default function Drawer({
   onClose,
   title,
   children,
+  wide,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  wide?: boolean;
 }) {
   return (
     <AnimatePresence>
@@ -25,8 +27,8 @@ export default function Drawer({
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-            className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col
-                       sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:bottom-0 sm:w-full sm:max-w-md sm:rounded-t-none sm:rounded-l-3xl sm:max-h-none"
+            className={`fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col
+                       sm:inset-y-0 sm:left-auto sm:right-0 sm:top-0 sm:bottom-0 sm:w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'} sm:rounded-t-none sm:rounded-l-3xl sm:max-h-none`}
           >
             <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 shrink-0">
               <h3 className="font-extrabold text-gray-900 font-display">{title}</h3>
