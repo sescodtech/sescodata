@@ -145,7 +145,7 @@ export default function KYCPage() {
         <p className="text-[12px] text-gray-500 leading-relaxed">{meta.description}</p>
         <div className="mt-2.5 pt-2.5 border-t border-gray-50 flex items-start gap-2 text-[11px] text-gray-400">
           <Info size={12} className="shrink-0 mt-0.5" />
-          Preview only — submission isn't wired to a backend yet, so nothing here is saved.
+          Identity verification is coming soon. You'll be able to complete and submit this form once it's available.
         </div>
       </div>
 
@@ -159,7 +159,7 @@ export default function KYCPage() {
             <button type="button" disabled className="px-3 py-1.5 rounded-lg border border-gray-200 text-[12px] font-bold text-gray-400 cursor-not-allowed">
               Upload Photo
             </button>
-            <p className="text-[10.5px] text-gray-400 mt-1">Enabled once document storage is configured.</p>
+            <p className="text-[10.5px] text-gray-400 mt-1">Photo upload will be available soon.</p>
           </div>
         </div>
       </Section>

@@ -132,20 +132,46 @@ export class ProviderOrchestrator {
 
   async executeWithFailover(
     serviceType: keyof IProvider,
-    params: any
+    params: any,
+    /**
+     * ROOT-CAUSE FIX (Production Stabilization, Priority 1): the provider
+     * this specific plan's `providerId` was actually formatted for (e.g.
+     * ProductService's `apiSource`). Previously executeWithFailover always
+     * attempted providers strictly in the global PROVIDER_PRIORITY order
+     * (gladtidings, cheapdatahub, jarapoint) regardless of which upstream
+     * API the plan code belonged to. Since ~98% of the catalog's plan IDs
+     * are Jarapoint-format strings, GladTidings was rejecting nearly every
+     * data/cable/exam-pin/recharge purchase before ever reaching a provider
+     * that understood the plan code, and if the fallback providers' API
+     * keys weren't configured on the new deployment, every purchase failed
+     * outright with "All available providers failed".
+     *
+     * When set, the preferred provider is tried first (still logged/counted
+     * exactly like any other attempt); the rest of the active order still
+     * runs afterward as a genuine failover, so redundancy is preserved.
+     */
+    preferredProvider?: string
   ): Promise<ProviderResponse> {
     const errors: any[] = [];
     const settings = await this.getSettings();
-    const activeOrder = await this.resolveActiveOrder();
+    let activeOrder = await this.resolveActiveOrder();
+
+    if (preferredProvider && activeOrder.includes(preferredProvider)) {
+      activeOrder = [preferredProvider, ...activeOrder.filter((p) => p !== preferredProvider)];
+    }
 
     if (activeOrder.length === 0) {
       return {
         success: false,
-        error: 'No providers are currently enabled',
+        error: 'Transaction could not be completed at the moment. Please try again shortly.',
         failReason: 'config_error',
         data: { errors: [] },
       };
     }
+
+    // TEMP-DEBUG (Production Stabilization, Priority 6) — remove this block
+    // once purchases are confirmed stable in production.
+    console.log(`[TEMP-DEBUG][purchase] method=${String(serviceType)} preferred=${preferredProvider || 'none'} order=${activeOrder.join(',')} params=${JSON.stringify({ ...params, phone: params?.phone ? String(params.phone).replace(/.(?=.{4})/g, '*') : undefined })}`);
 
     for (const providerName of activeOrder) {
       const provider = this.providers.get(providerName);
@@ -154,6 +180,7 @@ export class ProviderOrchestrator {
       // 1. Health & balance check
       const balanceCheck = await provider.getBalance();
       if (!balanceCheck.success || balanceCheck.balance < settings.minBalanceThreshold) {
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} skipped at balance check: success=${balanceCheck.success} balance=${balanceCheck.balance} error=${balanceCheck.error || 'none'} minRequired=${settings.minBalanceThreshold}`);
         errors.push({ provider: providerName, error: balanceCheck.error || 'Insufficient balance' });
         continue;
       }
@@ -162,22 +189,28 @@ export class ProviderOrchestrator {
       const startedAt = Date.now();
       try {
         const result = await (provider as any)[serviceType](params);
-        logProviderCall({ provider: providerName, method: serviceType, success: !!result.success, durationMs: Date.now() - startedAt, error: result.success ? undefined : result.error });
+        const durationMs = Date.now() - startedAt;
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} success=${!!result.success} reference=${result.reference || 'none'} message=${result.message || 'none'} rawResponse=${JSON.stringify(result.data || {}).slice(0, 1000)}`);
+        logProviderCall({ provider: providerName, method: serviceType, success: !!result.success, durationMs, error: result.success ? undefined : result.error });
         if (result.success) {
           return { ...result, usedProvider: providerName };
         }
         errors.push({ provider: providerName, error: result.error });
       } catch (e: any) {
-        logProviderCall({ provider: providerName, method: serviceType, success: false, durationMs: Date.now() - startedAt, error: e.message });
+        const durationMs = Date.now() - startedAt;
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} EXCEPTION status=${e.response?.status || 'n/a'} body=${JSON.stringify(e.response?.data || {}).slice(0, 1000)} message=${e.message}`);
+        logProviderCall({ provider: providerName, method: serviceType, success: false, durationMs, error: e.message });
         errors.push({ provider: providerName, error: e.message });
       }
     }
 
+    console.log(`[TEMP-DEBUG][purchase] ALL PROVIDERS FAILED method=${String(serviceType)} errors=${JSON.stringify(errors)}`);
+
     return {
       success: false,
-      error: 'All available providers failed',
+      error: 'Transaction could not be completed at the moment. Please try again shortly.',
       failReason: 'provider_error',
-      data: { errors }
+      data: { errors } // raw per-provider errors kept here for admin/logging use only, never shown to the customer
     };
   }
 }

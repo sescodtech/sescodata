@@ -15,6 +15,16 @@ export interface Product {
   originalPrice?: number;
   enabled?: boolean;
   visible?: boolean;
+  /**
+   * ROOT-CAUSE FIX (Production Stabilization, Priority 1): which upstream
+   * API this plan's `providerId` is actually formatted for (e.g. a plan
+   * with providerId 'mtn_sme_500_mb_1_weeks' is a Jarapoint plan code and
+   * will be rejected if sent to GladTidings as-is). This field existed on
+   * the internal RawPlan all along but was previously dropped when mapping
+   * to Product, so PurchaseController had no way to route the purchase to
+   * the correct provider first. See ProviderOrchestrator.executeWithFailover.
+   */
+  apiSource?: string;
 }
 
 interface RawPlan {
@@ -256,6 +266,7 @@ export class ProductService {
           category,
           provider: plan.prov,
           providerId: plan.providerId,
+          apiSource: plan.apiSource,
           costPrice: plan.cost, // NOTE: only ever return this to admin-facing endpoints
           sellingPrice,
           validity: plan.validity,
@@ -272,7 +283,7 @@ export class ProductService {
     const catalog = await this.getCatalog();
     // Strip internal cost price before it ever reaches the customer-facing client,
     // and hide anything an admin has marked not-visible (unlisted, still directly purchasable).
-    return catalog.filter((p) => p.visible).map(({ costPrice, ...rest }) => rest);
+    return catalog.filter((p) => p.visible).map(({ costPrice, apiSource, ...rest }) => rest);
   }
 
   static async getProductById(productId: string) {
@@ -307,6 +318,7 @@ export class ProductService {
         category,
         provider: plan.prov,
         providerId: plan.providerId,
+        apiSource: plan.apiSource,
         costPrice: plan.cost,
         sellingPrice: override?.customSellingPrice ?? computedPrice,
         validity: plan.validity,
