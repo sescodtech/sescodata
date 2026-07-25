@@ -5,7 +5,11 @@ import { ProviderSettings } from '../models/ProviderSettings';
 import { AuditLogService } from '../services/AuditLogService';
 import { User } from '../models/User';
 
-const KNOWN_PROVIDERS = ['gladtidings', 'cheapdatahub', 'jarapoint'];
+// GladTidings-only launch: this is the only provider the orchestrator will
+// ever register or attempt. Kept as an array (rather than a single literal)
+// so the admin Provider Control Center UI, which is data-driven off this
+// list, keeps working unmodified if a second provider is ever added back.
+const KNOWN_PROVIDERS = ['gladtidings'];
 
 async function getActor(req: any): Promise<{ id: string; name: string }> {
   const admin = await User.findById(req.user.id).select('name email');

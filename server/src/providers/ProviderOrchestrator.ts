@@ -1,15 +1,19 @@
 import { IProvider, ProviderResponse } from './IProvider';
-import { JarapointProvider } from './JarapointProvider';
-import { CheapDataHubProvider } from './CheapDataHubProvider';
 import { GladTidingsProvider } from './GladTidingsProvider';
 import { ProviderCallLog } from '../models/ProviderCallLog';
 import { ProviderSettings } from '../models/ProviderSettings';
 
-// Single-tenant platform: priority order is a static platform setting.
-// Module 6: now DB-backed via ProviderSettings, falling back to this env var
-// only if no settings document has ever been saved — so a fresh deploy with
-// no admin changes behaves exactly as before.
-const ENV_DEFAULT_PRIORITY = (process.env.PROVIDER_PRIORITY || 'gladtidings,cheapdatahub,jarapoint')
+/**
+ * GLADTIDINGS-ONLY LAUNCH: this platform intentionally supports a single
+ * upstream provider now. JarapointProvider and CheapDataHubProvider are no
+ * longer imported or instantiated, so no purchase can ever be attempted
+ * against them, regardless of what an old env var or DB settings document
+ * says — resolveActiveOrder() below hard-filters to known, registered
+ * providers only, so 'jarapoint'/'cheapdatahub' entries left over from a
+ * prior deploy's ProviderSettings document are silently ignored rather than
+ * attempted and failing.
+ */
+const ENV_DEFAULT_PRIORITY = (process.env.PROVIDER_PRIORITY || 'gladtidings')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
@@ -32,8 +36,6 @@ export class ProviderOrchestrator {
   private settingsCache: { data: any; expiresAt: number } | null = null;
 
   constructor() {
-    this.providers.set('jarapoint', new JarapointProvider());
-    this.providers.set('cheapdatahub', new CheapDataHubProvider());
     this.providers.set('gladtidings', new GladTidingsProvider());
   }
 
@@ -61,15 +63,27 @@ export class ProviderOrchestrator {
     this.settingsCache = null;
   }
 
-  /** The actual provider order a live purchase will try right now, honoring manual override + disabled list. */
+  /**
+   * The actual provider order a live purchase will try right now, honoring
+   * manual override + disabled list, and always filtered down to providers
+   * that are actually registered in `this.providers` (currently: gladtidings
+   * only). This means a stale ProviderSettings document from before the
+   * GladTidings-only launch — e.g. one still listing 'jarapoint' or
+   * 'cheapdatahub' — can never cause a purchase attempt against a provider
+   * that no longer exists in this codebase.
+   */
   private async resolveActiveOrder(): Promise<string[]> {
     const settings = await this.getSettings();
+    const registered = (p: string) => this.providers.has(p);
     if (settings.manualOverrideProvider) {
       // Manual override still respects "disabled" — an admin can't force
       // traffic to a provider they've explicitly taken out of rotation.
-      return settings.disabledProviders.includes(settings.manualOverrideProvider) ? [] : [settings.manualOverrideProvider];
+      if (!registered(settings.manualOverrideProvider) || settings.disabledProviders.includes(settings.manualOverrideProvider)) {
+        return [];
+      }
+      return [settings.manualOverrideProvider];
     }
-    return settings.priorityOrder.filter((p: string) => !settings.disabledProviders.includes(p));
+    return settings.priorityOrder.filter((p: string) => registered(p) && !settings.disabledProviders.includes(p));
   }
 
   /**
@@ -169,10 +183,6 @@ export class ProviderOrchestrator {
       };
     }
 
-    // TEMP-DEBUG (Production Stabilization, Priority 6) — remove this block
-    // once purchases are confirmed stable in production.
-    console.log(`[TEMP-DEBUG][purchase] method=${String(serviceType)} preferred=${preferredProvider || 'none'} order=${activeOrder.join(',')} params=${JSON.stringify({ ...params, phone: params?.phone ? String(params.phone).replace(/.(?=.{4})/g, '*') : undefined })}`);
-
     for (const providerName of activeOrder) {
       const provider = this.providers.get(providerName);
       if (!provider) continue;
@@ -180,7 +190,6 @@ export class ProviderOrchestrator {
       // 1. Health & balance check
       const balanceCheck = await provider.getBalance();
       if (!balanceCheck.success || balanceCheck.balance < settings.minBalanceThreshold) {
-        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} skipped at balance check: success=${balanceCheck.success} balance=${balanceCheck.balance} error=${balanceCheck.error || 'none'} minRequired=${settings.minBalanceThreshold}`);
         errors.push({ provider: providerName, error: balanceCheck.error || 'Insufficient balance' });
         continue;
       }
@@ -190,7 +199,6 @@ export class ProviderOrchestrator {
       try {
         const result = await (provider as any)[serviceType](params);
         const durationMs = Date.now() - startedAt;
-        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} success=${!!result.success} reference=${result.reference || 'none'} message=${result.message || 'none'} rawResponse=${JSON.stringify(result.data || {}).slice(0, 1000)}`);
         logProviderCall({ provider: providerName, method: serviceType, success: !!result.success, durationMs, error: result.success ? undefined : result.error });
         if (result.success) {
           return { ...result, usedProvider: providerName };
@@ -198,13 +206,10 @@ export class ProviderOrchestrator {
         errors.push({ provider: providerName, error: result.error });
       } catch (e: any) {
         const durationMs = Date.now() - startedAt;
-        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} EXCEPTION status=${e.response?.status || 'n/a'} body=${JSON.stringify(e.response?.data || {}).slice(0, 1000)} message=${e.message}`);
         logProviderCall({ provider: providerName, method: serviceType, success: false, durationMs, error: e.message });
         errors.push({ provider: providerName, error: e.message });
       }
     }
-
-    console.log(`[TEMP-DEBUG][purchase] ALL PROVIDERS FAILED method=${String(serviceType)} errors=${JSON.stringify(errors)}`);
 
     return {
       success: false,

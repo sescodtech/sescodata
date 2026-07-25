@@ -18,13 +18,15 @@ const TV_PROVIDERS = [
   { id: 'startimes',         name: 'StarTimes', logo: 'S', bg: 'bg-red-700' },
 ];
 
+// Ids must match ProductService.ELECTRICITY_DISCOS / GladTidingsProvider's
+// discoMap exactly, since `disco` is sent straight through to the provider.
 const ELEC_PROVIDERS = [
   { id: 'ikedc', name: 'Ikeja Electric',     logo: 'I', bg: 'bg-shb-navy' },
   { id: 'ekedc', name: 'Eko Electric',       logo: 'E', bg: 'bg-shb-navy' },
   { id: 'aedc',  name: 'Abuja Electric',     logo: 'A', bg: 'bg-shb-navy' },
-  { id: 'phden', name: 'Port Harcourt PHED', logo: 'P', bg: 'bg-shb-navy' },
+  { id: 'phed',  name: 'Port Harcourt PHED', logo: 'P', bg: 'bg-shb-navy' },
   { id: 'ibedc', name: 'Ibadan Disco',       logo: 'I', bg: 'bg-shb-navy' },
-  { id: 'kedco', name: 'Kano Disco',         logo: 'K', bg: 'bg-shb-navy' },
+  { id: 'kano',  name: 'Kano Disco',         logo: 'K', bg: 'bg-shb-navy' },
 ];
 
 const ELEC_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000];
@@ -211,7 +213,7 @@ export default function UtilityBills() {
                         <span className="text-[12.5px]">Loading packages…</span>
                       </div>
                     ) : cablePlans.length === 0 ? (
-                      <EmptyState icon={Tv} title="No packages available" description="This provider has no packages loaded right now — try again shortly or contact support." />
+                      <EmptyState icon={Tv} title="Temporarily unavailable" description="Cable TV subscriptions are offline for a scheduled upgrade. Please check back shortly, or contact support for help." />
                     ) : (
                       <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                         {cablePlans.map((plan) => (

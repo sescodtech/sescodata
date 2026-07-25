@@ -16,8 +16,11 @@ import mongoose from 'mongoose';
 const ProviderSettingsSchema = new mongoose.Schema({
   singleton: { type: String, default: 'default', unique: true }, // enforces exactly one document
 
-  // Mirrors today's env-var priority order once Module 6 wires it in.
-  priorityOrder: { type: [String], default: ['gladtidings', 'cheapdatahub', 'jarapoint'] },
+  // GladTidings-only launch: mirrors the env-var priority order, which is
+  // now a single provider. ProviderOrchestrator.resolveActiveOrder() also
+  // hard-filters to actually-registered providers, so even a document left
+  // over from before this launch can't route a purchase anywhere else.
+  priorityOrder: { type: [String], default: ['gladtidings'] },
 
   // Module 6: lets an admin force every purchase to use one specific
   // provider regardless of priorityOrder — e.g. for testing a provider or

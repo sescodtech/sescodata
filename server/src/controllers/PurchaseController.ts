@@ -33,9 +33,6 @@ async function executePurchase(opts: {
 
   const ref = `${refPrefix}-${Date.now()}`;
 
-  // TEMP-DEBUG (Production Stabilization, Priority 6) — remove once purchases are confirmed stable.
-  console.log(`[TEMP-DEBUG][controller] userId=${userId} ref=${ref} providerMethod=${providerMethod} preferredProvider=${preferredProvider || 'none'} productMeta=${JSON.stringify(productMeta)}`);
-
   const result = await providerOrchestrator.executeWithFailover(providerMethod, { ...providerParams, ref }, preferredProvider);
 
   if (result.success) {
@@ -156,32 +153,20 @@ export class PurchaseController {
     }
   }
 
+  /**
+   * TEMPORARILY DISABLED (GladTidings-only launch): there are no verified
+   * GladTidings cable variation codes anywhere in this codebase — the old
+   * plan codes were Jarapoint-format and are rejected by GladTidings. Rather
+   * than debit a customer's wallet for a purchase that's guaranteed to fail
+   * and refund, this returns a clean maintenance message up front and never
+   * touches the wallet. Re-enable by restoring the cable branch once real
+   * GladTidings variation codes are sourced and added back to ProductService.
+   */
   static async buyCable(req: any, res: Response) {
-    try {
-      const { productId, smartcard, phone } = req.body;
-      const userId = req.user.id;
-
-      const product = await ProductService.getProductById(productId);
-      if (!product) return res.status(404).json({ success: false, error: 'Cable plan not found' });
-
-      const cost = product.costPrice;
-      const userPrice = product.sellingPrice;
-
-      const result = await executePurchase({
-        userId, userPrice, cost,
-        productMeta: { productId, name: product.name, category: 'cable', recipient: smartcard, quantity: 1 },
-        refPrefix: 'CB',
-        providerMethod: 'buyCable',
-        providerParams: { provider: product.provider, smartcard, planId: product.providerId, phone },
-        successMessage: 'Cable subscription successful',
-        preferredProvider: product.apiSource
-      });
-
-      if (result.ok) return res.json({ success: true, message: result.message, ref: result.ref });
-      return res.status(500).json({ success: false, error: result.error });
-    } catch (e: any) {
-      res.status(400).json({ success: false, error: e.message });
-    }
+    return res.status(503).json({
+      success: false,
+      error: 'Cable TV subscriptions are temporarily unavailable while we complete a scheduled upgrade. Please check back shortly, or contact support for help.',
+    });
   }
 
   /** NEW — wires up buyElectricity, which every provider already implements but had no controller/route. */

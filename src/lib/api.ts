@@ -26,9 +26,9 @@ const providerAliasMap: Record<string, string[]> = {
   ikedc: ['ikedc', 'ikejaelectric', 'ikejaelectricity'],
   ekedc: ['ekedc', 'ekoelectric', 'ekoelectricity'],
   aedc: ['aedc', 'abujaelectric', 'abujaelectricity'],
-  phden: ['phden', 'portharcourtelectricity'],
+  phed: ['phed', 'phden', 'portharcourtelectricity'],
   ibedc: ['ibedc', 'ibadandisco', 'ibadanelectricity'],
-  kedco: ['kedco', 'kanodisco', 'kanoelectricity'],
+  kano: ['kano', 'kedco', 'kanodisco', 'kanoelectricity'],
 };
 
 export const matchesProvider = (product: Product, providerId: string) => {
@@ -969,7 +969,7 @@ export interface ReportFilters {
   dateTo?: string;
   category?: string;   // Service
   productId?: string;  // Product
-  provider?: string;    // Upstream provider (gladtidings/cheapdatahub/jarapoint)
+  provider?: string;    // Upstream provider (gladtidings)
   userId?: string;      // User
   status?: string;      // deliveryStatus
 }
