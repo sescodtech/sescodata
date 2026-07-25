@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, DollarSign, Building2,
   Smartphone, Tv, Wallet, Receipt, Sparkles, RotateCcw,
-  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3, Headset,
+  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3, Headset, ChevronDown,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { admin, settings } from '../lib/api';
@@ -91,28 +91,55 @@ export default function AdminDashboardPage() {
     }
   }
 
+  const activeTabMeta = TABS.find((t) => t.id === activeTab)!;
+
   return (
-    <div className="admin-shell -m-3.5 md:-m-6 p-3 md:p-5 min-h-[calc(100vh-4rem)]" style={{ background: 'var(--color-admin-bg)' }}>
-      <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-500 pb-8 max-w-[1600px] mx-auto">
-        {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-md bg-gradient-to-br from-admin-blue to-admin-blue-dark" style={{ boxShadow: 'var(--shadow-admin-blue)' }}>
-              <Building2 size={16} />
+    <div className="admin-shell -m-3.5 md:-m-6 min-h-[calc(100vh-4rem)]" style={{ background: 'var(--color-admin-bg)' }}>
+      {/* Sticky console header — identity row + section switcher both stick, so the
+          active section is always reachable with one hand, no horizontal scroll. */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100">
+        <div className="max-w-[1600px] mx-auto px-3 md:px-5 pt-2.5 pb-2 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-md shrink-0 bg-gradient-to-br from-admin-blue to-admin-blue-dark" style={{ boxShadow: 'var(--shadow-admin-blue)' }}>
+              <Building2 size={15} />
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h1 className="text-[14px] font-extrabold text-admin-navy tracking-tight font-display">Business Control Center</h1>
-                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-admin-gold-soft text-admin-gold">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-[13px] font-extrabold text-admin-navy tracking-tight font-display truncate">Business Control Center</h1>
+                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-admin-gold-soft text-admin-gold shrink-0">
                   <Sparkles size={8} /> SescoHub
                 </span>
               </div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Operations Console</p>
+              <p className="text-gray-400 text-[9.5px] font-bold uppercase tracking-widest">Operations Console</p>
             </div>
           </div>
+        </div>
 
-          {/* Tab switcher */}
-          <div role="tablist" aria-label="Business Control Center sections" className="flex bg-white p-1 rounded-lg border border-gray-100 shadow-sm overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Mobile: a single compact section picker (native select) — never overflows,
+            never scrolls, always shows the full list without truncated tab labels. */}
+        <div className="md:hidden px-3 pb-2.5">
+          <div className="relative">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-admin-blue pointer-events-none">
+              <activeTabMeta.icon size={14} />
+            </span>
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as Tab)}
+              aria-label="Business Control Center section"
+              className="w-full appearance-none pl-8 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[12.5px] font-bold text-admin-navy outline-none focus:border-transparent focus:ring-2 focus:ring-admin-blue"
+            >
+              {TABS.map((tab) => (
+                <option key={tab.id} value={tab.id}>{tab.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Desktop/tablet: full section switcher that wraps onto extra rows instead
+            of scrolling horizontally — every section stays one tap away. */}
+        <div className="hidden md:block px-5 pb-2.5">
+          <div role="tablist" aria-label="Business Control Center sections" className="flex flex-wrap gap-1 bg-gray-50/80 p-1 rounded-lg border border-gray-100 max-w-[1600px] mx-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -120,16 +147,19 @@ export default function AdminDashboardPage() {
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[9.5px] font-black uppercase tracking-wide transition-all whitespace-nowrap shrink-0',
-                  activeTab === tab.id ? 'bg-admin-blue text-white shadow-sm' : 'text-gray-500 hover:text-admin-navy hover:bg-gray-50',
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all whitespace-nowrap',
+                  activeTab === tab.id ? 'bg-admin-blue text-white shadow-sm' : 'text-gray-500 hover:text-admin-navy hover:bg-white',
                 )}
               >
-                <tab.icon size={12} />
+                <tab.icon size={13} />
                 {tab.label}
               </button>
             ))}
           </div>
-        </header>
+        </div>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-500 pb-8 pt-3 px-3 md:px-5 max-w-[1600px] mx-auto">
 
         {activeTab === 'OVERVIEW' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
@@ -162,17 +192,17 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === 'PRICING' && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-4 sm:p-8">
-              <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
-                <DollarSign size={20} className="text-admin-blue" />
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
+            <div className="admin-card p-3 sm:p-4">
+              <h3 className="text-[14px] font-extrabold text-admin-navy mb-0.5 flex items-center gap-1.5 font-display">
+                <DollarSign size={16} className="text-admin-blue" />
                 Global Category Markup
               </h3>
-              <p className="text-sm text-gray-500 mb-5">
+              <p className="text-[12px] text-gray-500 mb-3.5">
                 Baseline profit percentage applied to every product in a category. Individual products can override this — see Product Management below.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
                 {[
                   { id: 'data', label: 'Data Bundles', icon: Database },
                   { id: 'airtime', label: 'Airtime Top-up', icon: Smartphone },
@@ -181,37 +211,37 @@ export default function AdminDashboardPage() {
                   { id: 'recharge', label: 'Recharge Cards', icon: CreditCard },
                   { id: 'bills', label: 'Electricity / Bills', icon: Zap },
                 ].map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-admin-blue/30 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 shadow-sm">
-                        <p.icon size={18} />
+                  <div key={p.id} className="flex items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100 group hover:border-admin-blue/30 transition-all">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-gray-400 shadow-sm shrink-0">
+                        <p.icon size={15} />
                       </div>
-                      <span className="font-bold text-gray-800 text-sm">{p.label}</span>
+                      <span className="font-bold text-gray-800 text-[12.5px] truncate">{p.label}</span>
                     </div>
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <input
                         type="number"
                         value={markup[p.id] ?? ''}
                         onChange={(e) => handleUpdateMarkup(p.id, parseFloat(e.target.value))}
-                        className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-black text-center outline-none focus:ring-2 focus:ring-admin-blue transition-all"
+                        className="w-16 pl-2.5 pr-5 py-1.5 bg-white border border-gray-200 rounded-lg text-[12px] font-black text-center outline-none focus:ring-2 focus:ring-admin-blue transition-all"
                         placeholder="0"
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">%</span>
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">%</span>
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-[11px] text-gray-400 mt-4">
+              <p className="text-[10.5px] text-gray-400 mt-3">
                 Changes save automatically as you type and apply to every purchase immediately — no separate "Apply" step.
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
-                <Package size={20} className="text-admin-blue" />
+              <h3 className="text-[14px] font-extrabold text-admin-navy mb-0.5 flex items-center gap-1.5 font-display">
+                <Package size={16} className="text-admin-blue" />
                 Product Management
               </h3>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-[12px] text-gray-500 mb-2.5">
                 Enable/disable, hide, and override pricing for individual products — Airtime, Data, Cable, Electricity, and Exam PINs.
               </p>
               <AdminProducts />
@@ -245,17 +275,17 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'BRANDING' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-4 sm:p-8 max-w-2xl">
-              <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
-                <Palette size={20} className="text-admin-blue" />
+            <div className="admin-card p-3 sm:p-4 max-w-xl">
+              <h3 className="text-[14px] font-extrabold text-admin-navy mb-0.5 flex items-center gap-1.5 font-display">
+                <Palette size={16} className="text-admin-blue" />
                 Brand Color
               </h3>
-              <p className="text-sm text-gray-500 mb-5">
+              <p className="text-[12px] text-gray-500 mb-3.5">
                 Sets the primary color used across the customer-facing app — buttons, links, active states, and highlights. Hover shades and soft backgrounds are generated automatically from this one color.
               </p>
 
-              <div className="flex items-center gap-4 mb-4">
-                <label className="relative w-11 h-11 rounded-xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer shrink-0">
+              <div className="flex items-center gap-3 mb-3">
+                <label className="relative w-10 h-10 rounded-lg border border-gray-200 shadow-sm overflow-hidden cursor-pointer shrink-0">
                   <input
                     type="color"
                     value={brandColor}
@@ -275,22 +305,22 @@ export default function AdminDashboardPage() {
                     }}
                     placeholder="#2563EB"
                     maxLength={7}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-admin-blue transition-all uppercase"
+                    className="admin-input uppercase font-bold"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mb-5 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex flex-wrap items-center gap-2.5 mb-3.5 p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Preview</span>
                 <button
                   type="button"
-                  className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm"
+                  className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-white shadow-sm"
                   style={{ background: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#2563EB' }}
                 >
                   Buy Data
                 </button>
                 <span
-                  className="px-3 py-1.5 rounded-full text-xs font-bold"
+                  className="px-2.5 py-1 rounded-full text-[11px] font-bold"
                   style={{
                     color: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#2563EB',
                     background: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? `${brandColor}1A` : '#2563EB1A',
@@ -300,21 +330,21 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={handleSaveBranding}
                   disabled={savingBrand || !/^#[0-9A-Fa-f]{6}$/.test(brandColor)}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-admin-blue text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="admin-btn-primary flex items-center gap-1.5"
                 >
-                  <Check size={16} />
+                  <Check size={14} />
                   {savingBrand ? 'Saving…' : 'Save & apply site-wide'}
                 </button>
                 {brandColor === savedBrandColor && (
-                  <span className="text-xs font-semibold text-gray-400">Currently live</span>
+                  <span className="text-[11px] font-semibold text-gray-400">Currently live</span>
                 )}
               </div>
               {!/^#[0-9A-Fa-f]{6}$/.test(brandColor) && (
-                <p className="text-xs font-semibold text-red-500 mt-3">Enter a valid 6-digit hex color, e.g. #2563EB</p>
+                <p className="text-[11px] font-semibold text-red-500 mt-2.5">Enter a valid 6-digit hex color, e.g. #2563EB</p>
               )}
             </div>
           </div>
