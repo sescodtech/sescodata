@@ -92,10 +92,14 @@
     font-family: var(--font-display);
   }
 
-  /* Improve touch targets on mobile */
-  button, a, input, select, textarea {
-    min-height: 44px;
-    min-width: 44px;
+  /* Touch targets — sized like a native fintech app (40px), not a marketing
+     site (44px+). Scoped to real controls only; `a` is excluded so inline
+     links, badges and nav rows don't get force-inflated. */
+  button, input, select, textarea {
+    min-height: 40px;
+  }
+  button.icon-btn {
+    min-height: 0;
   }
 
   /* Better focus states for accessibility — gold ring matches brand instead of generic blue */
@@ -129,20 +133,25 @@
 }
 
 @layer components {
+  /* Compact fintech-app density: this component layer is the single source
+     that most pages consume via shb-card / shb-btn-* / shb-input / admin-*.
+     Sizes are tightened across the board (OPay/Kuda/Moniepoint density
+     rather than marketing-site spacing) so the change cascades everywhere
+     these classes are used without touching every page. */
   .shb-card {
-    @apply bg-white rounded-2xl border border-gray-100 transition-shadow duration-300;
+    @apply bg-white rounded-xl border border-gray-100 transition-shadow duration-300;
     box-shadow: var(--shadow-card);
   }
 
   .shb-btn-primary {
     background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
-    @apply text-white font-bold rounded-xl px-5 py-2.5 text-[14.5px] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-bold rounded-lg px-4 py-2.5 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-gold);
     transition: transform 0.15s var(--ease-premium), box-shadow 0.2s var(--ease-premium), filter 0.2s ease;
   }
   .shb-btn-primary:hover:not(:disabled) {
     filter: brightness(1.06);
-    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.26);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
     transform: translateY(-1px);
   }
   .shb-btn-primary:active:not(:disabled) {
@@ -151,27 +160,27 @@
   }
 
   .shb-btn-secondary {
-    @apply border-2 border-shb-navy text-shb-navy font-bold rounded-xl px-5 py-2.5 text-[14.5px] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply border border-shb-navy text-shb-navy font-bold rounded-lg px-4 py-2.5 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed;
     transition: background-color 0.2s var(--ease-premium), color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
   .shb-btn-secondary:hover:not(:disabled) { @apply bg-shb-navy text-white; }
   .shb-btn-secondary:active:not(:disabled) { transform: scale(0.98); }
 
   .shb-skeleton {
-    @apply rounded-xl relative overflow-hidden;
+    @apply rounded-lg relative overflow-hidden;
     background: linear-gradient(90deg, #F1F2F4 25%, #F8F9FA 37%, #F1F2F4 63%);
     background-size: 400% 100%;
     animation: shimmer 1.4s ease infinite;
   }
 
-  /* ── Premium primitives (Phase 2) ────────────────────────── */
+  /* ── Premium primitives ──────────────────────────────────── */
   .shb-card-sm {
-    @apply bg-white rounded-2xl border border-gray-100 p-3.5 transition-shadow duration-300;
+    @apply bg-white rounded-xl border border-gray-100 p-3 transition-shadow duration-300;
     box-shadow: var(--shadow-card);
   }
 
   .shb-input {
-    @apply w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-[14.5px] text-gray-900 placeholder:text-gray-400;
+    @apply w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none text-[14px] text-gray-900 placeholder:text-gray-400;
     transition: background-color 0.2s var(--ease-premium), border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
   }
   .shb-input:focus {
@@ -186,12 +195,12 @@
   }
 
   .shb-btn-ghost {
-    @apply font-bold rounded-xl px-4 py-2.5 text-[14.5px] text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply font-bold rounded-lg px-4 py-2.5 text-[13px] text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
     transition: background-color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
   }
 
   .shb-badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold;
   }
   .shb-badge-success { @apply bg-green-50 text-green-700; }
   .shb-badge-danger  { @apply bg-red-50 text-red-600; }
@@ -199,24 +208,40 @@
   .shb-badge-info    { @apply bg-shb-gold-soft/60 text-shb-gold-dark; }
   .shb-badge-muted   { @apply bg-gray-100 text-gray-500; }
 
-  /* ── Admin component classes ─────────────────────────────── */
+  /* ── Admin component classes — modern SaaS console density ─ */
   .admin-card {
-    @apply bg-white rounded-2xl border border-gray-100;
+    @apply bg-white rounded-lg border border-gray-100;
     box-shadow: var(--shadow-admin-card);
   }
 
   .admin-btn-primary {
     background: linear-gradient(135deg, var(--color-admin-blue), var(--color-admin-blue-dark));
-    @apply text-white font-bold rounded-xl px-5 py-2.5 text-[14.5px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply text-white font-semibold rounded-lg px-3.5 py-2 text-[13px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
     box-shadow: var(--shadow-admin-blue);
   }
 
   .admin-btn-secondary {
-    @apply border-2 border-admin-navy text-admin-navy font-bold rounded-xl px-5 py-2.5 text-[14.5px] transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
+    @apply border border-admin-navy text-admin-navy font-semibold rounded-lg px-3.5 py-2 text-[13px] transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
   }
 
   .admin-skeleton {
-    @apply animate-pulse bg-gray-100 rounded-xl;
+    @apply animate-pulse bg-gray-100 rounded-lg;
+  }
+
+  /* Compact form controls + table density for the admin console specifically */
+  .admin-input {
+    @apply w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-[13px] text-gray-900 placeholder:text-gray-400;
+    transition: border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
+  }
+  .admin-input:focus {
+    @apply border-transparent;
+    box-shadow: 0 0 0 2px var(--color-admin-blue);
+  }
+  .admin-table th {
+    @apply text-left text-[11px] font-bold uppercase tracking-wide text-admin-muted px-3 py-2;
+  }
+  .admin-table td {
+    @apply px-3 py-2.5 text-[13px] text-gray-700;
   }
 }
 
@@ -247,10 +272,10 @@
 
 /* Typography hierarchy — used consistently across every redesigned page
    instead of ad-hoc text-2xl/text-xl choices per file. */
-.shb-page-title { @apply text-[20px] sm:text-[24px] font-extrabold text-gray-900 font-display tracking-tight leading-[1.15]; }
-.shb-section-title { @apply text-[14px] font-extrabold text-gray-900 font-display tracking-tight leading-snug; }
-.shb-eyebrow { @apply text-[10.5px] font-black uppercase tracking-wider text-shb-muted; }
-.shb-body { @apply text-[13.5px] text-gray-500 leading-snug; }
+.shb-page-title { @apply text-[17px] sm:text-[19px] font-extrabold text-gray-900 font-display tracking-tight leading-tight; }
+.shb-section-title { @apply text-[14px] font-extrabold text-gray-900 font-display tracking-tight; }
+.shb-eyebrow { @apply text-[11px] font-black uppercase tracking-wider text-shb-muted; }
+.shb-body { @apply text-[13px] text-gray-500 leading-relaxed; }
 
 /* Print isolation for digital receipts — everything except the receipt
    itself is hidden when the user prints from the transaction details drawer. */

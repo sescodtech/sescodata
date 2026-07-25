@@ -71,7 +71,7 @@ export default function AdminAuditLogs() {
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by admin, target, or reason..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-admin-blue text-sm transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-admin-blue text-[12.5px] transition-all"
             />
           </div>
           <button onClick={handleExport} disabled={logs.length === 0} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0">
@@ -116,31 +116,31 @@ export default function AdminAuditLogs() {
         ) : (
           <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left min-w-[720px]">
+              <table className="w-full text-left min-w-[680px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-4 py-3">Admin</th>
-                    <th className="px-4 py-3">Action</th>
-                    <th className="px-4 py-3">Target</th>
-                    <th className="px-4 py-3">Reason</th>
-                    <th className="px-4 py-3 text-right">Date</th>
+                    <th className="px-3 py-2">Admin</th>
+                    <th className="px-3 py-2">Action</th>
+                    <th className="px-3 py-2">Target</th>
+                    <th className="px-3 py-2">Reason</th>
+                    <th className="px-3 py-2 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm divide-y divide-gray-50">
+                <tbody className="text-[12.5px] divide-y divide-gray-50">
                   {logs.map((l) => (
                     <tr key={l._id} onClick={() => setSelected(l)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-admin-blue-soft text-admin-blue flex items-center justify-center shrink-0"><UserIcon size={12} /></div>
                           <span className="font-bold text-gray-900 text-xs">{l.adminName}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-admin-blue-soft text-admin-blue">{actionLabel(l.action)}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 truncate max-w-[160px]">{l.targetLabel || '—'}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[220px]">{l.reason || '—'}</td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(l.createdAt)}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600 truncate max-w-[160px]">{l.targetLabel || '—'}</td>
+                      <td className="px-3 py-2 text-xs text-gray-500 truncate max-w-[220px]">{l.reason || '—'}</td>
+                      <td className="px-3 py-2 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(l.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -149,7 +149,7 @@ export default function AdminAuditLogs() {
 
             <div className="md:hidden divide-y divide-gray-50">
               {logs.map((l) => (
-                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-start gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
+                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-start gap-3 px-4 py-2.5 text-left active:bg-gray-50 transition-colors">
                   <div className="w-8 h-8 rounded-full bg-admin-blue-soft text-admin-blue flex items-center justify-center shrink-0"><UserIcon size={14} /></div>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-gray-900 text-[13px]">{l.adminName}</p>

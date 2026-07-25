@@ -105,7 +105,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 content-reveal pb-8">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal pb-8">
       <PageHeader
         title="Notifications"
         description={unreadCount > 0 ? `${unreadCount} unread update${unreadCount !== 1 ? 's' : ''}` : 'You\u2019re all caught up.'}
@@ -118,7 +118,7 @@ export default function NotificationsPage() {
       />
 
       {/* Category filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {FILTERS.map((f) => {
           const count = f.id === 'ALL' ? txns.length : counts[f.id];
           return (
@@ -126,13 +126,13 @@ export default function NotificationsPage() {
               key={f.id}
               onClick={() => setFilter(f.id)}
               className={cn(
-                'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all duration-200',
+                'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap border transition-all shrink-0',
                 filter === f.id ? 'bg-shb-navy text-white border-shb-navy' : 'bg-white text-gray-600 border-gray-200 hover:border-shb-gold-soft',
               )}
             >
-              <f.icon size={13} /> {f.label}
+              <f.icon size={11} /> {f.label}
               {count > 0 && (
-                <span className={cn('text-[10px] rounded-full px-1.5 py-0.5', filter === f.id ? 'bg-white/20' : 'bg-gray-100 text-gray-500')}>
+                <span className={cn('text-[9px] rounded-full px-1.5 py-0.5', filter === f.id ? 'bg-white/20' : 'bg-gray-100 text-gray-500')}>
                   {count}
                 </span>
               )}
@@ -149,12 +149,12 @@ export default function NotificationsPage() {
             icon={filter === 'ALL' ? ShoppingCart : FILTERS.find((f) => f.id === filter)!.icon}
             title={filter === 'ALL' ? 'No activity yet' : `No ${filter} notifications`}
             description={filter === 'ALL' ? 'Updates about your purchases and wallet will show up here.' : undefined}
-            action={filter !== 'ALL' ? <button onClick={() => setFilter('ALL')} className="text-shb-gold-dark text-sm font-bold hover:underline">Show all</button> : undefined}
+            action={filter !== 'ALL' ? <button onClick={() => setFilter('ALL')} className="text-shb-gold-dark text-[12.5px] font-bold hover:underline">Show all</button> : undefined}
           />
         ) : (
           Array.from(grouped.entries()).map(([label, items]) => (
             <div key={label}>
-              <div className="px-4 sm:px-5 py-2 bg-gray-50/70 sticky top-0">
+              <div className="px-3 py-1.5 bg-gray-50/70 sticky top-0">
                 <span className="shb-eyebrow">{label}</span>
               </div>
               <div className="divide-y divide-gray-50">
@@ -163,15 +163,17 @@ export default function NotificationsPage() {
                   const Icon = meta.icon;
                   const isUnread = !readIds.includes(tx.id);
                   return (
-                    <div key={tx.id} className={cn('flex items-start gap-3 px-4 sm:px-5 py-3 relative transition-colors', isUnread && 'bg-shb-gold-soft/10')}>
-                      {isUnread && <span className="absolute left-2 top-6 w-1.5 h-1.5 rounded-full bg-shb-gold" />}
-                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', meta.color)}>
-                        <Icon size={16} />
+                    <div key={tx.id} className={cn('flex items-center gap-2.5 px-3 py-2 relative transition-colors', isUnread && 'bg-shb-gold-soft/10')}>
+                      {isUnread && <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-shb-gold" />}
+                      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', meta.color)}>
+                        <Icon size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-gray-900 truncate">{meta.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">{meta.body}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">{formatDate(tx.date)}</p>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="text-[12.5px] font-bold text-gray-900 truncate">{meta.title}</p>
+                          <p className="text-[10px] text-gray-400 shrink-0">{formatDate(tx.date)}</p>
+                        </div>
+                        <p className="text-[11.5px] text-gray-500 truncate leading-snug">{meta.body}</p>
                       </div>
                     </div>
                   );

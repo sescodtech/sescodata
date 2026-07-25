@@ -29,12 +29,12 @@ export default function EmptyState({
     tone === 'admin' ? 'text-admin-blue' : 'text-shb-gold-dark';
 
   return (
-    <div className="flex flex-col items-center justify-center py-14 px-6 text-center gap-3">
-      <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center', iconWrap)}>
-        <Icon size={24} className={iconColor} />
+    <div className="flex flex-col items-center justify-center py-10 px-5 text-center gap-2.5">
+      <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center', iconWrap)}>
+        <Icon size={20} className={iconColor} />
       </div>
-      <p className="text-gray-800 text-sm font-bold">{title}</p>
-      {description && <p className="text-xs text-gray-400 max-w-xs">{description}</p>}
+      <p className="text-gray-800 text-[13px] font-bold">{title}</p>
+      {description && <p className="text-[12px] text-gray-400 max-w-xs">{description}</p>}
       {action}
     </div>
   );

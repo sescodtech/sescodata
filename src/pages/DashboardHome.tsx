@@ -92,7 +92,7 @@ export default function DashboardHome() {
   }));
 
   return (
-    <div className="space-y-5 sm:space-y-6 content-reveal">
+    <div className="space-y-3 sm:space-y-4 content-reveal">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
         <div>
@@ -106,23 +106,23 @@ export default function DashboardHome() {
 
       {/* Wallet + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Link to="/app/wallet" className="lg:col-span-2 rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden block bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3 group transition-transform duration-300 hover:-translate-y-0.5 active:scale-[0.99]" style={{ boxShadow: 'var(--shadow-pop)' }}>
+        <Link to="/app/wallet" className="lg:col-span-2 rounded-2xl p-3.5 sm:p-4 text-white relative overflow-hidden block bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3 group" style={{ boxShadow: 'var(--shadow-pop)' }}>
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-shb-gold/15 rounded-full blur-3xl" />
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1.5">
               <Wallet size={15} className="text-shb-gold-soft" />
               <p className="text-shb-gold-soft text-[13px] font-semibold">Wallet Balance</p>
             </div>
-            <p className="text-[28px] sm:text-3xl font-extrabold tracking-tight mb-5 font-display">{formatNaira(user?.walletBalance ?? 0)}</p>
+            <p className="text-[28px] sm:text-xl font-extrabold tracking-tight mb-5 font-display">{formatNaira(user?.walletBalance ?? 0)}</p>
             <div className="flex gap-3">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 flex-1 border border-white/10 group-hover:bg-white/15 transition-colors duration-300">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 flex-1 border border-white/10 group-hover:bg-white/15 transition-colors duration-300">
                 <div className="flex justify-between items-start mb-1.5">
                   <TrendingUp size={16} className="text-shb-gold-soft" />
                   <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">Spent</span>
                 </div>
                 <p className="text-base sm:text-lg font-bold">{formatNaira(totalSpent)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 flex-1 border border-white/10 group-hover:bg-white/15 transition-colors duration-300">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 flex-1 border border-white/10 group-hover:bg-white/15 transition-colors duration-300">
                 <div className="flex justify-between items-start mb-1.5">
                   <CheckCircle2 size={16} className="text-green-400" />
                   <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">Delivered</span>
@@ -133,14 +133,14 @@ export default function DashboardHome() {
           </div>
         </Link>
 
-        <div className="shb-card-sm sm:p-5 flex flex-col justify-between">
+        <div className="shb-card-sm sm:p-3.5 flex flex-col justify-between">
           <h3 className="shb-section-title mb-3">Quick Actions</h3>
           <div className="grid grid-cols-3 gap-2">
             {QUICK_ACTIONS.map((action) => (
               <Link
                 key={action.title}
                 to={action.to}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl hover:bg-shb-gold-soft/20 active:scale-95 transition-all duration-200 group border border-transparent hover:border-shb-gold-soft touch-manipulation"
+                className="flex flex-col items-center justify-center p-2 rounded-xl hover:bg-shb-gold-soft/20 transition-colors duration-200 group border border-transparent hover:border-shb-gold-soft touch-manipulation"
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5 bg-shb-gold-soft/50 text-shb-gold-dark group-hover:scale-110 transition-transform duration-200">
                   <action.icon size={16} />
@@ -205,7 +205,7 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <div className="shb-card overflow-hidden">
-            <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
+            <div className="px-4 sm:px-3.5 py-2.5 border-b border-gray-50 flex items-center justify-between">
               <h3 className="shb-section-title flex items-center gap-1.5">
                 <Clock size={14} className="text-shb-gold-dark" /> Recent Purchases
               </h3>
@@ -224,7 +224,7 @@ export default function DashboardHome() {
             ) : (
               <div className="divide-y divide-gray-50">
                 {recentTxns.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150">
+                  <div key={tx.id} className="flex items-center justify-between px-4 sm:px-3.5 py-2.5 hover:bg-gray-50 transition-colors duration-150">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
                         {tx.amount > 0 ? <ArrowDownLeft size={16} /> : <ShoppingCart size={16} />}
@@ -281,7 +281,7 @@ export default function DashboardHome() {
             <p className="text-xs text-gray-600 leading-relaxed">{tipOfTheDay}</p>
           </div>
 
-          <div className="rounded-3xl p-5 text-white relative overflow-hidden group cursor-pointer bg-gradient-to-br from-shb-navy to-shb-navy-3">
+          <div className="rounded-2xl p-3.5 text-white relative overflow-hidden group cursor-pointer bg-gradient-to-br from-shb-navy to-shb-navy-3">
             <h4 className="text-base font-bold mb-1.5 font-display">Need help?</h4>
             <p className="text-gray-300 text-xs mb-3.5 leading-relaxed">Our support team can help with any issue.</p>
             <Link

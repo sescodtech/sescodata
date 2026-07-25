@@ -73,12 +73,14 @@ function KpiCard({ label, value, icon: Icon, tone = 'blue' }: { label: string; v
     gold: 'bg-admin-gold-soft text-admin-gold',
   };
   return (
-    <div className="admin-card p-4 sm:p-5">
-      <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center mb-3', toneClasses[tone])}>
-        <Icon size={18} />
+    <div className="admin-card p-3.5 min-h-[112px] flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+        <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0', toneClasses[tone])}>
+          <Icon size={14} />
+        </div>
       </div>
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-xl font-extrabold text-gray-900 tracking-tight font-display">{value}</p>
+      <p className="text-[19px] font-extrabold text-gray-900 tracking-tight font-display leading-tight">{value}</p>
     </div>
   );
 }
@@ -96,7 +98,7 @@ function SupportDashboard() {
   }, []);
 
   if (loading || !stats) {
-    return <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}</div>;
+    return <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}</div>;
   }
 
   return (
@@ -254,25 +256,25 @@ function TicketList({ filters, onFiltersChange, admins, onOpen, refreshKey }: {
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-left text-gray-400 font-black uppercase tracking-wide text-[10px] border-b border-gray-100 bg-gray-50/50">
-                  <th className="py-3 px-5 cursor-pointer" onClick={() => toggleSort('createdAt')}>Ticket</th>
-                  <th className="py-3 px-4">Customer</th>
-                  <th className="py-3 px-4 cursor-pointer" onClick={() => toggleSort('status')}>Status</th>
-                  <th className="py-3 px-4 cursor-pointer" onClick={() => toggleSort('priority')}>Priority</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Assigned</th>
-                  <th className="py-3 px-5 text-right cursor-pointer" onClick={() => toggleSort('lastReplyAt')}>Last Activity</th>
+                  <th className="py-2 px-3 cursor-pointer" onClick={() => toggleSort('createdAt')}>Ticket</th>
+                  <th className="py-2 px-3">Customer</th>
+                  <th className="py-2 px-3 cursor-pointer" onClick={() => toggleSort('status')}>Status</th>
+                  <th className="py-2 px-3 cursor-pointer" onClick={() => toggleSort('priority')}>Priority</th>
+                  <th className="py-2 px-3">Category</th>
+                  <th className="py-2 px-3">Assigned</th>
+                  <th className="py-2 px-3 text-right cursor-pointer" onClick={() => toggleSort('lastReplyAt')}>Last Activity</th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.map((t) => (
                   <tr key={t._id} onClick={() => onOpen(t._id)} className="border-b border-gray-50 hover:bg-admin-blue-soft/30 cursor-pointer transition-colors">
-                    <td className="py-3 px-5 font-bold text-gray-800 max-w-[220px] truncate">{t.subject}</td>
-                    <td className="py-3 px-4 text-gray-600 max-w-[160px] truncate">{t.name}</td>
-                    <td className="py-3 px-4"><StatusPill status={t.status} /></td>
-                    <td className="py-3 px-4"><PriorityPill priority={t.priority} /></td>
-                    <td className="py-3 px-4 text-gray-500">{CATEGORY_LABELS[t.category] || t.category}</td>
-                    <td className="py-3 px-4 text-gray-500">{t.assignedAdminName || <span className="text-gray-300">Unassigned</span>}</td>
-                    <td className="py-3 px-5 text-right text-gray-400">{formatDate(t.lastReplyAt || t.createdAt)}</td>
+                    <td className="py-2 px-3 font-bold text-gray-800 max-w-[220px] truncate">{t.subject}</td>
+                    <td className="py-2 px-3 text-gray-600 max-w-[160px] truncate">{t.name}</td>
+                    <td className="py-2 px-3"><StatusPill status={t.status} /></td>
+                    <td className="py-2 px-3"><PriorityPill priority={t.priority} /></td>
+                    <td className="py-2 px-3 text-gray-500">{CATEGORY_LABELS[t.category] || t.category}</td>
+                    <td className="py-2 px-3 text-gray-500">{t.assignedAdminName || <span className="text-gray-300">Unassigned</span>}</td>
+                    <td className="py-2 px-3 text-right text-gray-400">{formatDate(t.lastReplyAt || t.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -303,17 +305,17 @@ function ConversationPane({ ticket, onSend, sending }: { ticket: SupportTicket; 
       <div className="flex-1 space-y-3 mb-4 min-h-[200px]">
         {/* Original ticket message */}
         <div className="flex justify-start">
-          <div className="max-w-[85%] bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-2.5">
+          <div className="max-w-[85%] bg-gray-100 rounded-lg rounded-tl-sm px-3 py-2">
             <p className="text-xs text-gray-800 whitespace-pre-line">{ticket.message}</p>
             <p className="text-[10px] text-gray-400 mt-1">{ticket.name} · {formatDate(ticket.createdAt)}</p>
           </div>
         </div>
         {messages.length === 0 ? (
-          <p className="text-center text-xs text-gray-300 py-6">No replies yet — be the first to respond.</p>
+          <p className="text-center text-xs text-gray-300 py-4">No replies yet — be the first to respond.</p>
         ) : messages.map((r, i) => (
           <div key={i} className={cn('flex', r.from === 'admin' ? 'justify-end' : 'justify-start')}>
             <div className={cn(
-              'max-w-[85%] rounded-2xl px-4 py-2.5',
+              'max-w-[85%] rounded-lg px-3 py-2',
               r.from === 'admin' ? 'bg-admin-blue text-white rounded-tr-sm' : 'bg-gray-100 text-gray-800 rounded-tl-sm'
             )}>
               <p className="text-xs whitespace-pre-line">{r.message}</p>
@@ -330,12 +332,12 @@ function ConversationPane({ ticket, onSend, sending }: { ticket: SupportTicket; 
           onChange={(e) => setMsg(e.target.value)}
           placeholder="Type your reply — an email will be sent automatically…"
           rows={2}
-          className="flex-1 text-xs font-medium border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-admin-blue"
+          className="flex-1 text-xs font-medium border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-admin-blue"
         />
         <button
           onClick={() => { if (msg.trim()) { onSend(msg); setMsg(''); } }}
           disabled={sending || !msg.trim()}
-          className="w-10 h-10 rounded-xl bg-admin-blue hover:bg-admin-blue-dark text-white flex items-center justify-center transition-colors disabled:opacity-40 shrink-0"
+          className="w-9 h-9 rounded-lg bg-admin-blue hover:bg-admin-blue-dark text-white flex items-center justify-center transition-colors disabled:opacity-40 shrink-0"
         >
           <Send size={15} />
         </button>
@@ -347,10 +349,10 @@ function ConversationPane({ ticket, onSend, sending }: { ticket: SupportTicket; 
 function CustomerPane({ customer, previousTickets, onOpenTicket }: { customer: CustomerSupportContext | null; previousTickets: PreviousTicketSummary[]; onOpenTicket: (id: string) => void }) {
   if (!customer) return <EmptyState icon={UserIcon} title="Customer record not found" tone="admin" />;
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <div className="admin-card p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-admin-blue-soft text-admin-blue flex items-center justify-center font-black">{customer.user.name?.[0]?.toUpperCase()}</div>
+          <div className="w-8 h-8 rounded-full bg-admin-blue-soft text-admin-blue flex items-center justify-center font-black text-[13px]">{customer.user.name?.[0]?.toUpperCase()}</div>
           <div className="min-w-0">
             <p className="text-sm font-extrabold text-gray-900 truncate">{customer.user.name}</p>
             <p className="text-[11px] text-gray-400 truncate flex items-center gap-1"><Mail size={11} />{customer.user.email}</p>
@@ -434,18 +436,18 @@ function NotesPane({ ticket, onAdd, busy }: { ticket: SupportTicket; onAdd: (not
           value={note} onChange={(e) => setNote(e.target.value)}
           placeholder="Add an internal note — customers never see this…"
           rows={2}
-          className="flex-1 text-xs font-medium border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-admin-blue"
+          className="flex-1 text-xs font-medium border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-admin-blue"
         />
         <button
           onClick={() => { if (note.trim()) { onAdd(note); setNote(''); } }}
           disabled={busy || !note.trim()}
-          className="w-10 h-10 rounded-xl bg-admin-gold hover:opacity-90 text-white flex items-center justify-center transition-opacity disabled:opacity-40 shrink-0"
+          className="w-9 h-9 rounded-lg bg-admin-gold hover:opacity-90 text-white flex items-center justify-center transition-opacity disabled:opacity-40 shrink-0"
         >
           <StickyNote size={15} />
         </button>
       </div>
       {(!ticket.internalNotes || ticket.internalNotes.length === 0) ? (
-        <p className="text-center text-xs text-gray-300 py-6">No internal notes yet.</p>
+        <p className="text-center text-xs text-gray-300 py-4">No internal notes yet.</p>
       ) : (
         <div className="space-y-2">
           {[...ticket.internalNotes].reverse().map((n) => (
@@ -526,7 +528,7 @@ function TicketDetailDrawer({ ticketId, onClose, admins, isSuperAdmin, onChanged
   return (
     <Drawer open={!!ticketId} onClose={onClose} title={ticket ? ticket.subject : 'Ticket'} wide>
       {loading || !ticket ? (
-        <div className="space-y-3"><Skeleton className="h-24 w-full rounded-2xl" /><SkeletonList rows={4} /></div>
+        <div className="space-y-3"><Skeleton className="h-24 w-full rounded-xl" /><SkeletonList rows={4} /></div>
       ) : (
         <div className="space-y-4">
           {/* Header meta + quick actions */}
@@ -667,7 +669,7 @@ export default function AdminSupport() {
   }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 w-fit">
         {SUB_VIEWS.map((v) => (
           <button

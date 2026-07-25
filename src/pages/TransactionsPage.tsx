@@ -91,7 +91,7 @@ export default function TransactionsPage() {
   const pendingCount = useMemo(() => txns.filter((t) => resolvedStatus(t) === 'pending').length, [txns]);
 
   return (
-    <div className="space-y-6 content-reveal">
+    <div className="space-y-4 content-reveal">
       <PageHeader
         title="Transaction History"
         description="Review all your purchases and receipts."
@@ -171,7 +171,7 @@ export default function TransactionsPage() {
           <EmptyState
             icon={AlertCircle}
             title={error}
-            action={<button onClick={loadTransactions} className="shb-btn-primary mt-2 px-5 py-2 text-sm">Try Again</button>}
+            action={<button onClick={loadTransactions} className="shb-btn-primary mt-2 px-3.5 py-2 text-sm">Try Again</button>}
           />
         ) : filteredTxns.length === 0 ? (
           <EmptyState
@@ -189,12 +189,12 @@ export default function TransactionsPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-5 py-3">Transaction</th>
-                    <th className="px-5 py-3">Amount</th>
-                    <th className="px-5 py-3">Status</th>
-                    <th className="px-5 py-3">Recipient</th>
-                    <th className="px-5 py-3 text-right">Date</th>
-                    <th className="px-5 py-3" />
+                    <th className="px-4 py-3">Transaction</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Recipient</th>
+                    <th className="px-4 py-3 text-right">Date</th>
+                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-gray-50">
@@ -202,7 +202,7 @@ export default function TransactionsPage() {
                     const Icon = txIcon(tx.category, tx.amount);
                     return (
                       <tr key={tx.id} onClick={() => setSelected(tx)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                        <td className="px-5 py-3">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
                               <Icon size={18} />
@@ -213,15 +213,15 @@ export default function TransactionsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3">
+                        <td className="px-4 py-3">
                           <span className={cn('font-bold', tx.amount > 0 ? 'text-green-600' : 'text-gray-900')}>
                             {tx.amount > 0 ? '+' : ''}{formatNaira(Math.abs(tx.amount))}
                           </span>
                         </td>
-                        <td className="px-5 py-3"><StatusBadge status={resolvedStatus(tx)} /></td>
-                        <td className="px-5 py-3"><span className="font-mono text-xs text-gray-600">{tx.recipient || '—'}</span></td>
-                        <td className="px-5 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.date)}</td>
-                        <td className="px-5 py-3"><ChevronRight size={16} className="text-gray-300" /></td>
+                        <td className="px-4 py-3"><StatusBadge status={resolvedStatus(tx)} /></td>
+                        <td className="px-4 py-3"><span className="font-mono text-xs text-gray-600">{tx.recipient || '—'}</span></td>
+                        <td className="px-4 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.date)}</td>
+                        <td className="px-4 py-3"><ChevronRight size={16} className="text-gray-300" /></td>
                       </tr>
                     );
                   })}
@@ -234,7 +234,7 @@ export default function TransactionsPage() {
               {filteredTxns.map((tx) => {
                 const Icon = txIcon(tx.category, tx.amount);
                 return (
-                  <button key={tx.id} onClick={() => setSelected(tx)} className="w-full flex items-center justify-between px-4 py-4 text-left active:bg-gray-50">
+                  <button key={tx.id} onClick={() => setSelected(tx)} className="w-full flex items-center justify-between px-4 py-3 text-left active:bg-gray-50">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-shb-gold-soft/50 text-shb-gold-dark')}>
                         <Icon size={18} />
@@ -258,7 +258,7 @@ export default function TransactionsPage() {
         )}
 
         {!isLoading && !error && filteredTxns.length > 0 && (
-          <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400 font-medium">
+          <div className="px-4 py-3 border-t border-gray-50 text-xs text-gray-400 font-medium">
             Showing {filteredTxns.length} of {txns.length} transactions
           </div>
         )}
@@ -267,7 +267,7 @@ export default function TransactionsPage() {
       {/* Details Drawer — full digital receipt */}
       <Drawer open={!!selected} onClose={() => setSelected(null)} title="Transaction Receipt">
         {selected && (
-          <div className="space-y-5">
+          <div className="space-y-3">
             <TransactionReceipt txn={selected} customer={{ name: user?.name ?? '', email: user?.email ?? '' }} status={resolvedStatus(selected)} />
 
             <div className="grid grid-cols-3 gap-2">

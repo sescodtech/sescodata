@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Smartphone, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search, PartyPopper } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Smartphone, CheckCircle2, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search, PartyPopper, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -9,25 +9,19 @@ import { recentNumbers, favoritePlans } from '../lib/localPrefs';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
-const STEPS = ['Select Network', 'Choose Plan', 'Confirm & Pay'];
-
 export default function BuyDataFlow() {
   useDocumentTitle('Buy Data');
   const { user, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const productIdParam = searchParams.get('productId');
 
-  // State
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedNetwork, setSelectedNetwork] = useState<typeof NETWORKS[number] | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<Product | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [manualNetworkId, setManualNetworkId] = useState<string | null>(null);
+  const [networkPickerOpen, setNetworkPickerOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Product | null>(null);
   const [planFilter, setPlanFilter] = useState<'all' | 'sme' | 'gifting' | 'corporate' | 'favorites'>('all');
   const [planSearch, setPlanSearch] = useState('');
-  const [quickPhone, setQuickPhone] = useState('');
-  const [detectedNetworkId, setDetectedNetworkId] = useState<string | null>(null);
 
-  // API state
   const [allPlans, setAllPlans] = useState<Product[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [plansError, setPlansError] = useState('');
@@ -35,11 +29,9 @@ export default function BuyDataFlow() {
   const [paymentError, setPaymentError] = useState('');
   const [justPaid, setJustPaid] = useState(false);
 
-  // Convenience state (client-side only, non-breaking)
   const [favorites, setFavorites] = useState<string[]>(favoritePlans.get());
   const [recents] = useState<string[]>(recentNumbers.get());
 
-  // Load all data plans on mount
   const loadPlans = async () => {
     setIsLoadingPlans(true);
     setPlansError('');
@@ -53,29 +45,33 @@ export default function BuyDataFlow() {
     }
   };
 
-  useEffect(() => {
-    loadPlans();
-  }, []);
+  useEffect(() => { loadPlans(); }, []);
 
   useEffect(() => {
     if (allPlans.length > 0 && productIdParam) {
-      const product = allPlans.find(p => p.id === productIdParam);
+      const product = allPlans.find((p) => p.id === productIdParam);
       if (product) {
-        const network = NETWORKS.find(n => matchesProvider(product, n.id));
+        const network = NETWORKS.find((n) => matchesProvider(product, n.id));
         if (network) {
-          setSelectedNetwork(network);
+          setManualNetworkId(network.id);
           setSelectedPlan(product);
-          setCurrentStep(2);
         }
       }
     }
   }, [allPlans, productIdParam]);
 
-  // Plans for the selected network
-  const networkPlans = selectedNetwork
-    ? allPlans.filter((p) => matchesProvider(p, selectedNetwork.id))
-    : [];
+  // Instant detection while typing — the whole point of a phone-first flow.
+  const detectedNetworkId = useMemo(() => {
+    const clean = phoneNumber.replace(/\s/g, '');
+    return clean.length >= 4 ? detectNetworkId(clean) : null;
+  }, [phoneNumber]);
 
+  const activeNetworkId = manualNetworkId || detectedNetworkId;
+  const activeNetwork = NETWORKS.find((n) => n.id === activeNetworkId) || null;
+
+  const isValidPhone = /^(07|08|09)\d{9}$/.test(phoneNumber.replace(/\s/g, ''));
+
+  const networkPlans = activeNetwork ? allPlans.filter((p) => matchesProvider(p, activeNetwork.id)) : [];
   const filteredPlans = (planFilter === 'all'
     ? networkPlans
     : planFilter === 'favorites'
@@ -85,40 +81,6 @@ export default function BuyDataFlow() {
 
   const availableFilters = ['all', ...Array.from(new Set(networkPlans.map((p) => p.planType).filter(Boolean)))] as string[];
 
-  // Auto network detection — suggests a network from a typed number using
-  // real NCC-allocated prefix ranges; the user still explicitly confirms by
-  // tapping the suggestion, nothing is auto-submitted.
-  useEffect(() => {
-    const clean = quickPhone.replace(/\s/g, '');
-    if (clean.length >= 4) {
-      setDetectedNetworkId(detectNetworkId(clean));
-    } else {
-      setDetectedNetworkId(null);
-    }
-  }, [quickPhone]);
-
-  const handleUseDetectedNetwork = () => {
-    const network = NETWORKS.find((n) => n.id === detectedNetworkId);
-    if (!network) return;
-    setPhoneNumber(quickPhone);
-    handleNetworkSelect(network);
-  };
-
-  // Phone validation
-  const isValidPhone = /^(07|08|09)\d{9}$/.test(phoneNumber.replace(/\s/g, ''));
-
-  const handleNetworkSelect = (network: typeof NETWORKS[number]) => {
-    setSelectedNetwork(network);
-    setSelectedPlan(null);
-    setPlanFilter('all');
-    setCurrentStep(1);
-  };
-
-  const handlePlanSelect = (plan: Product) => {
-    setSelectedPlan(plan);
-    setCurrentStep(2);
-  };
-
   const toggleFavorite = (e: React.MouseEvent, planId: string) => {
     e.stopPropagation();
     setFavorites(favoritePlans.toggle(planId));
@@ -126,25 +88,15 @@ export default function BuyDataFlow() {
 
   const handlePay = async () => {
     if (!selectedPlan || !phoneNumber || !user?.email) return;
-
-    // Check wallet balance
     if (user.walletBalance == null || user.walletBalance < selectedPlan.price) {
       setPaymentError('Insufficient wallet balance. Please fund your wallet first.');
       return;
     }
-
     setIsProcessing(true);
     setPaymentError('');
     try {
-      await purchase.buyData({
-        productId: selectedPlan.id,
-        recipient: phoneNumber.replace(/\s/g, ''),
-        quantity: 1,
-      });
-
+      await purchase.buyData({ productId: selectedPlan.id, recipient: phoneNumber.replace(/\s/g, ''), quantity: 1 });
       recentNumbers.add(phoneNumber);
-
-      // Refresh user balance and redirect to transactions
       await refreshUser();
       setJustPaid(true);
       setTimeout(() => { window.location.href = '/app/transactions'; }, 1400);
@@ -154,359 +106,263 @@ export default function BuyDataFlow() {
     }
   };
 
-  const reset = () => {
-    setCurrentStep(0);
-    setSelectedNetwork(null);
-    setSelectedPlan(null);
-    setPhoneNumber('');
-    setPlanFilter('all');
-    setPaymentError('');
-  };
-
   if (justPaid) {
     return (
-      <div className="max-w-md mx-auto py-16">
+      <div className="max-w-sm mx-auto py-14">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-16 h-16 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-4">
-            <PartyPopper size={28} className="text-green-500" />
+          <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
+            <PartyPopper size={22} className="text-green-500" />
           </div>
-          <h2 className="shb-page-title mb-1.5">Payment sent!</h2>
+          <h2 className="shb-page-title mb-1">Payment sent!</h2>
           <p className="shb-body">Taking you to your receipt…</p>
-          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-5" size={20} />
+          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-4" size={18} />
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 content-reveal px-4 sm:px-0">
-      <PageHeader
-        title="Buy Mobile Data"
-        description="Cheap data plans for all networks."
-        icon={Database}
-        backTo="/app"
-      />
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0">
+      <PageHeader title="Buy Data" description="Instant delivery to any network." icon={Database} backTo="/app" />
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-5 sm:mb-6 px-2 sm:px-4">
-        {STEPS.map((step, idx) => (
-          <div key={step} className="flex flex-col items-center relative flex-1 max-w-[80px] sm:max-w-none">
-            <div className={cn(
-              'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all relative z-10',
-              idx < currentStep ? 'bg-green-600 text-white' :
-              idx === currentStep ? 'bg-shb-navy text-white ring-2 sm:ring-4 ring-shb-gold-soft/60' :
-              'bg-gray-200 text-gray-500'
-            )}>
-              {idx < currentStep ? <CheckCircle2 size={16} /> : idx + 1}
-            </div>
-            <span className={cn(
-              'mt-1 sm:mt-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-center leading-tight',
-              idx === currentStep ? 'text-shb-navy' : 'text-gray-400'
-            )}>{step}</span>
-            {idx < STEPS.length - 1 && (
-              <div className={cn(
-                'absolute top-4 sm:top-5 left-1/2 w-full h-[2px] -z-0',
-                idx < currentStep ? 'bg-green-600' : 'bg-gray-200'
-              )} />
-            )}
+      {/* Phone number — the single entry point. Network is detected live as you type. */}
+      <div className="shb-card p-3.5">
+        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Phone Number</label>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="tel"
+              autoFocus
+              value={phoneNumber}
+              onChange={(e) => { setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11)); setSelectedPlan(null); }}
+              className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-[15px] tracking-wide"
+              placeholder="08012345678"
+              maxLength={11}
+            />
           </div>
-        ))}
+
+          {/* Network chip — auto-filled from detection, tappable to override */}
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setNetworkPickerOpen((v) => !v)}
+              className={cn(
+                'flex items-center gap-1.5 pl-2 pr-2.5 py-2.5 rounded-lg border font-bold text-[12px] transition-colors',
+                activeNetwork ? 'border-gray-200' : 'border-dashed border-gray-300 text-gray-400',
+              )}
+            >
+              {activeNetwork ? (
+                <>
+                  <span className={cn('w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black', activeNetwork.bg, activeNetwork.textColor)}>
+                    {activeNetwork.id[0].toUpperCase()}
+                  </span>
+                  <span className="hidden xs:inline">{activeNetwork.name.split(' ')[0]}</span>
+                </>
+              ) : (
+                'Network'
+              )}
+              <ChevronDown size={13} />
+            </button>
+            <AnimatePresence>
+              {networkPickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                  className="absolute right-0 top-full mt-1.5 w-40 bg-white rounded-lg border border-gray-100 shadow-lg z-20 p-1"
+                >
+                  {NETWORKS.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => { setManualNetworkId(n.id); setNetworkPickerOpen(false); setSelectedPlan(null); }}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 text-left"
+                    >
+                      <span className={cn('w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0', n.bg, n.textColor)}>
+                        {n.id[0].toUpperCase()}
+                      </span>
+                      <span className="text-[12.5px] font-semibold text-gray-700">{n.name}</span>
+                      {n.id === activeNetworkId && <CheckCircle2 size={13} className="ml-auto text-shb-gold-dark shrink-0" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {phoneNumber.length > 0 && !isValidPhone && (
+          <p className="text-[11px] text-red-500 font-medium flex items-center gap-1 mt-1.5">
+            <AlertCircle size={11} /> Enter a valid 11-digit Nigerian number
+          </p>
+        )}
+
+        {recents.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-gray-50">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 mr-0.5">
+              <Clock size={10} /> Recent
+            </span>
+            {recents.slice(0, 4).map((num) => (
+              <button
+                key={num}
+                onClick={() => { setPhoneNumber(num); setSelectedPlan(null); }}
+                className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold border border-gray-200 text-gray-600 hover:border-shb-gold hover:text-shb-navy transition-colors"
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="shb-card p-4 sm:p-5 md:p-6 relative overflow-hidden">
-        <AnimatePresence mode="wait">
-
-          {/* STEP 0: Network Selection */}
-          {currentStep === 0 && (
-            <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <h2 className="text-base sm:text-lg font-extrabold text-gray-900 mb-1.5 font-display">Select Network</h2>
-              <p className="text-sm text-gray-500 mb-4 sm:mb-5">Which network do you want to buy data for?</p>
-
-              {isLoadingPlans && (
-                <div className="flex items-center gap-3 text-gray-500 py-5 sm:py-6">
-                  <Loader2 className="animate-spin" size={20} /> Loading plans from providers...
-                </div>
-              )}
-              {plansError && (
-                <div className="flex items-center gap-3 text-red-600 bg-red-50 p-4 rounded-2xl mb-6">
-                  <AlertCircle size={18} />
-                  <span className="text-sm">{plansError}</span>
-                  <button onClick={loadPlans} className="ml-auto text-xs font-bold flex items-center gap-1 hover:underline touch-manipulation">
-                    <RefreshCw size={14} /> Retry
-                  </button>
-                </div>
-              )}
-
-              <div className="mb-5 sm:mb-6 p-3.5 rounded-2xl bg-shb-gold-soft/10 border border-shb-gold-soft/40">
-                <label className="text-xs font-bold text-gray-600 mb-2 block">Or type your number — we'll detect the network</label>
-                <div className="relative">
+      {/* Once a network is known, plans load right below — no separate step. */}
+      {activeNetwork && !selectedPlan && (
+        <div className="shb-card p-3.5">
+          {isLoadingPlans ? (
+            <div className="flex items-center gap-2.5 text-gray-500 py-6 justify-center text-[13px]">
+              <Loader2 className="animate-spin" size={16} /> Loading {activeNetwork.name} plans…
+            </div>
+          ) : plansError ? (
+            <div className="flex items-center gap-2.5 text-red-600 bg-red-50 p-3 rounded-lg text-[12.5px]">
+              <AlertCircle size={15} />
+              {plansError}
+              <button onClick={loadPlans} className="ml-auto text-[11px] font-bold flex items-center gap-1 hover:underline shrink-0">
+                <RefreshCw size={11} /> Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
                   <input
-                    type="tel"
-                    inputMode="tel"
-                    value={quickPhone}
-                    onChange={(e) => setQuickPhone(e.target.value)}
-                    placeholder="08012345678"
-                    className="shb-input pl-4 pr-28 py-2.5 text-sm"
+                    value={planSearch}
+                    onChange={(e) => setPlanSearch(e.target.value)}
+                    placeholder="Search plans (e.g. 2GB)"
+                    className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[12.5px] outline-none focus:ring-2 focus:ring-shb-gold"
                   />
-                  <AnimatePresence>
-                    {detectedNetworkId && (
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                        onClick={handleUseDetectedNetwork}
-                        className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-xl bg-shb-navy text-white text-xs font-bold flex items-center gap-1"
-                      >
-                        {NETWORKS.find((n) => n.id === detectedNetworkId)?.name.split(' ')[0]} <ChevronRight size={12} />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {NETWORKS.map((net) => {
-                  const count = allPlans.filter((p) => matchesProvider(p, net.id)).length;
-                  return (
-                    <button
-                      key={net.id}
-                      onClick={() => handleNetworkSelect(net)}
-                      disabled={isLoadingPlans}
-                      className="p-4 sm:p-6 rounded-2xl border-2 border-gray-100 hover:border-shb-gold transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                    >
-                      <div className={cn('w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xl sm:text-2xl font-black mb-3 sm:mb-4 transition-transform group-hover:scale-110', net.bg, net.textColor)}>
-                        {net.id[0].toUpperCase()}
-                      </div>
-                      <p className="font-bold text-gray-900 text-sm sm:text-base">{net.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {isLoadingPlans ? 'Loading...' : count > 0 ? `${count} plans available` : 'No plans loaded'}
-                      </p>
-                      <ChevronRight size={16} className="mt-2 sm:mt-3 text-gray-300 group-hover:text-shb-gold-dark transition-colors" />
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 1: Plan Selection */}
-          {currentStep === 1 && selectedNetwork && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
-                <button onClick={() => setCurrentStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors touch-manipulation">
-                  <ArrowLeft size={18} className="text-gray-500" />
-                </button>
-                <div>
-                  <h2 className="text-base sm:text-lg font-extrabold text-gray-900 font-display">Choose a Plan</h2>
-                  <p className="text-sm text-gray-500">{selectedNetwork.name}</p>
-                </div>
-                <div className={cn('ml-auto w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-sm sm:text-lg', selectedNetwork.bg, selectedNetwork.textColor)}>
-                  {selectedNetwork.id[0].toUpperCase()}
-                </div>
-              </div>
-
-              {/* Search plans */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  value={planSearch}
-                  onChange={(e) => setPlanSearch(e.target.value)}
-                  placeholder="Search plans (e.g. 2GB, 30 days)..."
-                  className="shb-input pl-10 py-2.5 text-sm"
-                />
-              </div>
-
-              {/* Plan type filter tabs */}
-              <div className="flex gap-2 p-1 bg-gray-50 rounded-xl mb-6 overflow-x-auto">
-                {favorites.length > 0 && (
-                  <button
-                    onClick={() => setPlanFilter('favorites')}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-1',
-                      planFilter === 'favorites' ? 'bg-white text-shb-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                    )}
-                  >
-                    <Star size={11} className={planFilter === 'favorites' ? 'fill-shb-gold text-shb-gold' : ''} /> Favorites
-                  </button>
-                )}
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 mb-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {availableFilters.map((f) => (
                   <button
                     key={f}
                     onClick={() => setPlanFilter(f as any)}
                     className={cn(
-                      'px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all',
-                      planFilter === f ? 'bg-white text-shb-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      'px-2.5 py-1 rounded-md text-[10.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 transition-all',
+                      planFilter === f ? 'bg-shb-navy text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100',
                     )}
                   >
-                    {f === 'all' ? 'All Plans' : f.toUpperCase()}
+                    {f === 'all' ? 'All Plans' : f}
                   </button>
                 ))}
+                <button
+                  onClick={() => setPlanFilter('favorites')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-md text-[10.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 flex items-center gap-1 transition-all',
+                    planFilter === 'favorites' ? 'bg-shb-navy text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100',
+                  )}
+                >
+                  <Star size={10} /> Saved
+                </button>
               </div>
 
               {filteredPlans.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Database size={40} className="mx-auto mb-3 opacity-40" />
-                  <p className="font-semibold">
-                    {planSearch ? `No plans match "${planSearch}"` : planFilter === 'favorites' ? 'No favorite plans yet' : `No ${planFilter !== 'all' ? planFilter : ''} plans for ${selectedNetwork.name}`}
+                <div className="text-center py-10 text-gray-400">
+                  <Database size={28} className="mx-auto mb-2 opacity-40" />
+                  <p className="font-semibold text-[13px]">
+                    {planSearch ? `No plans match "${planSearch}"` : planFilter === 'favorites' ? 'No saved plans yet' : `No ${planFilter !== 'all' ? planFilter : ''} plans for ${activeNetwork.name}`}
                   </p>
-                  <button onClick={() => { setPlanFilter('all'); setPlanSearch(''); }} className="mt-2 text-sm text-shb-gold-dark hover:underline">Show all plans</button>
+                  <button onClick={() => { setPlanFilter('all'); setPlanSearch(''); }} className="mt-1.5 text-[12px] text-shb-gold-dark hover:underline">Show all plans</button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[420px] overflow-y-auto pr-1">
                   {filteredPlans.map((plan) => (
                     <button
                       key={plan.id}
-                      onClick={() => handlePlanSelect(plan)}
-                      className="p-5 rounded-2xl border-2 border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10 transition-all text-left group relative"
+                      onClick={() => setSelectedPlan(plan)}
+                      className="p-2.5 rounded-lg border border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10 transition-all text-left group relative"
                     >
                       <button
                         onClick={(e) => toggleFavorite(e, plan.id)}
-                        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white transition-colors"
+                        className="icon-btn absolute top-1.5 right-1.5 p-1 rounded-full hover:bg-white transition-colors"
                         aria-label="Toggle favorite"
                       >
-                        <Star size={15} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
+                        <Star size={12} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
                       </button>
-                      <div className="flex justify-between items-start pr-6">
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm leading-tight">{plan.name}</p>
-                          {plan.validity && <p className="text-xs text-gray-500 mt-0.5">{plan.validity}</p>}
-                          {plan.planType && (
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase tracking-tight">
-                              {plan.planType}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-shb-navy font-extrabold text-lg whitespace-nowrap">{formatNaira(plan.price)}</span>
+                      <p className="font-bold text-gray-900 text-[13px] leading-tight pr-4">{plan.name}</p>
+                      {plan.validity && <p className="text-[11px] text-gray-500 mt-0.5">{plan.validity}</p>}
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-shb-navy font-extrabold text-[14px] whitespace-nowrap">{formatNaira(plan.price)}</span>
+                        {plan.planType && (
+                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-bold uppercase tracking-tight">{plan.planType}</span>
+                        )}
                       </div>
-                      <ChevronRight size={14} className="mt-3 text-gray-300 group-hover:text-shb-gold-dark transition-colors" />
                     </button>
                   ))}
                 </div>
               )}
-            </motion.div>
+            </>
           )}
+        </div>
+      )}
 
-          {/* STEP 2: Confirm & Pay */}
-          {currentStep === 2 && selectedPlan && selectedNetwork && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-4 mb-8">
-                <button onClick={() => setCurrentStep(1)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                  <ArrowLeft size={18} className="text-gray-500" />
-                </button>
-                <div>
-                  <h2 className="text-xl font-extrabold text-gray-900 font-display">Confirm & Pay</h2>
-                  <p className="text-sm text-gray-500">Enter recipient phone number</p>
-                </div>
-              </div>
+      {!activeNetwork && phoneNumber.length === 0 && (
+        <div className="text-center py-10 text-gray-400">
+          <Smartphone size={26} className="mx-auto mb-2 opacity-40" />
+          <p className="text-[13px] font-semibold">Type a phone number to see plans</p>
+        </div>
+      )}
 
-              {/* Order Summary */}
-              <div className="bg-shb-gold-soft/20 border border-shb-gold-soft rounded-2xl p-5 mb-8">
-                <p className="text-xs font-black text-shb-gold-dark uppercase tracking-widest mb-3">Order Summary</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Plan</span>
-                    <span className="font-bold text-gray-900">{selectedPlan.name}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Network</span>
-                    <span className="font-bold text-gray-900">{selectedNetwork.name}</span>
-                  </div>
-                  {selectedPlan.validity && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Validity</span>
-                      <span className="font-bold text-gray-900">{selectedPlan.validity}</span>
-                    </div>
-                  )}
-                  <div className="h-px bg-shb-gold-soft my-2" />
-                  <div className="flex justify-between">
-                    <span className="font-bold text-gray-900">Total</span>
-                    <span className="text-2xl font-extrabold text-shb-navy">{formatNaira(selectedPlan.price)}</span>
-                  </div>
-                </div>
-              </div>
+      {/* Confirm & pay — replaces the plan grid in place, no page navigation */}
+      {selectedPlan && activeNetwork && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="shb-card p-3.5">
+          <button onClick={() => setSelectedPlan(null)} className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-shb-navy mb-3">
+            <ArrowLeft size={13} /> Change plan
+          </button>
 
-              {/* Phone Input */}
-              <div className="space-y-2 mb-4">
-                <label className="text-sm font-semibold text-gray-700 block">Recipient Phone Number</label>
-                <div className="relative">
-                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11))}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-lg tracking-widest"
-                    placeholder="08012345678"
-                    maxLength={11}
-                  />
-                </div>
-                {phoneNumber.length > 0 && !isValidPhone && (
-                  <p className="text-xs text-red-500 font-medium flex items-center gap-1">
-                    <AlertCircle size={12} /> Enter a valid 11-digit Nigerian phone number
-                  </p>
-                )}
-                {isValidPhone && (
-                  <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Valid phone number
-                  </p>
-                )}
-              </div>
+          <div className="bg-shb-gold-soft/20 border border-shb-gold-soft rounded-lg p-3 mb-3.5">
+            <div className="flex justify-between items-center text-[13px] mb-1">
+              <span className="text-gray-600">{selectedPlan.name} · {activeNetwork.name.split(' ')[0]}</span>
+              {selectedPlan.validity && <span className="text-gray-500 text-[11px]">{selectedPlan.validity}</span>}
+            </div>
+            <div className="flex justify-between items-center pt-1.5 mt-1.5 border-t border-shb-gold-soft">
+              <span className="font-bold text-gray-900 text-[13px]">Total</span>
+              <span className="text-[17px] font-extrabold text-shb-navy">{formatNaira(selectedPlan.price)}</span>
+            </div>
+          </div>
 
-              {/* Saved numbers — quick select */}
-              {recents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 mr-1">
-                    <Clock size={11} /> Recent:
-                  </span>
-                  {recents.map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setPhoneNumber(num)}
-                      className="px-3 py-1 rounded-lg text-xs font-mono font-bold border border-gray-200 text-gray-600 hover:border-shb-gold hover:text-shb-navy transition-colors"
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <p className="text-[12.5px] text-gray-600 mb-1">Sending to <span className="font-mono font-bold text-gray-900">{phoneNumber}</span></p>
 
-              <AnimatePresence>
-                {paymentError && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-sm text-red-700"
-                  >
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    {paymentError}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-start gap-3 text-xs text-gray-600">
-                <Wallet size={14} className="shrink-0 mt-0.5 text-shb-gold-dark" />
-                Payment will be deducted from your wallet balance. Data is delivered automatically after payment.
-              </div>
-
-              <button
-                onClick={handlePay}
-                disabled={!isValidPhone || isProcessing}
-                className="shb-btn-primary w-full text-lg flex items-center justify-center gap-2"
+          <AnimatePresence>
+            {paymentError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="my-2.5 p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-[12px] text-red-700"
               >
-                {isProcessing ? (
-                  <><Loader2 className="animate-spin" size={20} /> Processing...</>
-                ) : (
-                  <>Pay {formatNaira(selectedPlan.price)} from Wallet</>
-                )}
-              </button>
+                <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                {paymentError}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              <button onClick={reset} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 py-2 transition-colors">
-                Cancel and start over
-              </button>
-            </motion.div>
-          )}
+          <div className="my-2.5 p-2.5 bg-gray-50 border border-gray-200 rounded-lg flex items-start gap-2 text-[11.5px] text-gray-600">
+            <Wallet size={13} className="shrink-0 mt-0.5 text-shb-gold-dark" />
+            Deducted from your wallet. Data delivers automatically.
+          </div>
 
-        </AnimatePresence>
-      </div>
+          <button
+            onClick={handlePay}
+            disabled={!isValidPhone || isProcessing}
+            className="shb-btn-primary w-full text-[15px] flex items-center justify-center gap-2"
+          >
+            {isProcessing ? (
+              <><Loader2 className="animate-spin" size={17} /> Processing…</>
+            ) : (
+              <>Pay {formatNaira(selectedPlan.price)}</>
+            )}
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

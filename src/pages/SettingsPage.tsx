@@ -17,13 +17,11 @@ export default function SettingsPage() {
   const { user, refreshUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
 
-  // Profile form
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
-  // Password form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,8 +29,8 @@ export default function SettingsPage() {
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const tabs = [
-    { id: 'profile' as Tab, label: 'Profile Info', icon: UserIcon },
-    { id: 'security' as Tab, label: 'Security & Password', icon: Lock },
+    { id: 'profile' as Tab, label: 'Profile', icon: UserIcon },
+    { id: 'security' as Tab, label: 'Security', icon: Lock },
     { id: 'preferences' as Tab, label: 'Preferences', icon: Bell },
   ];
 
@@ -52,7 +50,6 @@ export default function SettingsPage() {
 
   const handleChangePassword = async () => {
     setPasswordMsg(null);
-    // Matches the backend's 8-character minimum (AuthController.changePassword).
     if (newPassword.length < 8) {
       setPasswordMsg({ type: 'err', text: 'New password must be at least 8 characters.' });
       return;
@@ -74,141 +71,137 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 content-reveal pb-12">
-      <PageHeader title="Account Settings" description="Manage your personal information and security settings." />
+    <div className="max-w-3xl mx-auto space-y-3 content-reveal pb-8 px-3.5 sm:px-0">
+      <PageHeader title="Settings" description="Manage your account and security." />
 
-      <div className="flex flex-col md:flex-row gap-5 md:gap-6">
-        {/* Tabs */}
-        <aside className="w-full md:w-56 flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap shrink-0 transition-all duration-200',
-                activeTab === tab.id ? 'bg-shb-navy text-white' : 'text-gray-500 hover:bg-white hover:text-gray-900',
-              )}
-              style={activeTab === tab.id ? { boxShadow: 'var(--shadow-pop)' } : undefined}
-            >
-              <tab.icon size={17} />
-              {tab.label}
-            </button>
-          ))}
-        </aside>
-
-        <div className="flex-1 space-y-4 min-w-0">
-          <div className="shb-card overflow-hidden">
-            <AnimatePresence mode="wait">
-              {activeTab === 'profile' && (
-                <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-4 sm:p-5">
-                  <div className="flex flex-col items-center md:items-start mb-5">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black border-4 border-white bg-gradient-to-br from-shb-gold to-shb-gold-dark" style={{ boxShadow: 'var(--shadow-gold)' }}>
-                      {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="mt-3.5 text-center md:text-left">
-                      <h3 className="shb-section-title text-lg">{user?.name}</h3>
-                      <p className="text-gray-500 text-sm">{user?.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Full Name" icon={<UserIcon size={16} />} type="text" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-                    <Input label="Email Address" icon={<Mail size={16} />} type="email" value={user?.email ?? ''} disabled className="bg-gray-100 text-gray-400 cursor-not-allowed" hint="Contact support to change your email" />
-                    <Input label="Phone Number" icon={<Phone size={16} />} type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="080 1234 5678" autoComplete="tel" />
-                  </div>
-
-                  <AnimatePresence>
-                    {profileMsg && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                        className={cn('mt-5 p-3 rounded-xl text-sm font-medium flex items-center gap-2', profileMsg.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}
-                        role={profileMsg.type === 'err' ? 'alert' : 'status'}>
-                        {profileMsg.type === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                        {profileMsg.text}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="mt-6 pt-5 border-t border-gray-50 flex justify-end">
-                    <Button onClick={handleSaveProfile} loading={profileSaving} icon={!profileSaving ? <Save size={17} /> : undefined}>
-                      {profileSaving ? 'Saving…' : 'Save Changes'}
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'security' && (
-                <motion.div key="security" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-4 sm:p-6 space-y-7">
-                  <div>
-                    <h3 className="shb-section-title mb-3 flex items-center gap-2">
-                      <Shield size={17} className="text-shb-gold-dark" />
-                      Two-Factor Authentication
-                    </h3>
-                    <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-gray-800">Coming soon</p>
-                        <p className="text-xs text-gray-500 mt-0.5">2FA isn't available yet — your account is currently secured by password only.</p>
-                      </div>
-                      <button disabled className="px-4 py-2 bg-gray-200 text-gray-400 rounded-lg text-xs font-bold cursor-not-allowed shrink-0">Enable</button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="shb-section-title flex items-center gap-2">
-                      <Lock size={17} className="text-shb-gold-dark" />
-                      Change Password
-                    </h3>
-                    <div className="space-y-4">
-                      <PasswordInput label="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
-                      <PasswordInput label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" minLength={8} />
-                      <PasswordInput
-                        label="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••" autoComplete="new-password" minLength={8}
-                        error={confirmPassword && confirmPassword !== newPassword ? 'Passwords do not match' : undefined}
-                      />
-                    </div>
-                  </div>
-
-                  <AnimatePresence>
-                    {passwordMsg && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                        className={cn('p-3 rounded-xl text-sm font-medium flex items-center gap-2', passwordMsg.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}
-                        role={passwordMsg.type === 'err' ? 'alert' : 'status'}>
-                        {passwordMsg.type === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                        {passwordMsg.text}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="pt-1 flex justify-end">
-                    <Button onClick={handleChangePassword} loading={passwordSaving} disabled={!currentPassword || !newPassword}>
-                      Update Password
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'preferences' && (
-                <motion.div key="preferences" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-4 sm:p-6 space-y-4">
-                  <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-500 leading-relaxed">
-                    Notification preferences aren't wired to a backend yet — toggles here won't persist. Check the{' '}
-                    <a href="/app/notifications" className="text-shb-gold-dark font-bold hover:underline">Notifications</a> tab for real activity from your account.
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Sign out */}
-          <div className="shb-card-sm !p-4 sm:!p-5 flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h3 className="text-gray-900 font-bold text-sm">Sign out</h3>
-              <p className="text-gray-500 text-xs mt-0.5">End your session on this device.</p>
-            </div>
-            <button onClick={logout} className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 flex items-center gap-2">
-              <LogOut size={15} /> Sign Out
-            </button>
-          </div>
+      {/* Compact identity strip — replaces the oversized centered avatar block */}
+      <div className="shb-card p-3 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[13px] font-black border-2 border-white shrink-0 bg-gradient-to-br from-shb-gold to-shb-gold-dark" style={{ boxShadow: 'var(--shadow-gold)' }}>
+          {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
         </div>
+        <div className="min-w-0">
+          <p className="font-bold text-gray-900 text-[13.5px] truncate">{user?.name}</p>
+          <p className="text-gray-500 text-[12px] truncate">{user?.email}</p>
+        </div>
+      </div>
+
+      {/* Horizontal segmented tabs */}
+      <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100 gap-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] font-bold transition-all',
+              activeTab === tab.id ? 'bg-white text-shb-navy shadow-sm' : 'text-gray-500 hover:text-gray-700',
+            )}
+          >
+            <tab.icon size={14} />
+            <span className="hidden xs:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="shb-card overflow-hidden">
+        <AnimatePresence mode="wait">
+          {activeTab === 'profile' && (
+            <motion.div key="profile" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }} className="p-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input label="Full Name" icon={<UserIcon size={14} />} type="text" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                <Input label="Email Address" icon={<Mail size={14} />} type="email" value={user?.email ?? ''} disabled className="bg-gray-100 text-gray-400 cursor-not-allowed" hint="Contact support to change" />
+                <Input label="Phone Number" icon={<Phone size={14} />} type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="080 1234 5678" autoComplete="tel" />
+              </div>
+
+              <AnimatePresence>
+                {profileMsg && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    className={cn('mt-3 p-2.5 rounded-lg text-[12.5px] font-medium flex items-center gap-2', profileMsg.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}
+                    role={profileMsg.type === 'err' ? 'alert' : 'status'}>
+                    {profileMsg.type === 'ok' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    {profileMsg.text}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end">
+                <Button size="sm" onClick={handleSaveProfile} loading={profileSaving} icon={!profileSaving ? <Save size={14} /> : undefined}>
+                  {profileSaving ? 'Saving…' : 'Save Changes'}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'security' && (
+            <motion.div key="security" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }} className="p-3.5 space-y-4">
+              <div>
+                <h3 className="shb-section-title mb-2 flex items-center gap-1.5">
+                  <Shield size={14} className="text-shb-gold-dark" />
+                  Two-Factor Authentication
+                </h3>
+                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-bold text-gray-800">Coming soon</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Your account is currently secured by password only.</p>
+                  </div>
+                  <button disabled className="px-3 py-1.5 bg-gray-200 text-gray-400 rounded-md text-[11px] font-bold cursor-not-allowed shrink-0">Enable</button>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <h3 className="shb-section-title flex items-center gap-1.5">
+                  <Lock size={14} className="text-shb-gold-dark" />
+                  Change Password
+                </h3>
+                <div className="space-y-2.5">
+                  <PasswordInput label="Current Password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
+                  <PasswordInput label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" minLength={8} />
+                  <PasswordInput
+                    label="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••" autoComplete="new-password" minLength={8}
+                    error={confirmPassword && confirmPassword !== newPassword ? 'Passwords do not match' : undefined}
+                  />
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {passwordMsg && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    className={cn('p-2.5 rounded-lg text-[12.5px] font-medium flex items-center gap-2', passwordMsg.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}
+                    role={passwordMsg.type === 'err' ? 'alert' : 'status'}>
+                    {passwordMsg.type === 'ok' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    {passwordMsg.text}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleChangePassword} loading={passwordSaving} disabled={!currentPassword || !newPassword}>
+                  Update Password
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'preferences' && (
+            <motion.div key="preferences" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }} className="p-3.5">
+              <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-[12.5px] text-gray-500 leading-relaxed">
+                Notification preferences aren't wired to a backend yet. Check{' '}
+                <a href="/app/notifications" className="text-shb-gold-dark font-bold hover:underline">Notifications</a> for real activity.
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Sign out */}
+      <div className="shb-card-sm flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-gray-900 font-bold text-[13px]">Sign out</h3>
+          <p className="text-gray-500 text-[11.5px] mt-0.5">End your session on this device.</p>
+        </div>
+        <button onClick={logout} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-[12.5px] hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center gap-1.5 shrink-0">
+          <LogOut size={13} /> Sign Out
+        </button>
       </div>
     </div>
   );

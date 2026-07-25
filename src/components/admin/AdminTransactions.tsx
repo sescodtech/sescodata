@@ -96,16 +96,16 @@ export default function AdminTransactions() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by reference, product, or recipient..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-admin-blue text-sm transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-admin-blue text-[12.5px] transition-all"
             />
           </div>
-          <button onClick={() => setShowFilters(!showFilters)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
+          <button onClick={() => setShowFilters(!showFilters)} className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">
             Filters <ChevronDown size={14} className={cn('transition-transform', showFilters && 'rotate-180')} />
           </button>
-          <button onClick={load} disabled={isLoading} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+          <button onClick={load} disabled={isLoading} className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
             <RefreshCw size={14} className={cn(isLoading && 'animate-spin')} />
           </button>
-          <button onClick={handleExport} disabled={txns.length === 0} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+          <button onClick={handleExport} disabled={txns.length === 0} className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
             <Download size={14} /> <span className="hidden sm:inline">Export CSV</span>
           </button>
         </div>
@@ -114,13 +114,13 @@ export default function AdminTransactions() {
           <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-100">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize">
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[11.5px] font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize">
                 {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o || 'All'}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Service</label>
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize">
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[11.5px] font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize">
                 {CATEGORY_OPTIONS.map((o) => <option key={o} value={o}>{o ? o.replace('_', ' ') : 'All'}</option>)}
               </select>
             </div>
@@ -145,22 +145,22 @@ export default function AdminTransactions() {
         ) : (
           <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left min-w-[720px]">
+              <table className="w-full text-left min-w-[680px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-4 py-3">Transaction</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Date</th>
+                    <th className="px-3 py-2">Transaction</th>
+                    <th className="px-3 py-2">Customer</th>
+                    <th className="px-3 py-2">Amount</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm divide-y divide-gray-50">
+                <tbody className="text-[12.5px] divide-y divide-gray-50">
                   {txns.map((tx) => {
                     const user = typeof tx.userId === 'object' ? tx.userId : null;
                     return (
                       <tr key={tx._id} onClick={() => setSelected(tx)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <div className="flex items-center gap-2.5">
                             <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
                               {tx.amount > 0 ? <ArrowDownLeft size={14} /> : <ShoppingCart size={14} />}
@@ -171,10 +171,10 @@ export default function AdminTransactions() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600">{user?.email || '—'}</td>
-                        <td className="px-4 py-3 font-bold text-xs text-gray-900">{formatNaira(Math.abs(tx.amount))}</td>
-                        <td className="px-4 py-3"><StatusBadge status={tx.deliveryStatus} /></td>
-                        <td className="px-4 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.createdAt)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-600">{user?.email || '—'}</td>
+                        <td className="px-3 py-2 font-bold text-xs text-gray-900">{formatNaira(Math.abs(tx.amount))}</td>
+                        <td className="px-3 py-2"><StatusBadge status={tx.deliveryStatus} /></td>
+                        <td className="px-3 py-2 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(tx.createdAt)}</td>
                       </tr>
                     );
                   })}
@@ -187,7 +187,7 @@ export default function AdminTransactions() {
               {txns.map((tx) => {
                 const user = typeof tx.userId === 'object' ? tx.userId : null;
                 return (
-                  <button key={tx._id} onClick={() => setSelected(tx)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
+                  <button key={tx._id} onClick={() => setSelected(tx)} className="w-full flex items-center gap-2.5 px-3 py-2 text-left active:bg-gray-50 transition-colors">
                     <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
                       {tx.amount > 0 ? <ArrowDownLeft size={15} /> : <ShoppingCart size={15} />}
                     </div>
@@ -213,7 +213,7 @@ export default function AdminTransactions() {
       {/* Detail Drawer with Receipt */}
       <Drawer open={!!selected} onClose={() => setSelected(null)} title="Transaction Receipt">
         {selected && (
-          <div className="space-y-5">
+          <div className="space-y-3">
             <TransactionReceipt
               txn={toReceiptShape(selected)}
               customer={{
@@ -236,11 +236,11 @@ export default function AdminTransactions() {
                   }
                 }}
                 disabled={isGeneratingPdf}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-xs font-bold text-gray-700 disabled:opacity-50"
+                className="flex flex-col items-center gap-1 py-2 rounded-lg border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-[11px] font-bold text-gray-700 disabled:opacity-50"
               >
                 {isGeneratingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} PDF
               </button>
-              <button onClick={printReceipt} className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-xs font-bold text-gray-700">
+              <button onClick={printReceipt} className="flex flex-col items-center gap-1 py-2 rounded-lg border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-[11px] font-bold text-gray-700">
                 <Printer size={16} /> Print
               </button>
               <button
@@ -248,7 +248,7 @@ export default function AdminTransactions() {
                   const r = await shareReceipt(toReceiptShape(selected));
                   if (r.copiedToClipboard) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
                 }}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-xs font-bold text-gray-700"
+                className="flex flex-col items-center gap-1 py-2 rounded-lg border border-gray-200 hover:border-admin-blue hover:bg-admin-blue-soft/50 transition-all text-[11px] font-bold text-gray-700"
               >
                 {copied ? <Check size={16} className="text-green-600" /> : <Share2 size={16} />} {copied ? 'Copied' : 'Share'}
               </button>

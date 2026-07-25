@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ShieldCheck, User as UserIcon, Camera, Calendar, Phone, Mail, MapPin,
-  Briefcase, Users, CreditCard, FileText, Lock, CheckCircle2, Clock3, XCircle, Info,
+  Briefcase, Users, CreditCard, Lock, CheckCircle2, Clock3, XCircle, FileText, Info,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/PageHeader';
@@ -10,26 +10,10 @@ import { cn } from '../lib/utils';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const STATUS_META: Record<string, { label: string; className: string; icon: typeof CheckCircle2; description: string }> = {
-  not_started: {
-    label: 'Not Started', icon: FileText,
-    className: 'bg-gray-100 text-gray-600 border-gray-200',
-    description: "You haven't started identity verification yet.",
-  },
-  pending: {
-    label: 'Pending Review', icon: Clock3,
-    className: 'bg-amber-50 text-amber-700 border-amber-200',
-    description: 'Your details are submitted and awaiting review.',
-  },
-  verified: {
-    label: 'Verified', icon: CheckCircle2,
-    className: 'bg-green-50 text-green-700 border-green-200',
-    description: 'Your identity has been verified.',
-  },
-  rejected: {
-    label: 'Rejected', icon: XCircle,
-    className: 'bg-red-50 text-red-700 border-red-200',
-    description: 'Your last submission was rejected. You can resubmit once verification is available.',
-  },
+  not_started: { label: 'Not Started', icon: FileText, className: 'bg-gray-100 text-gray-600 border-gray-200', description: "You haven't started identity verification yet." },
+  pending:     { label: 'Pending Review', icon: Clock3, className: 'bg-amber-50 text-amber-700 border-amber-200', description: 'Your details are submitted and awaiting review.' },
+  verified:    { label: 'Verified', icon: CheckCircle2, className: 'bg-green-50 text-green-700 border-green-200', description: 'Your identity has been verified.' },
+  rejected:    { label: 'Rejected', icon: XCircle, className: 'bg-red-50 text-red-700 border-red-200', description: 'Your last submission was rejected. You can resubmit once verification is available.' },
 };
 
 const NIGERIAN_STATES = [
@@ -40,6 +24,17 @@ const NIGERIAN_STATES = [
   'Taraba', 'Yobe', 'Zamfara',
 ];
 
+function Section({ icon: Icon, title, children }: { icon: typeof CheckCircle2; title: string; children: React.ReactNode }) {
+  return (
+    <div className="shb-card p-3.5">
+      <h3 className="shb-section-title mb-3 flex items-center gap-1.5">
+        <Icon size={14} className="text-shb-gold-dark" /> {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
 export default function KYCPage() {
   useDocumentTitle('Identity Verification');
   const { user } = useAuth();
@@ -48,8 +43,7 @@ export default function KYCPage() {
   const meta = STATUS_META[status] ?? STATUS_META.not_started;
   const StatusIcon = meta.icon;
 
-  // Preview-only form state — nothing here is persisted. See the banner
-  // below and KYC_BACKEND_REQUIREMENTS.md for why submission is disabled.
+  // Preview-only form state — nothing here is persisted; see KYC_BACKEND_REQUIREMENTS.md.
   const [fullName] = useState(user?.name || '');
   const [phone] = useState(user?.phone || '');
   const [dob, setDob] = useState('');
@@ -64,86 +58,84 @@ export default function KYCPage() {
   const [bvn, setBvn] = useState('');
   const [nin, setNin] = useState('');
 
-  const canSubmit = false; // No backend endpoint exists yet — see banner + requirements doc.
+  const canSubmit = false; // No backend endpoint exists yet.
+
+  // Real-time completion progress across the four groups — gives the "verification
+  // progress" experience even though submission itself isn't wired up yet.
+  const progress = useMemo(() => {
+    const groups = [
+      !!dob && !!gender && !!occupation,
+      !!address && !!stateVal && !!lga,
+      !!nokName && !!nokPhone && !!nokRelationship,
+      bvn.length === 11 && nin.length === 11,
+    ];
+    const done = groups.filter(Boolean).length;
+    return { done, total: groups.length, pct: Math.round((done / groups.length) * 100) };
+  }, [dob, gender, occupation, address, stateVal, lga, nokName, nokPhone, nokRelationship, bvn, nin]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 content-reveal pb-12">
-      <PageHeader
-        title="Identity Verification"
-        description="Verify your identity to unlock higher transaction limits."
-        icon={ShieldCheck}
-        backTo="/app"
-        actions={
-          <span className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border', meta.className)}>
-            <StatusIcon size={13} /> {meta.label}
-          </span>
-        }
-      />
+    <div className="max-w-3xl mx-auto space-y-3 content-reveal pb-8 px-3.5 sm:px-0">
+      <PageHeader title="Verification" description="Unlock higher transaction limits." icon={ShieldCheck} backTo="/app" />
 
-      <div className="shb-card p-4 sm:p-5 flex items-start gap-3 bg-shb-gold-soft/10 border-shb-gold-soft/40">
-        <Info size={18} className="text-shb-gold-dark shrink-0 mt-0.5" />
-        <div className="text-sm text-gray-600">
-          <p className="font-bold text-gray-800 mb-1">This page is a preview of the verification flow.</p>
-          <p>
-            {meta.description} Submitting documents, BVN, or NIN isn't available yet — this
-            platform doesn't have a verification backend wired up. The form below shows exactly
-            what verification will look like once that's built, so nothing here is saved or sent anywhere.
-          </p>
+      {/* Status card with progress bar */}
+      <div className="shb-card p-3.5">
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border', meta.className)}>
+            <StatusIcon size={12} /> {meta.label}
+          </span>
+          <span className="text-[11px] font-bold text-gray-400">{progress.done}/{progress.total} sections</span>
+        </div>
+        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mb-2.5">
+          <div className="h-full bg-shb-gold rounded-full transition-all" style={{ width: `${progress.pct}%` }} />
+        </div>
+        <p className="text-[12px] text-gray-500 leading-relaxed">{meta.description}</p>
+        <div className="mt-2.5 pt-2.5 border-t border-gray-50 flex items-start gap-2 text-[11px] text-gray-400">
+          <Info size={12} className="shrink-0 mt-0.5" />
+          Preview only — submission isn't wired to a backend yet, so nothing here is saved.
         </div>
       </div>
 
       {/* Profile photo */}
-      <div className="shb-card p-4 sm:p-5">
-        <h3 className="shb-section-title mb-4 flex items-center gap-2">
-          <Camera size={16} className="text-shb-gold-dark" /> Profile Photo
-        </h3>
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black border-4 border-white bg-gradient-to-br from-shb-gold to-shb-gold-dark shrink-0" style={{ boxShadow: 'var(--shadow-gold)' }}>
-            {fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || <UserIcon size={28} />}
+      <Section icon={Camera} title="Profile Photo">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[13px] font-black border-2 border-white shrink-0 bg-gradient-to-br from-shb-gold to-shb-gold-dark" style={{ boxShadow: 'var(--shadow-gold)' }}>
+            {fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || <UserIcon size={18} />}
           </div>
           <div>
-            <button type="button" disabled className="px-4 py-2 rounded-xl border-2 border-gray-200 text-sm font-bold text-gray-400 cursor-not-allowed">
+            <button type="button" disabled className="px-3 py-1.5 rounded-lg border border-gray-200 text-[12px] font-bold text-gray-400 cursor-not-allowed">
               Upload Photo
             </button>
-            <p className="text-xs text-gray-400 mt-1.5">Photo upload will be enabled once document storage is configured.</p>
+            <p className="text-[10.5px] text-gray-400 mt-1">Enabled once document storage is configured.</p>
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Personal details */}
-      <div className="shb-card p-4 sm:p-5">
-        <h3 className="shb-section-title mb-4 flex items-center gap-2">
-          <UserIcon size={16} className="text-shb-gold-dark" /> Personal Details
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input label="Full Name" icon={<UserIcon size={16} />} value={fullName} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" hint="Synced from your account — update it in Settings" />
-          <Input label="Email Address" icon={<Mail size={16} />} value={user?.email ?? ''} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" />
-          <Input label="Phone Number" icon={<Phone size={16} />} value={phone} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" hint="Synced from your account — update it in Settings" />
-          <Input label="Date of Birth" icon={<Calendar size={16} />} type="date" value={dob} onChange={(e) => setDob(e.target.value)} disabled={!canSubmit} />
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-bold text-gray-700 block">Gender</label>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} disabled={!canSubmit} className="shb-input pl-4 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
+      <Section icon={UserIcon} title="Personal Details">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <Input label="Full Name" icon={<UserIcon size={14} />} value={fullName} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" hint="Synced from Settings" />
+          <Input label="Email Address" icon={<Mail size={14} />} value={user?.email ?? ''} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" />
+          <Input label="Phone Number" icon={<Phone size={14} />} value={phone} disabled className="bg-gray-50 text-gray-400 cursor-not-allowed" hint="Synced from Settings" />
+          <Input label="Date of Birth" icon={<Calendar size={14} />} type="date" value={dob} onChange={(e) => setDob(e.target.value)} disabled={!canSubmit} />
+          <div className="space-y-1">
+            <label className="text-[12.5px] font-semibold text-gray-600 block">Gender</label>
+            <select value={gender} onChange={(e) => setGender(e.target.value)} disabled={!canSubmit} className="shb-input pl-3.5 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
               <option value="">Select gender</option>
               <option value="female">Female</option>
               <option value="male">Male</option>
               <option value="prefer_not_to_say">Prefer not to say</option>
             </select>
           </div>
-          <Input label="Occupation" icon={<Briefcase size={16} />} value={occupation} onChange={(e) => setOccupation(e.target.value)} disabled={!canSubmit} placeholder="e.g. Software Developer" />
+          <Input label="Occupation" icon={<Briefcase size={14} />} value={occupation} onChange={(e) => setOccupation(e.target.value)} disabled={!canSubmit} placeholder="e.g. Software Developer" />
         </div>
-      </div>
+      </Section>
 
-      {/* Address */}
-      <div className="shb-card p-4 sm:p-5">
-        <h3 className="shb-section-title mb-4 flex items-center gap-2">
-          <MapPin size={16} className="text-shb-gold-dark" /> Residential Address
-        </h3>
-        <div className="grid grid-cols-1 gap-4">
-          <Input label="Street Address" icon={<MapPin size={16} />} value={address} onChange={(e) => setAddress(e.target.value)} disabled={!canSubmit} placeholder="House number, street, area" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[13px] font-bold text-gray-700 block">State</label>
-              <select value={stateVal} onChange={(e) => setStateVal(e.target.value)} disabled={!canSubmit} className="shb-input pl-4 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
+      <Section icon={MapPin} title="Residential Address">
+        <div className="grid grid-cols-1 gap-2.5">
+          <Input label="Street Address" icon={<MapPin size={14} />} value={address} onChange={(e) => setAddress(e.target.value)} disabled={!canSubmit} placeholder="House number, street, area" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <label className="text-[12.5px] font-semibold text-gray-600 block">State</label>
+              <select value={stateVal} onChange={(e) => setStateVal(e.target.value)} disabled={!canSubmit} className="shb-input pl-3.5 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
                 <option value="">Select state</option>
                 {NIGERIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -151,43 +143,29 @@ export default function KYCPage() {
             <Input label="LGA" value={lga} onChange={(e) => setLga(e.target.value)} disabled={!canSubmit} placeholder="Local Government Area" />
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Next of kin */}
-      <div className="shb-card p-4 sm:p-5">
-        <h3 className="shb-section-title mb-4 flex items-center gap-2">
-          <Users size={16} className="text-shb-gold-dark" /> Next of Kin
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Section icon={Users} title="Next of Kin">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <Input label="Full Name" value={nokName} onChange={(e) => setNokName(e.target.value)} disabled={!canSubmit} />
-          <Input label="Phone Number" icon={<Phone size={16} />} value={nokPhone} onChange={(e) => setNokPhone(e.target.value)} disabled={!canSubmit} placeholder="080 1234 5678" />
-          <Input label="Relationship" value={nokRelationship} onChange={(e) => setNokRelationship(e.target.value)} disabled={!canSubmit} placeholder="e.g. Sibling, Parent, Spouse" className="md:col-span-2" />
+          <Input label="Phone Number" icon={<Phone size={14} />} value={nokPhone} onChange={(e) => setNokPhone(e.target.value)} disabled={!canSubmit} placeholder="080 1234 5678" />
+          <Input label="Relationship" value={nokRelationship} onChange={(e) => setNokRelationship(e.target.value)} disabled={!canSubmit} placeholder="e.g. Sibling, Parent, Spouse" className="sm:col-span-2" />
         </div>
-      </div>
+      </Section>
 
-      {/* Government ID */}
-      <div className="shb-card p-4 sm:p-5">
-        <h3 className="shb-section-title mb-4 flex items-center gap-2">
-          <CreditCard size={16} className="text-shb-gold-dark" /> Government Identification
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input label="BVN" icon={<CreditCard size={16} />} value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} disabled={!canSubmit} placeholder="11-digit Bank Verification Number" maxLength={11} />
-          <Input label="NIN" icon={<CreditCard size={16} />} value={nin} onChange={(e) => setNin(e.target.value.replace(/\D/g, '').slice(0, 11))} disabled={!canSubmit} placeholder="11-digit National Identification Number" maxLength={11} />
+      <Section icon={CreditCard} title="Government Identification">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <Input label="BVN" icon={<CreditCard size={14} />} value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} disabled={!canSubmit} placeholder="11-digit BVN" maxLength={11} />
+          <Input label="NIN" icon={<CreditCard size={14} />} value={nin} onChange={(e) => setNin(e.target.value.replace(/\D/g, '').slice(0, 11))} disabled={!canSubmit} placeholder="11-digit NIN" maxLength={11} />
         </div>
-        <p className="text-xs text-gray-400 mt-3 flex items-start gap-1.5">
-          <Lock size={13} className="shrink-0 mt-0.5" />
-          BVN and NIN will be verified against NIBSS/NIMC through a licensed verification
-          provider once that integration exists — never stored in plain text.
+        <p className="text-[11px] text-gray-400 mt-2.5 flex items-start gap-1.5">
+          <Lock size={12} className="shrink-0 mt-0.5" />
+          Verified against NIBSS/NIMC through a licensed provider once integrated — never stored in plain text.
         </p>
-      </div>
+      </Section>
 
-      <div className="flex justify-end pt-2">
-        <button
-          type="button"
-          disabled
-          className="shb-btn-primary px-8 opacity-50 cursor-not-allowed"
-          title="Verification submissions aren't available yet"
-        >
+      <div className="flex justify-end pt-1">
+        <button type="button" disabled className="shb-btn-primary px-6 opacity-50 cursor-not-allowed" title="Verification submissions aren't available yet">
           Submit for Verification
         </button>
       </div>

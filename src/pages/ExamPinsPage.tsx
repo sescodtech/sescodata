@@ -61,7 +61,7 @@ export default function ExamPinsPage() {
     return (
       <div className="max-w-md mx-auto py-16">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-16 h-16 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
             <PartyPopper size={28} className="text-green-500" />
           </div>
           <h2 className="shb-page-title mb-1.5">PIN purchase sent!</h2>
@@ -73,7 +73,7 @@ export default function ExamPinsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 content-reveal pb-12">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal pb-12">
       <PageHeader
         title="Exam PINs"
         description="WAEC / NECO result checker PINs, delivered instantly."
@@ -84,7 +84,7 @@ export default function ExamPinsPage() {
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-sm text-red-700" role="alert">
+            className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-sm text-red-700" role="alert">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span className="flex-1">{error}</span>
             <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
@@ -92,11 +92,11 @@ export default function ExamPinsPage() {
         )}
       </AnimatePresence>
 
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-3.5">
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key="s0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h2 className="shb-section-title mb-4">Select PIN Type</h2>
+              <h2 className="shb-section-title mb-2.5">Select PIN Type</h2>
               {isLoadingPlans ? (
                 <SkeletonList rows={2} />
               ) : loadError ? (
@@ -109,15 +109,15 @@ export default function ExamPinsPage() {
               ) : plans.length === 0 ? (
                 <EmptyState icon={GraduationCap} title="No exam PIN products available right now" description="Check back shortly — providers refresh their catalog regularly." />
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {plans.map((plan) => (
                     <button key={plan.id} onClick={() => { setSelectedPlan(plan); setQuantity(1); setStep(1); }}
-                      className="w-full flex items-center justify-between p-3.5 rounded-xl border-2 border-gray-100 hover:border-shb-gold transition-all duration-200 text-left">
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:border-shb-gold transition-all text-left">
                       <div>
-                        <p className="font-bold text-gray-900 text-sm">{plan.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Instant PIN generation</p>
+                        <p className="font-bold text-gray-900 text-[13px]">{plan.name}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Instant PIN generation</p>
                       </div>
-                      <span className="font-extrabold text-shb-navy">{formatNaira(plan.price)}</span>
+                      <span className="font-extrabold text-shb-navy text-[14px]">{formatNaira(plan.price)}</span>
                     </button>
                   ))}
                 </div>
@@ -127,36 +127,36 @@ export default function ExamPinsPage() {
 
           {step === 1 && selectedPlan && (
             <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-5">
-                <button onClick={() => setStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
-                  <ArrowLeft size={18} className="text-gray-500" />
+              <div className="flex items-center gap-2.5 mb-3">
+                <button onClick={() => setStep(0)} className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors" aria-label="Back">
+                  <ArrowLeft size={16} className="text-gray-500" />
                 </button>
                 <h2 className="shb-section-title">{selectedPlan.name}</h2>
               </div>
 
-              <label className="text-[13px] font-bold text-gray-700 block mb-3">Quantity</label>
-              <div className="flex items-center gap-4 mb-5">
+              <label className="text-[12px] font-bold text-gray-700 block mb-2">Quantity</label>
+              <div className="flex items-center gap-3 mb-3">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   aria-label="Decrease quantity"
-                  className="w-11 h-11 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-shb-gold active:scale-95 transition-all duration-150"
+                  className="w-9 h-9 rounded-lg border border-gray-100 flex items-center justify-center hover:border-shb-gold active:scale-95 transition-all"
                 >
-                  <Minus size={16} />
+                  <Minus size={14} />
                 </button>
-                <span className="text-2xl font-extrabold w-12 text-center tabular-nums">{quantity}</span>
+                <span className="text-[15px] font-extrabold w-7 text-center tabular-nums">{quantity}</span>
                 <button
                   onClick={() => setQuantity((q) => Math.min(50, q + 1))}
                   aria-label="Increase quantity"
-                  className="w-11 h-11 rounded-xl border-2 border-gray-100 flex items-center justify-center hover:border-shb-gold active:scale-95 transition-all duration-150"
+                  className="w-9 h-9 rounded-lg border border-gray-100 flex items-center justify-center hover:border-shb-gold active:scale-95 transition-all"
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                 </button>
               </div>
 
-              <div className="rounded-2xl p-5 mb-5 border bg-shb-gold-soft/20 border-shb-gold-soft">
+              <div className="rounded-lg p-3 mb-3.5 border bg-shb-gold-soft/20 border-shb-gold-soft">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">Total</span>
-                  <span className="text-2xl font-extrabold text-shb-navy">{formatNaira(total)}</span>
+                  <span className="font-bold text-gray-900 text-[13px]">Total</span>
+                  <span className="text-[17px] font-extrabold text-shb-navy">{formatNaira(total)}</span>
                 </div>
               </div>
 

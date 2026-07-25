@@ -14,8 +14,8 @@ export default function StatusBadge({ status, className }: { status: Status; cla
   const meta = STATUS_MAP[status] ?? { label: status, icon: Clock, className: 'bg-gray-50 text-gray-600 border-gray-200' };
   const Icon = meta.icon;
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border', meta.className, className)}>
-      <Icon size={11} />
+    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border', meta.className, className)}>
+      <Icon size={10} />
       {meta.label}
     </span>
   );

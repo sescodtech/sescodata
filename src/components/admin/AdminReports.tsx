@@ -81,22 +81,24 @@ function KpiCard({ label, value, icon: Icon, tone = 'blue', onClick }: {
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        'admin-card p-4 sm:p-5 text-left group transition-all',
+        'admin-card p-3.5 min-h-[112px] flex flex-col justify-between text-left group transition-all',
         onClick ? 'hover:-translate-y-0.5 cursor-pointer' : 'cursor-default'
       )}
     >
-      <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform', toneClasses[tone])}>
-        <Icon size={18} />
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+        <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform', toneClasses[tone])}>
+          <Icon size={14} />
+        </div>
       </div>
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-xl font-extrabold text-gray-900 tracking-tight font-display truncate">{value}</p>
+      <p className="text-[19px] font-extrabold text-gray-900 tracking-tight font-display truncate leading-tight">{value}</p>
     </button>
   );
 }
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="admin-card p-4 sm:p-5">
+    <div className="admin-card p-3.5 sm:p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-extrabold text-gray-900">{title}</h3>
         {action}
@@ -112,7 +114,7 @@ function TopListCard({ title, icon: Icon, items, onRowClick }: {
   return (
     <SectionCard title={title} action={<Icon size={16} className="text-admin-blue" />}>
       {items.length === 0 ? (
-        <p className="text-xs text-gray-400 py-6 text-center">No data for this period yet.</p>
+        <p className="text-xs text-gray-400 py-4 text-center">No data for this period yet.</p>
       ) : (
         <div className="space-y-1">
           {items.slice(0, 8).map((it, i) => (
@@ -161,7 +163,7 @@ function DrilldownDrawer({ open, onClose, title, filters }: { open: boolean; onC
   return (
     <Drawer open={open} onClose={onClose} title={title}>
       {loading ? (
-        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}</div>
+        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}</div>
       ) : txns.length === 0 ? (
         <EmptyState icon={Receipt} title="No matching records" tone="admin" />
       ) : (
@@ -470,7 +472,7 @@ function DashboardView({ filters, onDrilldown }: { filters: ReportFilters; onDri
   useEffect(() => { load(); }, [load]);
 
   if (loading || !data) {
-    return <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{Array.from({ length: 15 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}</div>;
+    return <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{Array.from({ length: 15 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}</div>;
   }
 
   const k = data.kpis;
@@ -499,7 +501,7 @@ function DashboardView({ filters, onDrilldown }: { filters: ReportFilters; onDri
         <TopListCard title="Top Billers" icon={Tv} items={data.topBillers} onRowClick={(name) => onDrilldown(`Biller: ${name}`, { category: 'cable', status: 'delivered' })} />
         <SectionCard title="Provider Performance" action={<Radio size={16} className="text-admin-blue" />}>
           {data.providerPerformance.length === 0 ? (
-            <p className="text-xs text-gray-400 py-6 text-center">No provider calls logged for this period yet.</p>
+            <p className="text-xs text-gray-400 py-4 text-center">No provider calls logged for this period yet.</p>
           ) : (
             <div className="space-y-1">
               {data.providerPerformance.map((p) => (
@@ -535,7 +537,7 @@ function ReportsView({ filters, onDrilldown }: { filters: ReportFilters; onDrill
       .finally(() => setLoading(false));
   }, [filters]);
 
-  if (loading || !data) return <Skeleton className="h-96 w-full rounded-2xl" />;
+  if (loading || !data) return <Skeleton className="h-96 w-full rounded-xl" />;
 
   return (
     <div className="space-y-4">
@@ -614,7 +616,7 @@ export default function AdminReports() {
   const contextLabel = useMemo(() => VIEWS.find((v) => v.id === view)?.label || 'Report', [view]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 w-fit">
           {VIEWS.map((v) => {

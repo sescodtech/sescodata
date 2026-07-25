@@ -91,7 +91,7 @@ export default function WalletPage() {
   }, [ledger, ledgerSearch]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 content-reveal pb-8">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-8 content-reveal pb-8">
       <PageHeader
         title="Wallet"
         description="Fund your wallet and track spending."
@@ -112,7 +112,7 @@ export default function WalletPage() {
           <motion.div
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
             className={cn(
-              'p-4 rounded-2xl flex items-start gap-3 text-sm font-medium border',
+              'p-4 rounded-xl flex items-start gap-3 text-sm font-medium border',
               paymentBanner.type === 'success' && 'bg-green-50 border-green-200 text-green-700',
               paymentBanner.type === 'pending' && 'bg-amber-50 border-amber-200 text-amber-700',
               paymentBanner.type === 'failed' && 'bg-red-50 border-red-200 text-red-700',
@@ -128,7 +128,7 @@ export default function WalletPage() {
       </AnimatePresence>
 
       {/* Balance Card — premium gold/navy */}
-      <div className="rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3" style={{ boxShadow: 'var(--shadow-pop)' }}>
+      <div className="rounded-2xl p-3.5 sm:p-4 text-white relative overflow-hidden bg-gradient-to-br from-shb-navy via-shb-navy-2 to-shb-navy-3" style={{ boxShadow: 'var(--shadow-pop)' }}>
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-shb-gold/15 rounded-full blur-3xl" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-shb-gold/10 rounded-full blur-2xl" />
         <div className="relative z-10">
@@ -137,9 +137,9 @@ export default function WalletPage() {
             <p className="text-shb-gold-soft text-sm font-semibold">Wallet Balance</p>
           </div>
           {isLoading ? (
-            <Skeleton className="h-10 sm:h-12 w-32 sm:w-40 bg-white/10 mb-2" />
+            <Skeleton className="h-10 sm:h-9 w-32 sm:w-40 bg-white/10 mb-2" />
           ) : (
-            <p className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2 font-display">{formatNaira(walletBalance)}</p>
+            <p className="text-xl sm:text-4xl font-extrabold tracking-tight mb-2 font-display">{formatNaira(walletBalance)}</p>
           )}
           <p className="text-gray-300 text-sm">{user?.name} · {user?.email}</p>
         </div>
@@ -149,27 +149,27 @@ export default function WalletPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="shb-card-sm relative overflow-hidden">
           <p className="shb-eyebrow mb-1.5">Total Spent</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>
+          <p className="text-xl sm:text-lg font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>
           <div className="absolute -top-8 -right-8 w-20 h-20 bg-shb-gold-soft/40 rounded-full blur-2xl" />
         </div>
         <div className="shb-card-sm">
           <p className="shb-eyebrow mb-1.5">Successful</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-green-600 tracking-tight">{successCount}</p>
+          <p className="text-xl sm:text-lg font-extrabold text-green-600 tracking-tight">{successCount}</p>
         </div>
         <div className="shb-card-sm">
           <p className="shb-eyebrow mb-1.5">Pending</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-amber-500 tracking-tight">{pendingCount}</p>
+          <p className="text-xl sm:text-lg font-extrabold text-amber-500 tracking-tight">{pendingCount}</p>
         </div>
         <div className="shb-card-sm">
           <p className="shb-eyebrow mb-1.5">Success Rate</p>
-          <p className="text-xl sm:text-2xl font-extrabold text-shb-gold-dark tracking-tight">{successRate}%</p>
+          <p className="text-xl sm:text-lg font-extrabold text-shb-gold-dark tracking-tight">{successRate}%</p>
         </div>
       </div>
 
       {/* Fund Wallet */}
-      <div className="shb-card p-4 sm:p-5">
-        <div className="flex items-center gap-3 mb-4 sm:mb-6">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-shb-gold-soft/50">
+      <div className="shb-card p-4 sm:p-3.5">
+        <div className="flex items-center gap-3 mb-4 sm:mb-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-shb-gold-soft/50">
             <ArrowDownLeft size={20} className="text-shb-gold-dark" />
           </div>
           <div>
@@ -234,7 +234,7 @@ export default function WalletPage() {
 
       {/* Wallet Ledger — Funding History */}
       <div className="shb-card overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-50">
+        <div className="px-4 sm:px-3.5 py-2.5 border-b border-gray-50">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles size={15} className="text-shb-gold-dark" />
             <div>
@@ -262,7 +262,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {filteredLedger.map((entry, i) => (
-              <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3">
+              <div key={i} className="flex items-center justify-between px-4 sm:px-3.5 py-2.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
                     entry.type === 'credit' ? 'bg-green-100' : 'bg-red-100')}>
@@ -291,7 +291,7 @@ export default function WalletPage() {
 
       {/* Recent Transactions */}
       <div className="shb-card overflow-hidden">
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
+        <div className="px-4 sm:px-3.5 py-2.5 border-b border-gray-50 flex items-center justify-between">
           <div>
             <h3 className="shb-section-title">Recent Purchases</h3>
             <p className="text-[11px] text-gray-400 mt-0.5">Your last transactions</p>
@@ -305,7 +305,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {txns.slice(0, 10).map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
+              <div key={tx.id} className="flex items-center justify-between px-4 sm:px-3.5 py-2.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-shb-gold-soft/50">
                     <CreditCard size={16} className="text-shb-gold-dark" />

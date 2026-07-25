@@ -96,30 +96,30 @@ export default function AdminWallet() {
   return (
     <div className="space-y-4">
       {/* Wallet Overview */}
-      <div className="rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden bg-gradient-to-br from-admin-navy to-admin-navy-2">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-admin-blue/15 rounded-full blur-3xl" />
+      <div className="rounded-xl p-4 text-white shadow-lg relative overflow-hidden bg-gradient-to-br from-admin-navy to-admin-navy-2">
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-admin-blue/15 rounded-full blur-3xl" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet size={16} className="text-admin-gold" />
-            <p className="text-admin-gold text-sm font-semibold">Total Platform Wallet Float</p>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Wallet size={14} className="text-admin-gold" />
+            <p className="text-admin-gold text-[12px] font-semibold">Total Platform Wallet Float</p>
           </div>
           {isLoadingStats ? (
-            <Skeleton className="h-10 w-48 bg-white/10" />
+            <Skeleton className="h-8 w-40 bg-white/10" />
           ) : (
-            <p className="text-3xl sm:text-4xl font-extrabold tracking-tight font-display">{formatNaira(totalFloat ?? 0)}</p>
+            <p className="text-[24px] font-extrabold tracking-tight font-display">{formatNaira(totalFloat ?? 0)}</p>
           )}
-          <p className="text-gray-300 text-sm mt-2">Sum of every customer's wallet balance — a business liability, not revenue.</p>
+          <p className="text-gray-300 text-[11.5px] mt-1.5">Sum of every customer's wallet balance — a liability, not revenue.</p>
         </div>
       </div>
 
       {/* Quick Credit/Debit */}
-      <div className="admin-card p-5 sm:p-7">
-        <h3 className="font-extrabold text-gray-900 font-display mb-4">Credit / Debit a Wallet</h3>
+      <div className="admin-card p-3.5 sm:p-4">
+        <h3 className="font-extrabold text-[13.5px] text-gray-900 mb-3">Credit / Debit a Wallet</h3>
 
         {selectedUser ? (
-          <div className="flex items-center justify-between p-3 bg-admin-blue-soft border border-admin-blue/20 rounded-xl mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark">
+          <div className="flex items-center justify-between p-2.5 bg-admin-blue-soft border border-admin-blue/20 rounded-lg mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10.5px] font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark">
                 {selectedUser.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div>
@@ -130,19 +130,19 @@ export default function AdminWallet() {
             <button onClick={() => { setSelectedUser(null); setQuery(''); }} className="text-xs font-bold text-gray-400 hover:text-gray-600">Change</button>
           </div>
         ) : (
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <div className="relative mb-3">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search a user by name or email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-admin-blue text-sm"
+              className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-admin-blue text-[12.5px]"
             />
             {isSearching && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400" />}
             {results.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
                 {results.map((u) => (
-                  <button key={u._id} onClick={() => { setSelectedUser(u); setResults([]); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 text-left">
+                  <button key={u._id} onClick={() => { setSelectedUser(u); setResults([]); }} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 text-left">
                     <UserIcon size={14} className="text-gray-400" />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{u.name}</p>
@@ -155,18 +155,18 @@ export default function AdminWallet() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5">
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount (₦)"
-            className="px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-admin-blue" />
+            className="px-2.5 py-2 bg-gray-50 border border-gray-100 rounded-lg text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue" />
           <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (required, logged to audit trail)"
-            className="px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-admin-blue" />
+            className="px-2.5 py-2 bg-gray-50 border border-gray-100 rounded-lg text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => handleAdjust('credit')} disabled={!selectedUser || !!busy} className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50">
-            {busy === 'credit' ? <Loader2 size={15} className="animate-spin" /> : <ArrowDownLeft size={15} />} Credit Wallet
+        <div className="grid grid-cols-2 gap-2.5">
+          <button onClick={() => handleAdjust('credit')} disabled={!selectedUser || !!busy} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-bold bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50">
+            {busy === 'credit' ? <Loader2 size={13} className="animate-spin" /> : <ArrowDownLeft size={13} />} Credit
           </button>
-          <button onClick={() => handleAdjust('debit')} disabled={!selectedUser || !!busy} className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50">
-            {busy === 'debit' ? <Loader2 size={15} className="animate-spin" /> : <ArrowUpRight size={15} />} Debit Wallet
+          <button onClick={() => handleAdjust('debit')} disabled={!selectedUser || !!busy} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-bold bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50">
+            {busy === 'debit' ? <Loader2 size={13} className="animate-spin" /> : <ArrowUpRight size={13} />} Debit
           </button>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function AdminWallet() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Adjustment History */}
         <div className="admin-card overflow-hidden">
-          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
+          <div className="px-3.5 sm:px-3 py-2 border-b border-gray-50 flex items-center gap-2">
             <History size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Adjustment History</h3>
           </div>
@@ -187,7 +187,7 @@ export default function AdminWallet() {
               {adjustments.map((a) => {
                 const user = typeof a.userId === 'object' ? a.userId : null;
                 return (
-                  <div key={a._id} className="flex items-center justify-between px-4 sm:px-5 py-3">
+                  <div key={a._id} className="flex items-center justify-between px-3.5 sm:px-3 py-2">
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{user?.name || user?.email || 'Customer'}</p>
                       <p className="text-[11px] text-gray-400">{formatDate(a.createdAt)}</p>
@@ -204,7 +204,7 @@ export default function AdminWallet() {
 
         {/* Wallet Audit Trail */}
         <div className="admin-card overflow-hidden">
-          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center gap-2">
+          <div className="px-3.5 sm:px-3 py-2 border-b border-gray-50 flex items-center gap-2">
             <ShieldCheck size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Wallet Audit Trail</h3>
           </div>
@@ -215,7 +215,7 @@ export default function AdminWallet() {
           ) : (
             <div className="divide-y divide-gray-50">
               {auditTrail.map((log) => (
-                <div key={log._id} className="px-4 sm:px-5 py-3">
+                <div key={log._id} className="px-3.5 sm:px-3 py-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-gray-900">{log.action === 'wallet.credit' ? 'Credit' : 'Debit'} · {log.targetLabel}</p>
                     <p className="text-[11px] text-gray-400">{formatDate(log.createdAt)}</p>

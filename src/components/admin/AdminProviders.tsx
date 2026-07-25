@@ -93,7 +93,7 @@ export default function AdminProviders() {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
         </div>
         <SkeletonList rows={4} />
       </div>
@@ -108,9 +108,9 @@ export default function AdminProviders() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Sub-tabs */}
-      <div role="tablist" aria-label="Provider Control Center sections" className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+      <div role="tablist" aria-label="Provider Control Center sections" className="flex bg-white p-1 rounded-lg border border-gray-100 shadow-sm overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -118,15 +118,15 @@ export default function AdminProviders() {
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 shrink-0',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11.5px] font-bold whitespace-nowrap transition-all shrink-0',
               activeTab === tab.id ? 'bg-admin-navy text-white' : 'text-gray-500 hover:bg-gray-50',
             )}
           >
-            <tab.icon size={15} /> {tab.label}
+            <tab.icon size={13} /> {tab.label}
           </button>
         ))}
-        <button onClick={() => load(true)} aria-label="Refresh" className="ml-auto p-2.5 text-gray-400 hover:text-admin-blue transition-colors shrink-0">
-          <RefreshCw size={15} />
+        <button onClick={() => load(true)} aria-label="Refresh" className="ml-auto p-2 text-gray-400 hover:text-admin-blue transition-colors shrink-0">
+          <RefreshCw size={13} />
         </button>
       </div>
 
@@ -143,7 +143,7 @@ export default function AdminProviders() {
 // ============================================================
 function OverviewTab({ data, onTest, testingProvider }: { data: ProviderDashboardResponse; onTest: (n: string) => void; testingProvider: string | null }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Alerts */}
       {data.alerts.length > 0 && (
         <div className="space-y-2">
@@ -155,7 +155,7 @@ function OverviewTab({ data, onTest, testingProvider }: { data: ProviderDashboar
             }[a.severity];
             const Icon = meta.icon;
             return (
-              <div key={i} className={cn('flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-semibold', meta.className)} role={a.severity === 'critical' ? 'alert' : undefined}>
+              <div key={i} className={cn('flex items-center gap-2.5 px-3 py-2 rounded-xl border text-sm font-semibold', meta.className)} role={a.severity === 'critical' ? 'alert' : undefined}>
                 <Icon size={16} className="shrink-0" /> {a.message}
               </div>
             );
@@ -175,7 +175,7 @@ function OverviewTab({ data, onTest, testingProvider }: { data: ProviderDashboar
 
 function ProviderCard({ provider: p, onTest, testing }: { provider: ProviderDashboardItem; onTest: (n: string) => void; testing: boolean }) {
   return (
-    <div className="admin-card p-5">
+    <div className="admin-card p-3.5">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-extrabold text-gray-900 text-sm font-display">{label(p.name)}</h3>
@@ -298,9 +298,9 @@ function ManagementTab({ data, onSaved, onTest, testingProvider }: {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Automatic routing indicator */}
-      <div className={cn('flex items-center gap-3 px-4 py-3 rounded-2xl border text-sm font-bold',
+      <div className={cn('flex items-center gap-3 px-3 py-2 rounded-xl border text-sm font-bold',
         manualOverride ? 'bg-admin-gold-soft/50 border-admin-gold text-admin-navy' : 'bg-green-50 border-green-100 text-green-700')}>
         {manualOverride ? <Radio size={16} /> : <Zap size={16} />}
         {manualOverride
@@ -308,7 +308,7 @@ function ManagementTab({ data, onSaved, onTest, testingProvider }: {
           : 'Automatic routing — purchases use priority order with failover'}
       </div>
 
-      <div className="admin-card p-5">
+      <div className="admin-card p-3.5">
         <h3 className="font-extrabold text-gray-900 mb-1 font-display">Priority Order &amp; Rotation</h3>
         <p className="text-xs text-gray-400 mb-4">Purchases try providers top-to-bottom, skipping any that are disabled or low on balance.</p>
 
@@ -350,7 +350,7 @@ function ManagementTab({ data, onSaved, onTest, testingProvider }: {
         </div>
       </div>
 
-      <div className="admin-card p-5">
+      <div className="admin-card p-3.5">
         <h3 className="font-extrabold text-gray-900 mb-1 font-display">Manual Provider Selection</h3>
         <p className="text-xs text-gray-400 mb-4">Force every purchase through one specific provider, bypassing priority order and failover entirely. Use for testing or routing around a known partial outage.</p>
         <div className="flex flex-wrap gap-2">
@@ -373,7 +373,7 @@ function ManagementTab({ data, onSaved, onTest, testingProvider }: {
         </div>
       </div>
 
-      <div className="admin-card p-5">
+      <div className="admin-card p-3.5">
         <h3 className="font-extrabold text-gray-900 mb-1 font-display">Balance Threshold</h3>
         <p className="text-xs text-gray-400 mb-4">A provider is treated as "low balance" and skipped once its balance falls below this amount.</p>
         <div className="relative max-w-xs">
@@ -389,7 +389,7 @@ function ManagementTab({ data, onSaved, onTest, testingProvider }: {
         <button
           onClick={handleSave}
           disabled={!isDirty || isSaving}
-          className="admin-btn-primary px-6 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+          className="admin-btn-primary px-3 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isSaving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
           {isSaving ? 'Saving…' : isDirty ? 'Save Settings' : 'Saved'}
@@ -474,7 +474,7 @@ function LogsTab({ providerNames }: { providerNames: string[] }) {
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by method, provider, or error..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-admin-blue text-sm transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-admin-blue text-[12.5px] transition-all"
             />
           </div>
           <button onClick={handleExport} disabled={visibleLogs.length === 0} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0">
@@ -518,28 +518,28 @@ function LogsTab({ providerNames }: { providerNames: string[] }) {
         ) : (
           <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left min-w-[720px]">
+              <table className="w-full text-left min-w-[680px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-4 py-3">Provider</th>
-                    <th className="px-4 py-3">Method</th>
-                    <th className="px-4 py-3">Result</th>
-                    <th className="px-4 py-3">Duration</th>
-                    <th className="px-4 py-3 text-right">Date</th>
+                    <th className="px-3 py-2">Provider</th>
+                    <th className="px-3 py-2">Method</th>
+                    <th className="px-3 py-2">Result</th>
+                    <th className="px-3 py-2">Duration</th>
+                    <th className="px-3 py-2 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm divide-y divide-gray-50">
+                <tbody className="text-[12.5px] divide-y divide-gray-50">
                   {visibleLogs.map((l) => (
                     <tr key={l._id} onClick={() => setSelected(l)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                      <td className="px-4 py-3 font-bold text-gray-900 text-xs">{label(l.provider)}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 font-mono">{l.method}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 font-bold text-gray-900 text-xs">{label(l.provider)}</td>
+                      <td className="px-3 py-2 text-xs text-gray-600 font-mono">{l.method}</td>
+                      <td className="px-3 py-2">
                         <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold', l.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600')}>
                           {l.success ? <CheckCircle2 size={10} /> : <XCircle size={10} />} {l.success ? 'Success' : 'Failed'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{l.durationMs}ms</td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(l.createdAt)}</td>
+                      <td className="px-3 py-2 text-xs text-gray-500">{l.durationMs}ms</td>
+                      <td className="px-3 py-2 text-right text-xs text-gray-400 whitespace-nowrap">{formatDate(l.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -548,7 +548,7 @@ function LogsTab({ providerNames }: { providerNames: string[] }) {
 
             <div className="md:hidden divide-y divide-gray-50">
               {visibleLogs.map((l) => (
-                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
+                <button key={l._id} onClick={() => setSelected(l)} className="w-full flex items-center gap-2.5 px-3 py-2 text-left active:bg-gray-50 transition-colors">
                   <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', l.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600')}>
                     {l.success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
                   </div>
@@ -569,7 +569,7 @@ function LogsTab({ providerNames }: { providerNames: string[] }) {
         {selected && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center', selected.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600')}>
+              <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center', selected.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600')}>
                 {selected.success ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
               </div>
               <div>
@@ -654,7 +654,7 @@ function AnalyticsTab({ data }: { data: ProviderDashboardResponse }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="admin-card p-5">
+        <div className="admin-card p-3.5">
           <h3 className="font-extrabold text-gray-900 text-sm mb-4 font-display">Success Rate (14 days)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData}>
@@ -673,7 +673,7 @@ function AnalyticsTab({ data }: { data: ProviderDashboardResponse }) {
           </ResponsiveContainer>
         </div>
 
-        <div className="admin-card p-5">
+        <div className="admin-card p-3.5">
           <h3 className="font-extrabold text-gray-900 text-sm mb-4 font-display">Average Response Time (14 days)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData}>
@@ -686,7 +686,7 @@ function AnalyticsTab({ data }: { data: ProviderDashboardResponse }) {
           </ResponsiveContainer>
         </div>
 
-        <div className="admin-card p-5">
+        <div className="admin-card p-3.5">
           <h3 className="font-extrabold text-gray-900 text-sm mb-4 font-display">Requests Per Day (14 days)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData}>
@@ -699,7 +699,7 @@ function AnalyticsTab({ data }: { data: ProviderDashboardResponse }) {
           </ResponsiveContainer>
         </div>
 
-        <div className="admin-card p-5">
+        <div className="admin-card p-3.5">
           <h3 className="font-extrabold text-gray-900 text-sm mb-4 font-display">Failure Trend (14 days)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData}>

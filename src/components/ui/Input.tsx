@@ -20,15 +20,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || autoId;
     const descId = `${inputId}-desc`;
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {label && (
-          <label htmlFor={inputId} className="text-[13px] font-bold text-gray-700 block">
+          <label htmlFor={inputId} className="text-[12.5px] font-semibold text-gray-600 block">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
               {icon}
             </span>
           )}
@@ -37,15 +37,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             aria-invalid={!!error}
             aria-describedby={error || hint ? descId : undefined}
-            className={`shb-input ${icon ? 'pl-11' : 'pl-4'} ${trailing ? 'pr-12' : ''} ${error ? 'shb-input-error' : ''} ${className}`}
+            className={`shb-input ${icon ? 'pl-10' : 'pl-3.5'} ${trailing ? 'pr-10' : ''} ${error ? 'shb-input-error' : ''} ${className}`}
             {...props}
           />
           {trailing && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailing}</span>
           )}
         </div>
-        {error && <p id={descId} role="alert" className="text-xs text-red-500 font-semibold">{error}</p>}
-        {!error && hint && <div id={descId} className="text-xs text-gray-400">{hint}</div>}
+        {error && <p id={descId} role="alert" className="text-[11.5px] text-red-500 font-semibold">{error}</p>}
+        {!error && hint && <div id={descId} className="text-[11.5px] text-gray-400">{hint}</div>}
       </div>
     );
   },

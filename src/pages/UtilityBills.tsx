@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tv, Zap, ArrowLeft, Loader2, AlertCircle, Wallet, CheckCircle2, PartyPopper, CreditCard } from 'lucide-react';
+import { Tv, Zap, ArrowLeft, Loader2, AlertCircle, Wallet, CheckCircle2, PartyPopper, CreditCard, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useLocation } from 'react-router-dom';
@@ -28,7 +28,7 @@ const ELEC_PROVIDERS = [
 ];
 
 const ELEC_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000];
-const STEPS = ['Select Provider', 'Enter Details', 'Confirm & Pay'];
+const STEPS = ['Provider', 'Details', 'Confirm'];
 
 export default function UtilityBills() {
   const { user, refreshUser } = useAuth();
@@ -119,46 +119,39 @@ export default function UtilityBills() {
 
   if (justPaid) {
     return (
-      <div className="max-w-md mx-auto py-16">
+      <div className="max-w-sm mx-auto py-14">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-16 h-16 rounded-3xl bg-green-50 flex items-center justify-center mx-auto mb-4">
-            <PartyPopper size={28} className="text-green-500" />
+          <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
+            <PartyPopper size={22} className="text-green-500" />
           </div>
-          <h2 className="shb-page-title mb-1.5">Payment sent!</h2>
+          <h2 className="shb-page-title mb-1">Payment sent!</h2>
           <p className="shb-body">Taking you to your receipt…</p>
-          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-5" size={20} />
+          <Loader2 className="animate-spin text-shb-gold-dark mx-auto mt-4" size={18} />
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 content-reveal pb-12">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0 pb-8">
       <PageHeader
-        title={isElectricity ? 'Electricity Bills' : 'TV Subscription'}
-        description={isElectricity ? 'Pay utility bills instantly from your wallet.' : 'Renew DStv, GOtv, StarTimes using wallet balance.'}
+        title={isElectricity ? 'Electricity' : 'TV Subscription'}
+        description={isElectricity ? 'Pay bills instantly from your wallet.' : 'Renew DStv, GOtv, StarTimes.'}
         icon={isElectricity ? Zap : Tv}
         backTo="/app"
       />
 
-      {/* Step indicator — same visual language as Buy Data */}
-      <div className="flex items-center justify-between px-1 sm:px-2">
+      {/* Slim breadcrumb — replaces the oversized circle-and-line stepper */}
+      <div className="flex items-center gap-1.5 text-[11px] font-bold">
         {STEPS.map((label, idx) => (
-          <div key={label} className="flex flex-col items-center relative flex-1">
-            <div className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all relative z-10',
-              idx < step ? 'bg-green-600 text-white' :
-              idx === step ? 'bg-shb-navy text-white ring-4 ring-shb-gold-soft/60' :
-              'bg-gray-200 text-gray-500',
+          <div key={label} className="flex items-center gap-1.5">
+            <span className={cn(
+              idx === step ? 'text-shb-navy' : idx < step ? 'text-green-600' : 'text-gray-300',
             )}>
-              {idx < step ? <CheckCircle2 size={14} /> : idx + 1}
-            </div>
-            <span className={cn('mt-1.5 text-[9px] font-bold uppercase tracking-widest text-center leading-tight', idx === step ? 'text-shb-navy' : 'text-gray-400')}>
+              {idx < step && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
               {label}
             </span>
-            {idx < STEPS.length - 1 && (
-              <div className={cn('absolute top-4 left-1/2 w-full h-[2px] -z-0', idx < step ? 'bg-green-600' : 'bg-gray-200')} />
-            )}
+            {idx < STEPS.length - 1 && <ChevronRight size={12} className="text-gray-300" />}
           </div>
         ))}
       </div>
@@ -166,30 +159,30 @@ export default function UtilityBills() {
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-sm text-red-700" role="alert">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            className="p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-[12px] text-red-700" role="alert">
+            <AlertCircle size={13} className="shrink-0 mt-0.5" />
             <span className="flex-1">{error}</span>
             <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="shb-card p-4 sm:p-6">
+      <div className="shb-card p-3.5">
         <AnimatePresence mode="wait">
 
           {step === 0 && (
             <motion.div key="s0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h2 className="shb-section-title mb-4">
-                {isElectricity ? 'Select Disco / PHCN' : 'Select TV Provider'}
+              <h2 className="shb-section-title mb-2.5">
+                {isElectricity ? 'Select Disco' : 'Select TV Provider'}
               </h2>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 {providers.map((p) => (
                   <button key={p.id} onClick={() => handleProviderSelect(p.id)}
-                    className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border-2 border-gray-100 hover:border-shb-gold transition-all duration-200 group touch-manipulation">
-                    <div className={cn('w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg sm:text-xl mb-3 group-hover:scale-110 transition-transform duration-200', p.bg)}>
+                    className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-gray-100 hover:border-shb-gold transition-all group touch-manipulation">
+                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[13px] mb-1.5 group-hover:scale-110 transition-transform', p.bg)}>
                       {p.logo}
                     </div>
-                    <span className="font-bold text-gray-900 text-sm text-center">{p.name}</span>
+                    <span className="font-bold text-gray-900 text-[11.5px] text-center leading-tight">{p.name}</span>
                   </button>
                 ))}
               </div>
@@ -198,40 +191,40 @@ export default function UtilityBills() {
 
           {step === 1 && activeProvider && (
             <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-5">
-                <button onClick={() => setStep(0)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
-                  <ArrowLeft size={18} className="text-gray-500" />
+              <div className="flex items-center gap-2.5 mb-3">
+                <button onClick={() => setStep(0)} className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors" aria-label="Back">
+                  <ArrowLeft size={16} className="text-gray-500" />
                 </button>
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-white font-black', activeProvider.bg)}>
+                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-[12px]', activeProvider.bg)}>
                   {activeProvider.logo}
                 </div>
                 <h2 className="shb-section-title">{activeProvider.name}</h2>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-2.5">
                 {!isElectricity && (
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 block">Select Package</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-700 block">Select Package</label>
                     {isLoadingPlans ? (
-                      <div className="flex items-center gap-2 py-6 text-gray-400">
-                        <Loader2 className="animate-spin" size={18} />
-                        <span className="text-sm">Loading packages...</span>
+                      <div className="flex items-center gap-2 py-3 text-gray-400">
+                        <Loader2 className="animate-spin" size={15} />
+                        <span className="text-[12.5px]">Loading packages…</span>
                       </div>
                     ) : cablePlans.length === 0 ? (
                       <EmptyState icon={Tv} title="No packages available" description="This provider has no packages loaded right now — try again shortly or contact support." />
                     ) : (
-                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                         {cablePlans.map((plan) => (
                           <button key={plan.id} onClick={() => setSelectedPlan(plan)}
-                            className={cn('w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition-all duration-200 text-left',
+                            className={cn('w-full flex items-center justify-between p-2.5 rounded-lg border transition-all text-left',
                               selectedPlan?.id === plan.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-shb-gold-soft')}>
                             <div>
-                              <p className="font-bold text-gray-900 text-sm">{plan.name}</p>
-                              {plan.validity && <p className="text-xs text-gray-400 mt-0.5">{plan.validity}</p>}
+                              <p className="font-bold text-gray-900 text-[13px]">{plan.name}</p>
+                              {plan.validity && <p className="text-[11px] text-gray-400 mt-0.5">{plan.validity}</p>}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-gray-900 text-sm">{formatNaira(plan.price)}</span>
-                              {selectedPlan?.id === plan.id && <CheckCircle2 size={17} className="text-shb-gold-dark" />}
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-gray-900 text-[13px]">{formatNaira(plan.price)}</span>
+                              {selectedPlan?.id === plan.id && <CheckCircle2 size={15} className="text-shb-gold-dark" />}
                             </div>
                           </button>
                         ))}
@@ -242,22 +235,22 @@ export default function UtilityBills() {
 
                 <Input
                   label={isElectricity ? 'Meter Number' : 'IUC / SmartCard Number'}
-                  icon={<CreditCard size={16} />}
+                  icon={<CreditCard size={15} />}
                   type="text"
                   inputMode="numeric"
                   placeholder={isElectricity ? 'Enter meter number' : 'Enter IUC / smartcard number'}
                   value={smartcard}
                   onChange={(e) => setSmartcard(e.target.value.replace(/[^0-9]/g, '').slice(0, 16))}
-                  className="font-mono tracking-widest"
+                  className="font-mono tracking-wide"
                 />
 
                 {isElectricity && (
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 block">Amount (₦)</label>
-                    <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-700 block">Amount (₦)</label>
+                    <div className="grid grid-cols-3 gap-1.5 mb-2">
                       {ELEC_AMOUNTS.map((a) => (
                         <button key={a} onClick={() => setAmount(String(a))}
-                          className={cn('px-3 py-1.5 rounded-xl text-sm font-bold border-2 transition-all duration-200',
+                          className={cn('py-1.5 rounded-lg text-[12px] font-bold border transition-all',
                             amount === String(a) ? 'border-shb-gold bg-shb-gold-soft/40 text-shb-gold-dark' : 'border-gray-100 text-gray-700 hover:border-shb-gold-soft')}>
                           {formatNaira(a)}
                         </button>
@@ -271,12 +264,12 @@ export default function UtilityBills() {
                 )}
               </div>
 
-              <div className="mt-6 p-3.5 bg-gray-50 rounded-xl flex items-start gap-2.5 text-xs text-gray-500">
-                <Wallet size={14} className="shrink-0 mt-0.5 text-shb-gold-dark" />
+              <div className="mt-3 p-2.5 bg-gray-50 rounded-lg flex items-start gap-2 text-[11.5px] text-gray-500">
+                <Wallet size={13} className="shrink-0 mt-0.5 text-shb-gold-dark" />
                 Payment will be deducted from your wallet balance.
               </div>
 
-              <Button onClick={() => setStep(2)} disabled={!canProceed} fullWidth size="lg" className="mt-5">
+              <Button onClick={() => setStep(2)} disabled={!canProceed} fullWidth size="lg" className="mt-3.5">
                 Preview Order
               </Button>
             </motion.div>
@@ -284,16 +277,16 @@ export default function UtilityBills() {
 
           {step === 2 && activeProvider && (
             <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="flex items-center gap-3 mb-5">
-                <button onClick={() => setStep(1)} className="p-2 hover:bg-gray-50 rounded-xl transition-colors" aria-label="Back">
-                  <ArrowLeft size={18} className="text-gray-500" />
+              <div className="flex items-center gap-2.5 mb-3">
+                <button onClick={() => setStep(1)} className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors" aria-label="Back">
+                  <ArrowLeft size={16} className="text-gray-500" />
                 </button>
                 <h2 className="shb-section-title">Confirm Order</h2>
               </div>
 
-              <div className="rounded-2xl p-5 mb-5 border bg-shb-gold-soft/20 border-shb-gold-soft">
-                <p className="shb-eyebrow mb-4 text-shb-gold-dark">Order Summary</p>
-                <div className="space-y-3 text-sm">
+              <div className="rounded-lg p-3 mb-3.5 border bg-shb-gold-soft/20 border-shb-gold-soft">
+                <p className="shb-eyebrow mb-2.5 text-shb-gold-dark">Order Summary</p>
+                <div className="space-y-2 text-[13px]">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Provider</span>
                     <span className="font-bold">{activeProvider.name}</span>
@@ -314,9 +307,9 @@ export default function UtilityBills() {
                       <span className="font-bold">{selectedPlan.validity}</span>
                     </div>
                   )}
-                  <div className="pt-3 border-t border-shb-gold-soft flex justify-between items-center">
+                  <div className="pt-2 border-t border-shb-gold-soft flex justify-between items-center">
                     <span className="font-bold text-gray-900">Total</span>
-                    <span className="text-2xl font-extrabold text-shb-navy">
+                    <span className="text-[17px] font-extrabold text-shb-navy">
                       {isElectricity ? formatNaira(Number(amount)) : formatNaira(selectedPlan?.price ?? 0)}
                     </span>
                   </div>
@@ -326,7 +319,7 @@ export default function UtilityBills() {
               <Button onClick={handlePay} loading={isProcessing} fullWidth size="lg">
                 {isProcessing ? 'Processing…' : 'Pay from Wallet'}
               </Button>
-              <button onClick={reset} className="w-full mt-3 text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors">Cancel</button>
+              <button onClick={reset} className="w-full mt-2.5 text-[12.5px] text-gray-400 hover:text-gray-600 py-1.5 transition-colors">Cancel</button>
             </motion.div>
           )}
 

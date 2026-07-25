@@ -191,10 +191,10 @@ export default function AdminUserDetailDrawer({
       ) : !data ? (
         <EmptyState tone="admin" icon={UserIcon} title="Couldn't load this user" />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Identity header */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[13px] bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
               {data.user.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
@@ -231,7 +231,7 @@ export default function AdminUserDetailDrawer({
 
           {/* OVERVIEW TAB */}
           {tab === 'overview' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <section>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Account Information</p>
                 <dl className="space-y-2 text-sm">
@@ -275,25 +275,25 @@ export default function AdminUserDetailDrawer({
 
               <section className="pt-4 border-t border-gray-50 space-y-2">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Account Actions</p>
-                <button onClick={handleStatusToggle} disabled={!!busy} className={cn('w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50',
+                <button onClick={handleStatusToggle} disabled={!!busy} className={cn('w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-bold transition-colors disabled:opacity-50',
                   data.user.status === 'active' ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-green-50 text-green-700 hover:bg-green-100')}>
                   {data.user.status === 'active' ? 'Suspend Account' : 'Activate Account'}
                   {busy === 'status' ? <Loader2 size={15} className="animate-spin" /> : data.user.status === 'active' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}
                 </button>
-                <button onClick={handleLockToggle} disabled={!!busy} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                <button onClick={handleLockToggle} disabled={!!busy} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
                   {data.user.isLocked ? 'Unlock Account' : 'Lock Account (Security)'}
                   {busy === 'lock' ? <Loader2 size={15} className="animate-spin" /> : data.user.isLocked ? <Unlock size={15} /> : <Lock size={15} />}
                 </button>
-                <button onClick={handleResetPassword} disabled={!!busy} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold bg-admin-blue-soft text-admin-blue hover:brightness-95 transition-all disabled:opacity-50">
+                <button onClick={handleResetPassword} disabled={!!busy} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-bold bg-admin-blue-soft text-admin-blue hover:brightness-95 transition-all disabled:opacity-50">
                   Send Password Reset Email
                   {busy === 'reset' ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}
                 </button>
                 {data.user.role !== 'admin' ? (
-                  <button onClick={() => handleRoleChange('admin')} disabled={!!busy} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold bg-admin-navy/5 text-admin-navy hover:bg-admin-navy/10 transition-colors disabled:opacity-50">
+                  <button onClick={() => handleRoleChange('admin')} disabled={!!busy} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-bold bg-admin-navy/5 text-admin-navy hover:bg-admin-navy/10 transition-colors disabled:opacity-50">
                     Promote to Admin <ShieldCheck size={15} />
                   </button>
                 ) : (
-                  <button onClick={() => handleRoleChange('customer')} disabled={!!busy} className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                  <button onClick={() => handleRoleChange('customer')} disabled={!!busy} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50">
                     Demote to Customer <UserIcon size={15} />
                   </button>
                 )}
@@ -314,10 +314,10 @@ export default function AdminUserDetailDrawer({
 
           {/* WALLET TAB */}
           {tab === 'wallet' && (
-            <div className="space-y-4">
-              <div className="rounded-2xl p-4 text-white bg-gradient-to-br from-admin-navy to-admin-navy-2">
+            <div className="space-y-3">
+              <div className="rounded-xl p-3.5 text-white bg-gradient-to-br from-admin-navy to-admin-navy-2">
                 <p className="text-admin-gold text-xs font-bold uppercase tracking-widest mb-1">Wallet Balance</p>
-                <p className="text-2xl font-extrabold font-display">{formatNaira(data.user.walletBalance)}</p>
+                <p className="text-[16px] font-extrabold font-display">{formatNaira(data.user.walletBalance)}</p>
               </div>
 
               <section>
@@ -339,7 +339,7 @@ export default function AdminUserDetailDrawer({
               <section className="pt-4 border-t border-gray-50">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Recent Transactions</p>
                 {data.recentTransactions.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-4 text-center">No transactions yet.</p>
+                  <p className="text-[11.5px] text-gray-400 py-2.5 text-center">No transactions yet.</p>
                 ) : (
                   <div className="space-y-1.5">
                     {data.recentTransactions.map((tx) => (
@@ -361,7 +361,7 @@ export default function AdminUserDetailDrawer({
 
           {/* ACTIVITY TAB — login history + admin action timeline */}
           {tab === 'activity' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <section>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><MapPin size={11} /> Login History</p>
                 {data.loginHistory.length === 0 ? (

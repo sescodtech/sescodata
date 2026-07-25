@@ -31,11 +31,11 @@ const ADMIN_EXTRA = [
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-shb-gold to-shb-gold-dark shadow-lg" style={{ boxShadow: 'var(--shadow-gold)' }}>
-        <span className="text-shb-navy font-extrabold text-lg sm:text-xl leading-none font-display">S</span>
+    <div className="flex items-center gap-2">
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-shb-gold to-shb-gold-dark shadow-md" style={{ boxShadow: 'var(--shadow-gold)' }}>
+        <span className="text-shb-navy font-extrabold text-[15px] leading-none font-display">S</span>
       </div>
-      <span className="font-display font-extrabold text-lg sm:text-xl tracking-tight text-shb-navy">SescoHub</span>
+      <span className="font-display font-extrabold text-[15px] tracking-tight text-shb-navy">SescoHub</span>
     </div>
   );
 }
@@ -48,14 +48,14 @@ function NavItem({ link, onClick }: { link: (typeof USER_LINKS)[0]; onClick?: ()
       onClick={onClick}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all touch-manipulation',
+          'flex items-center gap-2.5 px-2.5 py-2 text-[13px] font-semibold rounded-lg transition-all touch-manipulation',
           isActive
             ? 'bg-shb-navy text-white shadow-md'
             : 'text-gray-500 hover:bg-gray-50 hover:text-shb-navy',
         )
       }
     >
-      <link.icon size={18} />
+      <link.icon size={16} />
       {link.name}
     </NavLink>
   );
@@ -77,13 +77,13 @@ export default function DashboardLayout() {
   const roleLabel = isAdmin ? '⚡ Admin' : 'Customer';
 
   const UserPill = ({ className }: { className?: string }) => (
-    <div className={cn('p-3 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-3', className)}>
-      <div className="w-9 h-9 rounded-full flex items-center justify-center text-shb-navy text-sm font-extrabold shrink-0 bg-gradient-to-br from-shb-gold-soft to-shb-gold">
+    <div className={cn('p-2.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2.5', className)}>
+      <div className="w-8 h-8 rounded-full flex items-center justify-center text-shb-navy text-[12.5px] font-extrabold shrink-0 bg-gradient-to-br from-shb-gold-soft to-shb-gold">
         {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-sm text-gray-900 truncate">{user?.name}</p>
-        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{roleLabel}</p>
+        <p className="font-bold text-[13px] text-gray-900 truncate">{user?.name}</p>
+        <p className="text-[9.5px] text-gray-400 font-bold uppercase tracking-widest">{roleLabel}</p>
       </div>
     </div>
   );
@@ -91,14 +91,14 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* ── Mobile Top Bar ────────────────────────────────────── */}
-      <header className="flex md:hidden items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+      <header className="flex md:hidden items-center justify-between px-3.5 py-2.5 bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
         <Logo />
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+          className="p-1.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
           aria-label="Toggle menu"
         >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
 
@@ -118,27 +118,27 @@ export default function DashboardLayout() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed inset-y-0 left-0 w-72 bg-white z-50 flex flex-col shadow-2xl"
+              className="fixed inset-y-0 left-0 w-64 bg-white z-50 flex flex-col shadow-2xl"
             >
-              <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                 <Logo />
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 text-gray-400" aria-label="Close menu">
-                  <X size={22} />
+                  <X size={18} />
                 </button>
               </div>
 
-              <UserPill className="mx-4 mt-4" />
+              <UserPill className="mx-3 mt-3" />
 
-              <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+              <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
                 {links.map((link) => (
                   <NavItem key={link.to} link={link} onClick={() => setIsMobileMenuOpen(false)} />
                 ))}
               </nav>
 
-              <div className="p-4 border-t border-gray-100">
+              <div className="p-3 border-t border-gray-100">
                 <button
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-3 py-3 text-sm font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                  className="flex items-center gap-2.5 w-full px-2.5 py-2 text-[13px] font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"
                 >
                   <LogOut size={18} />
                   Sign Out
@@ -151,25 +151,25 @@ export default function DashboardLayout() {
 
       <div className="flex flex-1">
         {/* ── Desktop Sidebar ───────────────────────────────────── */}
-        <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 fixed h-full z-30 shadow-sm">
-          <div className="p-6 flex-1 overflow-y-auto">
-            <div className="mb-8">
+        <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 fixed h-full z-30 shadow-sm">
+          <div className="p-4 flex-1 overflow-y-auto">
+            <div className="mb-5">
               <Logo />
             </div>
 
-            <UserPill className="mb-6" />
+            <UserPill className="mb-4" />
 
-            <nav className="space-y-1">
+            <nav className="space-y-0.5">
               {links.map((link) => (
                 <NavItem key={link.to} link={link} />
               ))}
             </nav>
           </div>
 
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-3 border-t border-gray-100">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+              className="flex items-center gap-2.5 w-full px-2.5 py-2 text-[13px] font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"
             >
               <LogOut size={18} />
               Sign Out
@@ -178,8 +178,8 @@ export default function DashboardLayout() {
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────── */}
-        <main className="flex-1 md:ml-64 min-h-screen">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <main className="flex-1 md:ml-56 min-h-screen">
+          <div className="p-3.5 md:p-6 max-w-[1400px] mx-auto">
             <Outlet />
           </div>
         </main>

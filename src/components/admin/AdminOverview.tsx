@@ -29,13 +29,17 @@ function KpiCard({ label, value, sub, icon: Icon, tone = 'blue' }: {
     navy: 'bg-admin-navy/5 text-admin-navy',
   };
   return (
-    <div className="admin-card p-4 group hover:-translate-y-0.5 transition-all">
-      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform', toneClasses[tone])}>
-        <Icon size={18} />
+    <div className="admin-card p-3.5 min-h-[112px] flex flex-col justify-between group hover:-translate-y-0.5 transition-all">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+        <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform', toneClasses[tone])}>
+          <Icon size={14} />
+        </div>
       </div>
-      <p className="text-[10.5px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-xl font-extrabold text-gray-900 tracking-tight font-display">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      <div>
+        <p className="text-[19px] font-extrabold text-gray-900 tracking-tight font-display leading-tight">{value}</p>
+        {sub && <p className="text-[11px] text-gray-400 mt-1 truncate">{sub}</p>}
+      </div>
     </div>
   );
 }
@@ -116,9 +120,9 @@ export default function AdminOverview() {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
-        <Skeleton className="h-80 rounded-2xl" />
+        <Skeleton className="h-80 rounded-xl" />
       </div>
     );
   }
@@ -126,7 +130,7 @@ export default function AdminOverview() {
   if (error) {
     return (
       <EmptyState tone="admin" icon={AlertCircle} title={error} action={
-        <button onClick={() => load(period)} className="admin-btn-primary mt-2 px-5 py-2 text-sm">Try Again</button>
+        <button onClick={() => load(period)} className="admin-btn-primary mt-2 px-3.5 py-2 text-sm">Try Again</button>
       } />
     );
   }
@@ -134,7 +138,7 @@ export default function AdminOverview() {
   if (!stats) return null;
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="space-y-4 sm:space-y-8">
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400">Live data — refreshed on load.</p>
@@ -154,26 +158,23 @@ export default function AdminOverview() {
         </div>
       )}
 
-      {/* KPI Grid — row 1: business */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Grid — 2 cols phone, 4 cols tablet, 6 cols desktop per spec */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 gap-2.5">
         <KpiCard label="Total Users" value={stats.totalUsers.toLocaleString()} sub={`${stats.activeUsers} active (30d)`} icon={Users} tone="navy" />
-        <KpiCard label="Platform Wallet Float" value={formatNaira(stats.totalWalletBalance)} sub="Total customer balances" icon={Wallet} tone="blue" />
+        <KpiCard label="Wallet Float" value={formatNaira(stats.totalWalletBalance)} sub="Customer balances" icon={Wallet} tone="blue" />
         <KpiCard label="Today's Revenue" value={formatNaira(stats.todayRevenue)} sub={`${stats.todayTransactions} orders today`} icon={DollarSign} tone="green" />
-        <KpiCard label="Net Profit (all-time)" value={formatNaira(stats.profit)} sub={`${formatNaira(stats.revenue)} revenue`} icon={TrendingUp} tone="gold" />
-      </div>
-
-      {/* KPI Grid — row 2: transactions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard label="Net Profit" value={formatNaira(stats.profit)} sub={`${formatNaira(stats.revenue)} revenue`} icon={TrendingUp} tone="gold" />
         <KpiCard label="Total Transactions" value={stats.totalTransactions.toLocaleString()} icon={Package} tone="navy" />
         <KpiCard label="Successful" value={stats.delivered.toLocaleString()} icon={CheckCircle2} tone="green" />
         <KpiCard label="Pending" value={stats.pending.toLocaleString()} icon={Clock} tone="amber" />
         <KpiCard label="Failed" value={stats.failed.toLocaleString()} icon={XCircle} tone="red" />
+
       </div>
 
       {/* Chart + Providers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 admin-card p-5 sm:p-7">
-          <div className="flex items-center justify-between mb-6">
+        <div className="lg:col-span-2 admin-card p-3.5 sm:p-4">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-extrabold text-gray-900 font-display">Revenue</h3>
               <p className="text-xs text-gray-400 mt-0.5">
@@ -227,7 +228,7 @@ export default function AdminOverview() {
           )}
         </div>
 
-        <div className="admin-card p-5 sm:p-7">
+        <div className="admin-card p-3.5 sm:p-4">
           <div className="flex items-center gap-2 mb-5">
             <Zap size={16} className="text-admin-blue" />
             <h3 className="font-extrabold text-gray-900 font-display">Provider Health</h3>
@@ -243,7 +244,7 @@ export default function AdminOverview() {
       {/* Recent Transactions + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 admin-card overflow-hidden">
-          <div className="px-4 sm:px-5 py-3 border-b border-gray-50 flex items-center justify-between">
+          <div className="px-3.5 sm:px-3 py-2 border-b border-gray-50 flex items-center justify-between">
             <h3 className="font-extrabold text-gray-900 font-display">Recent Transactions</h3>
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last 8</span>
           </div>
@@ -252,7 +253,7 @@ export default function AdminOverview() {
           ) : (
             <div className="divide-y divide-gray-50">
               {recentTxns.map((tx) => (
-                <div key={tx._id || tx.id} className="flex items-center justify-between px-4 sm:px-5 py-3">
+                <div key={tx._id || tx.id} className="flex items-center justify-between px-3.5 sm:px-4 py-2.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
                       tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-admin-blue-soft text-admin-blue')}>
@@ -270,13 +271,13 @@ export default function AdminOverview() {
           )}
         </div>
 
-        <div className="admin-card p-5 sm:p-7 space-y-3">
+        <div className="admin-card p-3.5 sm:p-4 space-y-3">
           <h3 className="font-extrabold text-gray-900 font-display mb-2">Quick Actions</h3>
-          <button onClick={handleRefresh} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-admin-blue-soft hover:brightness-95 transition-all text-sm font-bold text-admin-blue">
+          <button onClick={handleRefresh} className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-admin-blue-soft hover:brightness-95 transition-all text-sm font-bold text-admin-blue">
             Refresh Dashboard <RefreshCw size={15} />
           </button>
           {stats.openTickets > 0 && (
-            <div className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-blue-50 text-sm font-bold text-blue-700">
+            <div className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-50 text-sm font-bold text-blue-700">
               {stats.openTickets} Open Ticket{stats.openTickets !== 1 ? 's' : ''} <Ticket size={15} />
             </div>
           )}
@@ -284,7 +285,7 @@ export default function AdminOverview() {
               intentionally not linked here yet rather than pointing at pages that don't exist. */}
           <div className="pt-2 space-y-2">
             {['User Management', 'Transaction Management', 'Product & Pricing', 'Settings'].map((label) => (
-              <div key={label} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-400">
+              <div key={label} className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 text-sm font-semibold text-gray-400">
                 {label}
                 <span className="text-[9px] font-black uppercase tracking-widest bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Next Module</span>
               </div>

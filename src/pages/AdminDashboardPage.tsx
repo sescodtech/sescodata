@@ -92,27 +92,27 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="admin-shell -m-4 md:-m-8 p-4 md:p-8 min-h-[calc(100vh-4rem)]" style={{ background: 'var(--color-admin-bg)' }}>
-      <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-500 pb-12 max-w-[1600px] mx-auto">
+    <div className="admin-shell -m-3.5 md:-m-6 p-3 md:p-5 min-h-[calc(100vh-4rem)]" style={{ background: 'var(--color-admin-bg)' }}>
+      <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-500 pb-8 max-w-[1600px] mx-auto">
         {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-xl bg-gradient-to-br from-admin-blue to-admin-blue-dark" style={{ boxShadow: 'var(--shadow-admin-blue)' }}>
-              <Building2 size={22} />
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-md bg-gradient-to-br from-admin-blue to-admin-blue-dark" style={{ boxShadow: 'var(--shadow-admin-blue)' }}>
+              <Building2 size={16} />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-admin-navy tracking-tight font-display">Business Control Center</h1>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-admin-gold-soft text-admin-gold">
-                  <Sparkles size={9} /> SescoHub
+                <h1 className="text-[14px] font-extrabold text-admin-navy tracking-tight font-display">Business Control Center</h1>
+                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-admin-gold-soft text-admin-gold">
+                  <Sparkles size={8} /> SescoHub
                 </span>
               </div>
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Operations Console</p>
+              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Operations Console</p>
             </div>
           </div>
 
           {/* Tab switcher */}
-          <div role="tablist" aria-label="Business Control Center sections" className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div role="tablist" aria-label="Business Control Center sections" className="flex bg-white p-1 rounded-lg border border-gray-100 shadow-sm overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -120,11 +120,11 @@ export default function AdminDashboardPage() {
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap',
-                  activeTab === tab.id ? 'bg-admin-blue text-white shadow-md' : 'text-gray-500 hover:text-admin-navy hover:bg-gray-50',
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[9.5px] font-black uppercase tracking-wide transition-all whitespace-nowrap shrink-0',
+                  activeTab === tab.id ? 'bg-admin-blue text-white shadow-sm' : 'text-gray-500 hover:text-admin-navy hover:bg-gray-50',
                 )}
               >
-                <tab.icon size={14} />
+                <tab.icon size={12} />
                 {tab.label}
               </button>
             ))}
@@ -162,13 +162,13 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === 'PRICING' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-4 sm:p-6">
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <div className="admin-card p-4 sm:p-8">
               <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
                 <DollarSign size={20} className="text-admin-blue" />
                 Global Category Markup
               </h3>
-              <p className="text-sm text-gray-500 mb-8">
+              <p className="text-sm text-gray-500 mb-5">
                 Baseline profit percentage applied to every product in a category. Individual products can override this — see Product Management below.
               </p>
 
@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
                   { id: 'recharge', label: 'Recharge Cards', icon: CreditCard },
                   { id: 'bills', label: 'Electricity / Bills', icon: Zap },
                 ].map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-admin-blue/30 transition-all">
+                  <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-admin-blue/30 transition-all">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 shadow-sm">
                         <p.icon size={18} />
@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-[11px] text-gray-400 mt-6">
+              <p className="text-[11px] text-gray-400 mt-4">
                 Changes save automatically as you type and apply to every purchase immediately — no separate "Apply" step.
               </p>
             </div>
@@ -245,17 +245,17 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'BRANDING' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
-            <div className="admin-card p-5 sm:p-6 max-w-2xl">
+            <div className="admin-card p-4 sm:p-8 max-w-2xl">
               <h3 className="text-lg font-bold text-admin-navy mb-1 flex items-center gap-2 font-display">
                 <Palette size={20} className="text-admin-blue" />
                 Brand Color
               </h3>
-              <p className="text-sm text-gray-500 mb-8">
+              <p className="text-sm text-gray-500 mb-5">
                 Sets the primary color used across the customer-facing app — buttons, links, active states, and highlights. Hover shades and soft backgrounds are generated automatically from this one color.
               </p>
 
-              <div className="flex items-center gap-4 mb-6">
-                <label className="relative w-16 h-16 rounded-2xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer shrink-0">
+              <div className="flex items-center gap-4 mb-4">
+                <label className="relative w-11 h-11 rounded-xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer shrink-0">
                   <input
                     type="color"
                     value={brandColor}
@@ -280,11 +280,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex items-center gap-3 mb-5 p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Preview</span>
                 <button
                   type="button"
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm"
+                  className="px-3.5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm"
                   style={{ background: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#2563EB' }}
                 >
                   Buy Data
@@ -304,7 +304,7 @@ export default function AdminDashboardPage() {
                 <button
                   onClick={handleSaveBranding}
                   disabled={savingBrand || !/^#[0-9A-Fa-f]{6}$/.test(brandColor)}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-admin-blue text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-admin-blue text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   <Check size={16} />
                   {savingBrand ? 'Saving…' : 'Save & apply site-wide'}

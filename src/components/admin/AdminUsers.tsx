@@ -93,19 +93,19 @@ export default function AdminUsers() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, email, or phone..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-admin-blue text-sm transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-admin-blue text-[12.5px] transition-all"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Filters <ChevronDown size={14} className={cn('transition-transform', showFilters && 'rotate-180')} />
           </button>
-          <button onClick={load} disabled={isLoading} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+          <button onClick={load} disabled={isLoading} className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
             <RefreshCw size={14} className={cn(isLoading && 'animate-spin')} />
           </button>
-          <button onClick={handleExport} disabled={users.length === 0} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+          <button onClick={handleExport} disabled={users.length === 0} className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
             <Download size={14} /> <span className="hidden sm:inline">Export CSV</span>
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function AdminUsers() {
                 <select
                   value={f.value}
                   onChange={(e) => f.set(e.target.value)}
-                  className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize"
+                  className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[11.5px] font-semibold outline-none focus:ring-2 focus:ring-admin-blue capitalize"
                 >
                   {f.options.map((o) => <option key={o} value={o}>{o ? o.replace('_', ' ') : 'All'}</option>)}
                 </select>
@@ -134,13 +134,13 @@ export default function AdminUsers() {
 
       {/* Bulk actions bar */}
       {selected.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-admin-navy text-white rounded-xl">
+        <div className="flex items-center justify-between px-3 py-2 bg-admin-navy text-white rounded-xl">
           <span className="text-sm font-bold">{selected.length} selected</span>
           <div className="flex gap-2">
-            <button onClick={() => handleBulkStatus('active')} disabled={bulkBusy} className="px-3 py-1.5 bg-green-500 rounded-lg text-xs font-bold hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+            <button onClick={() => handleBulkStatus('active')} disabled={bulkBusy} className="px-2.5 py-1.5 bg-green-500 rounded-md text-[11px] font-bold hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-1">
               <CheckCircle2 size={13} /> Activate
             </button>
-            <button onClick={() => handleBulkStatus('suspended')} disabled={bulkBusy} className="px-3 py-1.5 bg-red-500 rounded-lg text-xs font-bold hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+            <button onClick={() => handleBulkStatus('suspended')} disabled={bulkBusy} className="px-2.5 py-1.5 bg-red-500 rounded-md text-[11px] font-bold hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-1">
               <XCircle size={13} /> Suspend
             </button>
           </div>
@@ -156,28 +156,28 @@ export default function AdminUsers() {
         ) : (
           <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left min-w-[720px]">
+              <table className="w-full text-left min-w-[680px]">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="px-4 py-3 w-10">
+                    <th className="px-3 py-2 w-10">
                       <input type="checkbox" checked={selected.length === users.length && users.length > 0} onChange={toggleSelectAll} className="rounded" />
                     </th>
-                    <th className="px-4 py-3">User</th>
-                    <th className="px-4 py-3">Wallet</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">KYC</th>
-                    <th className="px-4 py-3">Joined</th>
+                    <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Wallet</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">KYC</th>
+                    <th className="px-3 py-2">Joined</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm divide-y divide-gray-50">
+                <tbody className="text-[12.5px] divide-y divide-gray-50">
                   {users.map((u) => (
                     <tr key={u._id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setDetailUserId(u._id)}>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={selected.includes(u._id)} onChange={() => setSelected((s) => s.includes(u._id) ? s.filter((id) => id !== u._id) : [...s, u._id])} className="rounded" />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10.5px] font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
                             {u.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -190,17 +190,17 @@ export default function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-gray-900 text-xs">{formatNaira(u.walletBalance)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 font-bold text-gray-900 text-xs">{formatNaira(u.walletBalance)}</td>
+                      <td className="px-3 py-2">
                         <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
                           u.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700')}>
                           {u.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <span className="text-[10px] font-bold text-gray-500 uppercase">{u.kycStatus.replace('_', ' ')}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{formatDate(u.createdAt)}</td>
+                      <td className="px-3 py-2 text-xs text-gray-400 whitespace-nowrap">{formatDate(u.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -210,7 +210,7 @@ export default function AdminUsers() {
             {/* Mobile card list — real adapted layout, not a shrunken table */}
             <div className="md:hidden divide-y divide-gray-50">
               {users.map((u) => (
-                <button key={u._id} onClick={() => setDetailUserId(u._id)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-gray-50 transition-colors">
+                <button key={u._id} onClick={() => setDetailUserId(u._id)} className="w-full flex items-center gap-2.5 px-3 py-2 text-left active:bg-gray-50 transition-colors">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black bg-gradient-to-br from-admin-blue to-admin-blue-dark shrink-0">
                     {u.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
