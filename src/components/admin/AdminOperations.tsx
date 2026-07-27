@@ -15,7 +15,7 @@ import ConfirmActionDialog from './ConfirmActionDialog';
 
 type QueueTab = 'FAILED' | 'PENDING' | 'MANUAL_REVIEW';
 const CATEGORY_OPTIONS = ['', 'data', 'airtime', 'cable', 'electricity', 'education', 'recharge'];
-const PROVIDER_OPTIONS = ['', 'gladtidings', 'cheapdatahub', 'jarapoint'];
+const PROVIDER_OPTIONS = ['', 'gladtidings']; // GladTidings-only launch
 
 function StatCard({ label, value, sub, icon: Icon, tone = 'blue' }: { label: string; value: string; sub?: string; icon: any; tone?: 'blue' | 'red' | 'amber' | 'green' | 'gold' }) {
   const toneClasses: Record<string, string> = {

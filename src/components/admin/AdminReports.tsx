@@ -42,8 +42,8 @@ const PERIODS: { id: ReportPeriod; label: string }[] = [
 ];
 
 const SERVICE_OPTIONS = ['', 'data', 'airtime', 'cable', 'electricity', 'education', 'recharge'];
-// The three real upstream API providers integrated by ProviderOrchestrator — same list AdminProviderController serves.
-const PROVIDER_OPTIONS = ['', 'gladtidings', 'cheapdatahub', 'jarapoint'];
+// GladTidings-only launch: the single real upstream API provider integrated by ProviderOrchestrator — same list AdminProviderController serves.
+const PROVIDER_OPTIONS = ['', 'gladtidings']; // GladTidings-only launch
 const STATUS_OPTIONS = ['', 'delivered', 'pending', 'failed'];
 
 const CHART_DEFS: { metric: ChartMetric; title: string; kind: 'area' | 'line' | 'bar' | 'pie' | 'stackedBar' }[] = [

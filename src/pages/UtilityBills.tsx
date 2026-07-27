@@ -18,8 +18,6 @@ const TV_PROVIDERS = [
   { id: 'startimes',         name: 'StarTimes', logo: 'S', bg: 'bg-red-700' },
 ];
 
-// Ids must match ProductService.ELECTRICITY_DISCOS / GladTidingsProvider's
-// discoMap exactly, since `disco` is sent straight through to the provider.
 const ELEC_PROVIDERS = [
   { id: 'ikedc', name: 'Ikeja Electric',     logo: 'I', bg: 'bg-shb-navy' },
   { id: 'ekedc', name: 'Eko Electric',       logo: 'E', bg: 'bg-shb-navy' },
@@ -31,6 +29,13 @@ const ELEC_PROVIDERS = [
 
 const ELEC_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000];
 const STEPS = ['Provider', 'Details', 'Confirm'];
+
+// GladTidings-only production launch (Provider Audit, Priority 7): no
+// verified GladTidings cable (DStv/GOtv/StarTimes) plan codes exist yet, so
+// Cable/TV purchases are temporarily disabled here rather than left
+// reachable and failing at checkout. Flip this back to false once real
+// GladTidings cable variation IDs are confirmed and wired into the catalog.
+const CABLE_TEMPORARILY_DISABLED = true;
 
 export default function UtilityBills() {
   const { user, refreshUser } = useAuth();
@@ -134,6 +139,20 @@ export default function UtilityBills() {
     );
   }
 
+  if (!isElectricity && CABLE_TEMPORARILY_DISABLED) {
+    return (
+      <div className="max-w-sm mx-auto py-14">
+        <div className="text-center">
+          <div className="w-11 h-11 rounded-xl bg-shb-gold-soft/40 flex items-center justify-center mx-auto mb-3">
+            <Tv size={22} className="text-shb-gold-dark" />
+          </div>
+          <h2 className="shb-page-title mb-1">TV Subscription temporarily unavailable</h2>
+          <p className="shb-body">We're setting this up and it'll be back shortly. Please check back soon.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0 pb-8">
       <PageHeader
@@ -213,7 +232,7 @@ export default function UtilityBills() {
                         <span className="text-[12.5px]">Loading packages…</span>
                       </div>
                     ) : cablePlans.length === 0 ? (
-                      <EmptyState icon={Tv} title="Temporarily unavailable" description="Cable TV subscriptions are offline for a scheduled upgrade. Please check back shortly, or contact support for help." />
+                      <EmptyState icon={Tv} title="No packages available" description="This provider has no packages loaded right now — try again shortly or contact support." />
                     ) : (
                       <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                         {cablePlans.map((plan) => (

@@ -20,8 +20,8 @@ export class AuthController {
 
   static async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
-      const result = await AuthService.login(email, password);
+      const { email, password, rememberMe } = req.body;
+      const result = await AuthService.login(email, password, !!rememberMe);
       res.json({ success: true, ...result });
       // Real login history — fire-and-forget, must never block login itself.
       LoginEvent.create({

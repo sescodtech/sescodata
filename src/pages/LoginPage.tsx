@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function LoginPage() {
 
     try {
       if (mode === 'login') {
-        const user = await login(email, password);
+        const user = await login(email, password, rememberMe);
         navigate(user?.backendRole === 'admin' ? '/app/admin' : '/app');
       } else if (mode === 'register') {
         if (password !== confirmPassword) {
@@ -216,6 +217,15 @@ export default function LoginPage() {
                   </div>
                   <span className="text-[11px] font-bold text-gray-500 shrink-0">{passwordStrength.label}</span>
                 </div>
+              )}
+              {mode === 'login' && (
+                <label className="flex items-center gap-2 pt-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-shb-gold-dark focus:ring-shb-gold-dark"
+                  />
+                  <span className="text-[13px] text-gray-600">Remember me for 7 days</span>
+                </label>
               )}
             </div>
           )}

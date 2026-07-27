@@ -5,10 +5,10 @@ import { ProviderSettings } from '../models/ProviderSettings';
 import { AuditLogService } from '../services/AuditLogService';
 import { User } from '../models/User';
 
-// GladTidings-only launch: this is the only provider the orchestrator will
-// ever register or attempt. Kept as an array (rather than a single literal)
-// so the admin Provider Control Center UI, which is data-driven off this
-// list, keeps working unmodified if a second provider is ever added back.
+// GLADTIDINGS-ONLY PRODUCTION LAUNCH: Jarapoint and CheapDataHub have been
+// fully removed from the orchestrator (see ProviderOrchestrator.ts) — this
+// list drives admin settings validation (priorityOrder/disabledProviders/
+// manualOverrideProvider) and must stay in sync with what's actually registered.
 const KNOWN_PROVIDERS = ['gladtidings'];
 
 async function getActor(req: any): Promise<{ id: string; name: string }> {

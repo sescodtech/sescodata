@@ -4,7 +4,8 @@ import crypto from 'crypto';
 import { User } from '../models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-12345';
-const TOKEN_EXPIRY = '7d';
+const TOKEN_EXPIRY_REMEMBER = '7d';
+const TOKEN_EXPIRY_SESSION = '1d'; // safety-net ceiling even if the browser somehow restores the session storage
 
 export class AuthService {
   static async hashPassword(password: string): Promise<string> {
@@ -15,13 +16,13 @@ export class AuthService {
     return await bcrypt.compare(password, hash);
   }
 
-  static generateToken(user: any): string {
+  static generateToken(user: any, rememberMe: boolean = false): string {
     const payload = {
       id: user._id,
       email: user.email,
       role: user.role
     };
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: rememberMe ? TOKEN_EXPIRY_REMEMBER : TOKEN_EXPIRY_SESSION });
   }
 
   static async register(userData: any) {
@@ -51,7 +52,7 @@ export class AuthService {
     return { user, token };
   }
 
-  static async login(email: string, password: string) {
+  static async login(email: string, password: string, rememberMe: boolean = false) {
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) throw new Error('Invalid email or password');
 
@@ -73,7 +74,7 @@ export class AuthService {
     user.lastLogin = new Date();
     await user.save({ validateModifiedOnly: true });
 
-    const token = this.generateToken(user);
+    const token = this.generateToken(user, rememberMe);
     return { user, token };
   }
 

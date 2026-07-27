@@ -20,7 +20,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -86,9 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await authApi.login(email, password);
-    tokenStore.set(res.token);
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    const res = await authApi.login(email, password, rememberMe);
+    tokenStore.set(res.token, rememberMe);
     const u = buildUser(res.user);
     setUser(u);
     return u; // Return user for immediate redirection

@@ -22,8 +22,6 @@ type Tab = 'overview' | 'management' | 'logs' | 'analytics';
 
 const PROVIDER_LABELS: Record<string, string> = {
   gladtidings: 'GladTidings',
-  cheapdatahub: 'CheapDataHub',
-  jarapoint: 'Jarapoint',
 };
 const label = (id: string) => PROVIDER_LABELS[id] || id;
 

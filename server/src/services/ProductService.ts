@@ -51,10 +51,6 @@ export const ELECTRICITY_DISCOS = [
   { id: 'ikedc', name: 'Ikeja Electric' },
   { id: 'ekedc', name: 'Eko Electric' },
   { id: 'aedc', name: 'Abuja Electric' },
-  // FIX (GladTidings-only launch): these two ids previously didn't match
-  // GladTidingsProvider.buyElectricity's discoMap ('phed' / 'kano'), so
-  // Port Harcourt and Kano purchases would always fail with "Unknown disco"
-  // even when everything else worked. Ids below now match the provider.
   { id: 'phed', name: 'Port Harcourt PHED' },
   { id: 'ibedc', name: 'Ibadan Disco' },
   { id: 'kano', name: 'Kano Disco' },
@@ -76,37 +72,72 @@ export class ProductService {
     bills: 8
   };
 
-  /**
-   * GLADTIDINGS-ONLY LAUNCH (Priority 1): the static Jarapoint/CheapDataHub
-   * data catalog (53 entries) and the 5 static Jarapoint-format cable plans
-   * have been removed entirely — their plan codes are foreign-provider
-   * formats that GladTidings rejects (see Priority-1 audit). Data plans now
-   * come exclusively from the live fetchGladtidingsPlans() call below.
-   * Cable has no verified GladTidings variation codes anywhere in this
-   * codebase, so it stays disabled (see PurchaseController.buyCable and
-   * UtilityBills.tsx) until real codes are sourced from GladTidings.
-   *
-   * The remaining static entries (airtime, exam pins, recharge cards) are
-   * genuinely provider-agnostic — GladTidingsProvider's buyAirtime/
-   * buyExamPin/buyRechargeCard never read `providerId` from the catalog at
-   * all, so these work correctly against GladTidings today. apiSource is
-   * tagged 'gladtidings' throughout since GladTidings is now the only
-   * provider this platform ever calls.
-   */
   private static readonly RAW: RawPlan[] = [
+    // ── DATA ──
+    // GladTidings-only launch (Production Stabilization + Provider Audit):
+    // every static Jarapoint/CheapDataHub data plan has been removed. Data
+    // plans now come exclusively from fetchGladtidingsPlans() below, which
+    // pulls real dataplan_id codes live from GladTidings' own /api/user/
+    // endpoint for MTN/Glo/Airtel/9mobile. See getAllPlans().
+    //
+    // The one previously-static "gladtidings" data entry (9mobile gifting)
+    // was also removed here rather than kept: its providerId followed the
+    // same slug convention as the removed Jarapoint entries, not the
+    // numeric-style dataplan_id the live GladTidings fetch actually returns,
+    // so it could not be confirmed as a genuine, working GladTidings plan
+    // code. If GladTidings' live catalog doesn't return a 9mobile plan,
+    // there simply won't be one in the customer catalog until it does —
+    // safer than shipping an unverified plan ID.
+
     // ── AIRTIME ──
+    // GladTidingsProvider.buyAirtime never uses providerId/plan codes at all
+    // (just network + phone + amount), so these already work against
+    // GladTidings regardless of label — relabeled from 'jarapoint' to
+    // 'gladtidings' purely for catalog accuracy under the single-provider launch.
     { id:'airtime_mtn',    name:'MTN Airtime',    validity:'', cat:'airtime', prov:'mtn',     providerId:'airtime_mtn', cost:100, planType:'airtime', apiSource:'gladtidings' },
     { id:'airtime_airtel', name:'Airtel Airtime', validity:'', cat:'airtime', prov:'airtel',  providerId:'airtime_airtel', cost:100, planType:'airtime', apiSource:'gladtidings' },
     { id:'airtime_glo',    name:'Glo Airtime',    validity:'', cat:'airtime', prov:'glo',     providerId:'airtime_glo', cost:100, planType:'airtime', apiSource:'gladtidings' },
     { id:'airtime_9mobile',name:'9mobile Airtime',validity:'', cat:'airtime', prov:'9mobile', providerId:'airtime_9mobile', cost:100, planType:'airtime', apiSource:'gladtidings' },
+
+    // ── CABLE ──
+    // NOT REMOVED, but excluded from the customer-facing catalog by
+    // getCatalog()/getPublicCatalog() (see TEMP_DISABLED_CATEGORIES below).
+    // These providerId values are still Jarapoint's format
+    // ('dstv_subscription_1_months_dstv_premium' etc.) — no verified
+    // GladTidings cable variation codes exist in this codebase. Kept here
+    // (rather than deleted) only so admin tooling and future re-enablement
+    // have the plan metadata on hand; they can never be purchased while
+    // 'cable' remains in TEMP_DISABLED_CATEGORIES.
+    { id:'dstv_premium', name:'DSTV Premium', validity:'1 Month', cat:'cable', prov:'dstv_subscription', providerId:'dstv_subscription_1_months_dstv_premium', cost:44500, planType:'cable', apiSource:'jarapoint' },
+    { id:'dstv_compact', name:'DSTV Compact', validity:'1 Month', cat:'cable', prov:'dstv_subscription', providerId:'dstv_subscription_1_months_dstv_compact', cost:30000, planType:'cable', apiSource:'jarapoint' },
+    { id:'dstv_confam',  name:'DSTV Confam',  validity:'1 Month', cat:'cable', prov:'dstv_subscription', providerId:'dstv_subscription_1_months_dstv_confam',  cost:12750, planType:'cable', apiSource:'jarapoint' },
+    { id:'gotv_supa',    name:'GOTV Supa',    validity:'1 Month', cat:'cable', prov:'gotv_subscription', providerId:'gotv_subscription_1_months_gotv_supa', cost:11400, planType:'cable', apiSource:'jarapoint' },
+    { id:'gotv_max',     name:'GOTV Max',     validity:'1 Month', cat:'cable', prov:'gotv_subscription', providerId:'gotv_subscription_1_months_gotv_max', cost:8500, planType:'cable', apiSource:'jarapoint' },
+
     // ── EXAM PINS ──
+    // GladTidingsProvider.buyExamPin only sends exam_name + quantity, never
+    // providerId — relabeled 'jarapoint' -> 'gladtidings' per Priority 5.
     { id:'waec_pin', name:'WAEC PIN', validity:'', cat:'education', prov:'waec', providerId:'waec', cost:3900, planType:'education', apiSource:'gladtidings' },
     { id:'neco_pin', name:'NECO PIN', validity:'', cat:'education', prov:'neco', providerId:'neco', cost:2700, planType:'education', apiSource:'gladtidings' },
+
     // ── RECHARGE CARDS ──
+    // GladTidingsProvider.buyRechargeCard ignores providerId too, using its
+    // own internal network+amount -> networkAmountId map — relabeled
+    // 'jarapoint' -> 'gladtidings' per Priority 5. Confirmed GladTidings'
+    // internal map has entries for MTN ₦100/₦200/₦500 (see GladTidingsProvider.ts).
     { id:'recharge_mtn_100', name:'MTN ₦100',  validity:'', cat:'recharge', prov:'mtn', providerId:'100', cost:100, planType:'recharge', apiSource:'gladtidings' },
     { id:'recharge_mtn_200', name:'MTN ₦200',  validity:'', cat:'recharge', prov:'mtn', providerId:'200', cost:200, planType:'recharge', apiSource:'gladtidings' },
     { id:'recharge_mtn_500', name:'MTN ₦500',  validity:'', cat:'recharge', prov:'mtn', providerId:'500', cost:500, planType:'recharge', apiSource:'gladtidings' },
   ];
+
+  /**
+   * Categories temporarily withheld from the customer-facing catalog for the
+   * GladTidings-only launch (Priority 7 of the provider audit): the plan
+   * metadata still exists in RAW for admin visibility, but no verified
+   * GladTidings product ID exists for these yet, so they're excluded here
+   * rather than left purchasable and failing at the provider.
+   */
+  private static readonly TEMP_DISABLED_CATEGORIES: string[] = ['cable'];
 
   private static async fetchGladtidingsPlans(): Promise<RawPlan[]> {
     const GLAD_KEY = process.env.GLADTIDINGS_API_KEY;
@@ -121,19 +152,46 @@ export class ProductService {
 
       const plans: RawPlan[] = [];
       const GTD_NET = { MTN_PLAN:'mtn', GLO_PLAN:'glo', AIRTEL_PLAN:'airtel', '9MOBILE_PLAN':'9mobile' };
+      // TEMP-DEBUG (Glo pricing/purchase investigation) — remove once confirmed stable.
+      console.log(`[TEMP-DEBUG][catalog] Dataplans top-level keys: ${Object.keys(Dataplans).join(',')}`);
 
       for (const [planKey, planGroups] of Object.entries(Dataplans)) {
         const prov = GTD_NET[planKey as keyof typeof GTD_NET];
         if (!prov) continue;
-        const raw = (planGroups as any).ALL || (planGroups as any)[Object.keys(planGroups as object)[0]];
-        if (!Array.isArray(raw)) continue;
+
+        // ROOT-CAUSE FIX: previously used `planGroups.ALL || planGroups[firstKey]`.
+        // Per GladTidings' own API doc, 'ALL' does exist for every network, but
+        // your live reseller dashboard shows Glo categories (SME, SPECIAL,
+        // TALKMORE) that aren't reflected in a stale 'ALL' bucket — so relying
+        // on 'ALL' alone can silently miss real, purchasable plans for a given
+        // network. Merge every array-valued sub-group instead so nothing is
+        // dropped, then dedupe by dataplan_id since 'ALL' (when present and
+        // current) typically already contains everything the category-specific
+        // groups (CORPORATE/SME/GIFTING) do — without deduping, each plan would
+        // otherwise show up twice in the catalog.
+        const groupKeys = Object.keys(planGroups as object);
+        const merged: any[] = groupKeys
+          .map((k) => (planGroups as any)[k])
+          .filter((v) => Array.isArray(v))
+          .flat();
+        const seen = new Set<string>();
+        const raw: any[] = [];
+        for (const item of merged) {
+          const key = String(item.dataplan_id || item.id);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          raw.push(item);
+        }
+        console.log(`[TEMP-DEBUG][catalog] ${planKey} (${prov}): sub-groups=${groupKeys.join(',')} merged=${merged.length} deduped=${raw.length}`);
+        if (raw.length === 0) continue;
+
         for (const item of raw) {
           const planId = item.dataplan_id || item.id;
           const cost = parseFloat(item.plan_amount || 0);
           const rawName = (item.plan || '').trim();
           if (!planId || !cost || !rawName) continue;
           plans.push({
-            id: 'gtd_' + rawName.toLowerCase().replace(/\s+/g, '_'),
+            id: 'gtd_' + prov + '_' + planId,
             name: rawName,
             validity: item.month_validate || '',
             cat: 'data',
@@ -158,8 +216,8 @@ export class ProductService {
       return [...this.RAW, ...this._dynamicCache.plans];
     }
     try {
-      // GladTidings-only launch: this live fetch is now the sole source of
-      // Data plans. No other provider's catalog is ever merged in.
+      // GladTidings-only launch: this is now the ONLY source of Data plans.
+      // No Jarapoint/CheapDataHub fan-out — see fetchGladtidingsPlans() above.
       const gtdPlans = await this.fetchGladtidingsPlans();
       const staticIds = new Set(this.RAW.map(p => p.id));
       const dynamic = gtdPlans.filter(p => !staticIds.has(p.id));
@@ -208,6 +266,11 @@ export class ProductService {
           visible: override?.visible ?? true,
         };
       })
+      // GladTidings-only launch: categories with no verified GladTidings
+      // product ID (currently just 'cable') are excluded from the
+      // purchase-safe catalog entirely, so buyCable can never resolve a
+      // product and no customer can reach a failed purchase.
+      .filter((p) => !this.TEMP_DISABLED_CATEGORIES.includes(p.category))
       .filter((p) => p.enabled);
   }
 

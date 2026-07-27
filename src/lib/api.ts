@@ -26,9 +26,9 @@ const providerAliasMap: Record<string, string[]> = {
   ikedc: ['ikedc', 'ikejaelectric', 'ikejaelectricity'],
   ekedc: ['ekedc', 'ekoelectric', 'ekoelectricity'],
   aedc: ['aedc', 'abujaelectric', 'abujaelectricity'],
-  phed: ['phed', 'phden', 'portharcourtelectricity'],
+  phden: ['phden', 'portharcourtelectricity'],
   ibedc: ['ibedc', 'ibadandisco', 'ibadanelectricity'],
-  kano: ['kano', 'kedco', 'kanodisco', 'kanoelectricity'],
+  kedco: ['kedco', 'kanodisco', 'kanoelectricity'],
 };
 
 export const matchesProvider = (product: Product, providerId: string) => {
@@ -44,10 +44,26 @@ export const matchesProvider = (product: Product, providerId: string) => {
 };
 
 // ── Token storage ─────────────────────────────────────────────
+// Default (no "Remember me"): sessionStorage — cleared when the browser/tab
+// is closed, so the user must sign in again next time, matching how most
+// platforms behave without an explicit "stay signed in" opt-in.
+// "Remember me" checked: localStorage — persists across browser restarts,
+// paired with a longer-lived backend token (see AuthService.generateToken).
 export const token = {
-  get: () => localStorage.getItem('dh_token'),
-  set: (t: string) => localStorage.setItem('dh_token', t),
-  clear: () => localStorage.removeItem('dh_token'),
+  get: () => sessionStorage.getItem('dh_token') || localStorage.getItem('dh_token'),
+  set: (t: string, rememberMe: boolean = false) => {
+    if (rememberMe) {
+      localStorage.setItem('dh_token', t);
+      sessionStorage.removeItem('dh_token');
+    } else {
+      sessionStorage.setItem('dh_token', t);
+      localStorage.removeItem('dh_token');
+    }
+  },
+  clear: () => {
+    localStorage.removeItem('dh_token');
+    sessionStorage.removeItem('dh_token');
+  },
 };
 
 // ── Base fetch helper ──────────────────────────────────────────
@@ -143,10 +159,10 @@ export const auth = {
       body: JSON.stringify({ name, email, password, phone }),
     }),
 
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, rememberMe: boolean = false) =>
     apiFetch<AuthResponse>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     }),
 
   requestPasswordReset: (email: string) =>
@@ -919,7 +935,7 @@ export const NETWORKS = [
 // actually select or submit.
 const NETWORK_PREFIXES: Record<string, string[]> = {
   mtn: ['0803', '0806', '0703', '0706', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916'],
-  glo: ['0805', '0807', '0811', '0815', '0905', '0915'],
+  glo: ['0705', '0805', '0807', '0811', '0815', '0905', '0915'],
   airtel: ['0802', '0808', '0812', '0708', '0701', '0902', '0901', '0904', '0907', '0912'],
   '9mobile': ['0809', '0817', '0818', '0908', '0909'],
 };

@@ -3,23 +3,20 @@ import { GladTidingsProvider } from './GladTidingsProvider';
 import { ProviderCallLog } from '../models/ProviderCallLog';
 import { ProviderSettings } from '../models/ProviderSettings';
 
-/**
- * GLADTIDINGS-ONLY LAUNCH: this platform intentionally supports a single
- * upstream provider now. JarapointProvider and CheapDataHubProvider are no
- * longer imported or instantiated, so no purchase can ever be attempted
- * against them, regardless of what an old env var or DB settings document
- * says — resolveActiveOrder() below hard-filters to known, registered
- * providers only, so 'jarapoint'/'cheapdatahub' entries left over from a
- * prior deploy's ProviderSettings document are silently ignored rather than
- * attempted and failing.
- */
+// GLADTIDINGS-ONLY PRODUCTION LAUNCH (Provider Audit, Priorities 3 & 4):
+// Jarapoint and CheapDataHub have been fully removed — GladTidingsProvider is
+// the only provider this orchestrator will ever register or call. There is
+// no fallback/failover to another upstream API; if GladTidings can't fulfil
+// a purchase, the purchase fails and is refunded (see PurchaseController),
+// full stop. This is intentional per the single-provider launch decision,
+// not an oversight.
 const ENV_DEFAULT_PRIORITY = (process.env.PROVIDER_PRIORITY || 'gladtidings')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
 
 /**
- * Fire-and-forget call logging for future Provider Analytics (Module 6).
+ * Fire-and-forget call logging for Provider Analytics / admin dashboard.
  * Never awaited by executeWithFailover's control flow — a logging failure
  * must never affect a real purchase attempt.
  */
@@ -63,38 +60,20 @@ export class ProviderOrchestrator {
     this.settingsCache = null;
   }
 
-  /**
-   * The actual provider order a live purchase will try right now, honoring
-   * manual override + disabled list, and always filtered down to providers
-   * that are actually registered in `this.providers` (currently: gladtidings
-   * only). This means a stale ProviderSettings document from before the
-   * GladTidings-only launch — e.g. one still listing 'jarapoint' or
-   * 'cheapdatahub' — can never cause a purchase attempt against a provider
-   * that no longer exists in this codebase.
-   */
+  /** The actual provider order a live purchase will try right now, honoring manual override + disabled list. */
   private async resolveActiveOrder(): Promise<string[]> {
     const settings = await this.getSettings();
-    const registered = (p: string) => this.providers.has(p);
     if (settings.manualOverrideProvider) {
-      // Manual override still respects "disabled" — an admin can't force
-      // traffic to a provider they've explicitly taken out of rotation.
-      if (!registered(settings.manualOverrideProvider) || settings.disabledProviders.includes(settings.manualOverrideProvider)) {
-        return [];
-      }
-      return [settings.manualOverrideProvider];
+      return settings.disabledProviders.includes(settings.manualOverrideProvider) ? [] : [settings.manualOverrideProvider];
     }
-    return settings.priorityOrder.filter((p: string) => registered(p) && !settings.disabledProviders.includes(p));
+    return settings.priorityOrder.filter((p: string) => !settings.disabledProviders.includes(p));
   }
 
   /**
    * Real provider health for the admin dashboard — reuses the exact same
-   * provider instances and minBalance threshold that executeWithFailover
-   * already checks on every live purchase. Previously the admin endpoint
-   * for this returned hardcoded fake data ("Online", "99.9%") regardless
-   * of what was actually happening; this calls the real getBalance() on
-   * each provider, the same call already made in production on every order.
-   * Shows every configured provider (including disabled ones, flagged as
-   * such) so the admin sees the full picture, not just the active rotation.
+   * provider instance and minBalance threshold that executeWithFailover
+   * already checks on every live purchase. Calls the real getBalance() on
+   * GladTidings, the same call already made in production on every order.
    */
   async getProviderHealth() {
     const settings = await this.getSettings();
@@ -144,35 +123,21 @@ export class ProviderOrchestrator {
     }
   }
 
+  /**
+   * GladTidings-only: no preferredProvider parameter anymore — there is
+   * only ever one provider registered, so there is nothing to prefer among.
+   * The loop below is kept (rather than a single direct call) only because
+   * it already handles the balance check, structured logging, and
+   * ProviderCallLog write path cleanly — with one provider registered it
+   * runs exactly once.
+   */
   async executeWithFailover(
     serviceType: keyof IProvider,
-    params: any,
-    /**
-     * ROOT-CAUSE FIX (Production Stabilization, Priority 1): the provider
-     * this specific plan's `providerId` was actually formatted for (e.g.
-     * ProductService's `apiSource`). Previously executeWithFailover always
-     * attempted providers strictly in the global PROVIDER_PRIORITY order
-     * (gladtidings, cheapdatahub, jarapoint) regardless of which upstream
-     * API the plan code belonged to. Since ~98% of the catalog's plan IDs
-     * are Jarapoint-format strings, GladTidings was rejecting nearly every
-     * data/cable/exam-pin/recharge purchase before ever reaching a provider
-     * that understood the plan code, and if the fallback providers' API
-     * keys weren't configured on the new deployment, every purchase failed
-     * outright with "All available providers failed".
-     *
-     * When set, the preferred provider is tried first (still logged/counted
-     * exactly like any other attempt); the rest of the active order still
-     * runs afterward as a genuine failover, so redundancy is preserved.
-     */
-    preferredProvider?: string
+    params: any
   ): Promise<ProviderResponse> {
     const errors: any[] = [];
     const settings = await this.getSettings();
-    let activeOrder = await this.resolveActiveOrder();
-
-    if (preferredProvider && activeOrder.includes(preferredProvider)) {
-      activeOrder = [preferredProvider, ...activeOrder.filter((p) => p !== preferredProvider)];
-    }
+    const activeOrder = await this.resolveActiveOrder();
 
     if (activeOrder.length === 0) {
       return {
@@ -183,6 +148,10 @@ export class ProviderOrchestrator {
       };
     }
 
+    // TEMP-DEBUG (Production Stabilization, Priority 6) — remove this block
+    // once purchases are confirmed stable in production.
+    console.log(`[TEMP-DEBUG][purchase] method=${String(serviceType)} order=${activeOrder.join(',')} params=${JSON.stringify({ ...params, phone: params?.phone ? String(params.phone).replace(/.(?=.{4})/g, '*') : undefined })}`);
+
     for (const providerName of activeOrder) {
       const provider = this.providers.get(providerName);
       if (!provider) continue;
@@ -190,6 +159,7 @@ export class ProviderOrchestrator {
       // 1. Health & balance check
       const balanceCheck = await provider.getBalance();
       if (!balanceCheck.success || balanceCheck.balance < settings.minBalanceThreshold) {
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} skipped at balance check: success=${balanceCheck.success} balance=${balanceCheck.balance} error=${balanceCheck.error || 'none'} minRequired=${settings.minBalanceThreshold}`);
         errors.push({ provider: providerName, error: balanceCheck.error || 'Insufficient balance' });
         continue;
       }
@@ -199,6 +169,7 @@ export class ProviderOrchestrator {
       try {
         const result = await (provider as any)[serviceType](params);
         const durationMs = Date.now() - startedAt;
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} success=${!!result.success} reference=${result.reference || 'none'} message=${result.message || 'none'} rawResponse=${JSON.stringify(result.data || {}).slice(0, 1000)}`);
         logProviderCall({ provider: providerName, method: serviceType, success: !!result.success, durationMs, error: result.success ? undefined : result.error });
         if (result.success) {
           return { ...result, usedProvider: providerName };
@@ -206,16 +177,19 @@ export class ProviderOrchestrator {
         errors.push({ provider: providerName, error: result.error });
       } catch (e: any) {
         const durationMs = Date.now() - startedAt;
+        console.log(`[TEMP-DEBUG][purchase] provider=${providerName} method=${String(serviceType)} durationMs=${durationMs} EXCEPTION status=${e.response?.status || 'n/a'} body=${JSON.stringify(e.response?.data || {}).slice(0, 1000)} message=${e.message}`);
         logProviderCall({ provider: providerName, method: serviceType, success: false, durationMs, error: e.message });
         errors.push({ provider: providerName, error: e.message });
       }
     }
 
+    console.log(`[TEMP-DEBUG][purchase] GLADTIDINGS FAILED method=${String(serviceType)} errors=${JSON.stringify(errors)}`);
+
     return {
       success: false,
       error: 'Transaction could not be completed at the moment. Please try again shortly.',
       failReason: 'provider_error',
-      data: { errors } // raw per-provider errors kept here for admin/logging use only, never shown to the customer
+      data: { errors } // raw provider error kept here for admin/logging use only, never shown to the customer
     };
   }
 }
