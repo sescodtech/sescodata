@@ -17,9 +17,8 @@ export class ProductController {
       const { id } = req.params;
       const product = await ProductService.getProductById(id);
       if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-      // Never leak internal cost price or which upstream provider a plan
-      // code belongs to — this is a customer-facing endpoint.
-      const { costPrice, apiSource, ...publicProduct } = product;
+      // Never leak internal cost price to customers — this is a customer-facing endpoint.
+      const { costPrice, ...publicProduct } = product;
       res.json({ success: true, product: publicProduct });
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });

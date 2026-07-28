@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
  *
  * NOT YET CONSULTED by ProviderOrchestrator — this model exists so Module 6
  * has a real, seeded place to read/write from, but wiring it into
- * executeWithFailover's actual provider-selection logic is explicitly
+ * executePurchase's logic is explicitly
  * Module 6's job, not this refinement pass's. Today's failover behavior is
  * unchanged: it still reads PROVIDER_PRIORITY from the environment exactly
  * as before.

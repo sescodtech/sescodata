@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
  * "Provider Analytics" (success rate, volume, latency trends per provider
  * over time) has real historical data to work with as soon as Module 6
  * builds a UI for it, instead of starting from zero. Written additively
- * inside ProviderOrchestrator.executeWithFailover — logging an attempt
+ * inside ProviderOrchestrator.executePurchase — logging an attempt
  * never changes which provider is selected or what gets returned to the
  * caller; today's failover/selection behavior is unchanged.
  */

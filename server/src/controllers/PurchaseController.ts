@@ -8,10 +8,10 @@ import { EmailService } from '../services/EmailService';
 
 /**
  * Shared purchase pattern used by every buy-* endpoint:
- *   1. Debit wallet up-front (fails fast on insufficient balance).
- *   2. Attempt delivery through the provider orchestrator (with failover).
- *   3. On success: log a delivered transaction.
- *   4. On failure: refund the wallet and log a failed transaction.
+ *   1. Verify sufficient balance (read-only — no mutation yet).
+ *   2. Attempt delivery directly via GladTidingsProvider.
+ *   3. Only on confirmed success: debit the wallet and log a delivered transaction.
+ *   4. On failure: nothing was debited, so there's nothing to refund — just log a failed transaction.
  */
 async function executePurchase(opts: {
   userId: string;
@@ -25,18 +25,15 @@ async function executePurchase(opts: {
 }) {
   const { userId, userPrice, cost, productMeta, refPrefix, providerMethod, providerParams, successMessage } = opts;
 
-  // Pure balance mutation — throws (before any Transaction is written) if the
-  // wallet can't cover it. No ledger row is created for a rejected attempt.
-  await WalletService.debit(userId, userPrice);
+  const canAfford = await WalletService.hasSufficientBalance(userId, userPrice);
+  if (!canAfford) throw new Error('Insufficient wallet balance');
 
   const ref = `${refPrefix}-${Date.now()}`;
-
-  // TEMP-DEBUG (Production Stabilization, Priority 6) — remove once purchases are confirmed stable.
-  console.log(`[TEMP-DEBUG][controller] userId=${userId} ref=${ref} providerMethod=${providerMethod} productMeta=${JSON.stringify(productMeta)}`);
-
-  const result = await providerOrchestrator.executeWithFailover(providerMethod, { ...providerParams, ref });
+  const result = await providerOrchestrator.executePurchase(providerMethod, { ...providerParams, ref });
 
   if (result.success) {
+    await WalletService.debit(userId, userPrice);
+
     // Single ledger row per purchase: negative amount = what left the wallet.
     await Transaction.create({
       userId,
@@ -60,11 +57,10 @@ async function executePurchase(opts: {
     return { ok: true as const, ref, message: successMessage };
   }
 
-  // Delivery failed — refund the balance mutation, then log a single failed row.
-  await WalletService.credit(userId, userPrice);
+  // Delivery failed — nothing was ever debited, so just log the failed attempt.
   await Transaction.create({
     userId,
-    amount: -userPrice,
+    amount: 0,
     cost: 0,
     profit: 0,
     type: 'purchase',
@@ -81,21 +77,19 @@ async function executePurchase(opts: {
     if (user) EmailService.sendPurchaseFailed(user, { product: productMeta.name, amount: userPrice, ref, reason: result.error }).catch(() => {});
   }).catch(() => {});
 
-  return { ok: false as const, error: result.error || 'Delivery failed. You have been refunded.' };
+  return { ok: false as const, error: result.error || 'Transaction could not be completed. Please try again shortly.' };
 }
 
 /**
- * The delivery-attempt half of executePurchase, exported standalone for
- * Module 4's retry flow: it needs to re-attempt provider delivery for an
- * *existing* transaction (wallet debit and Transaction row already exist),
- * not create a brand new purchase. Reuses the identical
- * providerOrchestrator.executeWithFailover call — no duplicated delivery logic.
+ * Standalone export for the retry flow: re-attempts delivery for an
+ * *existing* transaction. Debit/refund handling for retries stays in that
+ * flow's own code — this just makes the GladTidings call.
  */
 export async function attemptProviderDelivery(
   providerMethod: 'buyData' | 'buyAirtime' | 'buyCable' | 'buyElectricity' | 'buyExamPin' | 'buyRechargeCard',
   providerParams: any,
 ) {
-  return providerOrchestrator.executeWithFailover(providerMethod, providerParams);
+  return providerOrchestrator.executePurchase(providerMethod, providerParams);
 }
 
 export class PurchaseController {

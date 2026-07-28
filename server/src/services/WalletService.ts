@@ -10,6 +10,12 @@ import { User } from '../models/User';
  * purchases, PaymentController for deposits).
  */
 export class WalletService {
+  static async hasSufficientBalance(userId: string, amount: number): Promise<boolean> {
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found');
+    return user.walletBalance >= amount;
+  }
+
   static async credit(userId: string, amount: number) {
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');

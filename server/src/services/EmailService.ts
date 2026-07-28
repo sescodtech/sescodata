@@ -2,8 +2,8 @@ import nodemailer from 'nodemailer';
 import axios from 'axios';
 import { emailTemplates } from '../emails/templates';
 
-const FROM_NAME = 'SescoHub';
-const FROM_EMAIL = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@sescohub.com';
+const FROM_NAME = process.env.EMAIL_FROM_NAME || 'SescoHub';
+const FROM_EMAIL = process.env.EMAIL_FROM || process.env.EMAIL_USER || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || '';
 
 let cachedTransporter: nodemailer.Transporter | null | undefined;
@@ -34,6 +34,10 @@ function getTransporter() {
  */
 async function deliver(to: string, subject: string, html: string) {
   if (!to) return;
+  if (!FROM_EMAIL) {
+    console.log(`[EmailService] EMAIL_FROM not set — skipping "${subject}" to ${to}. Set EMAIL_FROM to an address on a domain verified in your email provider (e.g. Resend).`);
+    return;
+  }
   try {
     const transporter = getTransporter();
     if (transporter) {

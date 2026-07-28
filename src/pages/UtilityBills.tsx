@@ -30,8 +30,7 @@ const ELEC_PROVIDERS = [
 const ELEC_AMOUNTS = [1000, 2000, 5000, 10000, 20000, 50000];
 const STEPS = ['Provider', 'Details', 'Confirm'];
 
-// GladTidings-only production launch (Provider Audit, Priority 7): no
-// verified GladTidings cable (DStv/GOtv/StarTimes) plan codes exist yet, so
+// No verified GladTidings cable (DStv/GOtv/StarTimes) plan codes exist yet, so
 // Cable/TV purchases are temporarily disabled here rather than left
 // reachable and failing at checkout. Flip this back to false once real
 // GladTidings cable variation IDs are confirmed and wired into the catalog.

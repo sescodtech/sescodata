@@ -29,7 +29,7 @@ export class AdminProviderController {
    * live health (real getBalance() calls), current settings (priority,
    * disabled, manual override), and real usage/success-rate stats computed
    * from ProviderCallLog — the same log every live purchase already writes
-   * to via ProviderOrchestrator.executeWithFailover. Nothing here is
+   * to via ProviderOrchestrator.executePurchase. Nothing here is
    * hardcoded or simulated.
    */
   static async getDashboard(_req: any, res: Response) {
