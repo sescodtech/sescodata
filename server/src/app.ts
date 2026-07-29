@@ -30,10 +30,23 @@ app.use(helmet());
 // Access-Control-Allow-Origin: * for literally any site. Requests with no
 // Origin header (curl, Postman, server-to-server, mobile apps) are always
 // allowed through since they aren't subject to browser CORS anyway.
+//
+// Fully env-driven — no domain is ever hardcoded here. To allow a new
+// frontend domain (custom domain, new Vercel URL, staging site, whatever),
+// just update ALLOWED_ORIGINS in the environment and redeploy — no code
+// change needed.
+//
+// ALLOWED_ORIGINS: comma-separated list, e.g.
+//   ALLOWED_ORIGINS=https://www.sescoconcept.name.ng,https://sescodata.vercel.app
+//
+// FRONTEND_URL is also folded in automatically (it's already used elsewhere
+// for email links), so you don't have to list it twice in both vars.
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'http://localhost:5173',
-  'http://localhost:3000',
+  ...(process.env.ALLOWED_ORIGINS || '').split(',').map((o) => o.trim()),
+  // localhost is only added outside production so local dev keeps working
+  // without needing to touch ALLOWED_ORIGINS.
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:3000'] : []),
 ].filter(Boolean) as string[];
 
 app.use(cors({

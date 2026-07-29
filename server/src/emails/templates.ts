@@ -174,7 +174,7 @@ export const emailTemplates = {
     };
   },
 
-  loginAlert(name: string, context: { ip?: string; userAgent?: string; time: Date }) {
+  loginAlert(name: string, context: { ip?: string; userAgent?: string; time: Date; resetUrl?: string }) {
     return {
       subject: 'New login to your SescoHub account',
       html: baseTemplate({
@@ -189,7 +189,7 @@ export const emailTemplates = {
           ])}
           <p style="margin:16px 0 0;color:${BRAND.muted};font-size:12px;">Wasn't you? Reset your password immediately and contact support.</p>`,
         ctaLabel: 'Not you? Reset Password',
-        ctaUrl: `${APP_URL}/reset-password`,
+        ctaUrl: context.resetUrl || `${APP_URL}/reset-password`,
       }),
     };
   },

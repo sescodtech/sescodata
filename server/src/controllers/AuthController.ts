@@ -29,11 +29,20 @@ export class AuthController {
         ip: AuditLogService.getClientIp(req),
         userAgent: req.headers['user-agent'],
       }).catch(() => {});
-      EmailService.sendLoginAlert(result.user, {
-        ip: AuditLogService.getClientIp(req),
-        userAgent: req.headers['user-agent'],
-        time: new Date(),
-      }).catch((err) => console.error('[login] failed to send login alert:', err));
+      // Generate a real reset token so the "wasn't you?" link in the alert
+      // email actually works, instead of pointing at a bare /reset-password
+      // page with no token/email params.
+      (async () => {
+        const dbUser = await User.findById(result.user._id);
+        if (!dbUser) return;
+        const { resetUrl } = await AuthService.generateResetToken(dbUser);
+        await EmailService.sendLoginAlert(result.user, {
+          ip: AuditLogService.getClientIp(req),
+          userAgent: req.headers['user-agent'],
+          time: new Date(),
+          resetUrl,
+        });
+      })().catch((err) => console.error('[login] failed to send login alert:', err));
     } catch (e: any) {
       res.status(401).json({ success: false, error: e.message });
     }

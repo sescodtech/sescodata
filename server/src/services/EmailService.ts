@@ -80,7 +80,7 @@ export class EmailService {
     await deliver(user.email, subject, html);
   }
 
-  static async sendLoginAlert(user: { name: string; email: string }, context: { ip?: string; userAgent?: string; time: Date }) {
+  static async sendLoginAlert(user: { name: string; email: string }, context: { ip?: string; userAgent?: string; time: Date; resetUrl?: string }) {
     const { subject, html } = emailTemplates.loginAlert(user.name, context);
     await deliver(user.email, subject, html);
   }

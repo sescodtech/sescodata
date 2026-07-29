@@ -87,7 +87,10 @@ async function apiFetch<T = any>(
     // fetch() itself throws for DNS failures, CORS-blocked requests, or the
     // backend being unreachable — this is distinct from an HTTP error status
     // and had no error path before, so it surfaced as an unhandled rejection.
-    throw new Error(`Could not reach the server at ${BASE_URL}. Check your connection or try again shortly.`);
+    // Message is intentionally generic and doesn't leak the backend URL —
+    // that's an implementation detail, not something an end user needs to see.
+    console.error('[api] network request failed:', BASE_URL + path, networkErr);
+    throw new Error('Unable to connect right now. Please check your internet connection and try again.');
   }
 
   // Read the body once, as text, regardless of what it turns out to be —
