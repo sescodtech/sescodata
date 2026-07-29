@@ -234,27 +234,29 @@ export class AdminController {
     }
   }
 
-  /** Global markup config now lives on ProductService, not per-tenant. */
+  /** Global markup config, persisted in MongoDB (MarkupSettings) — see ProductService.getMarkupConfig. */
   static async getGlobalMarkup(_req: Request, res: Response) {
-    res.json({ success: true, markup: ProductService.markup });
+    const markup = await ProductService.getMarkupConfig();
+    res.json({ success: true, markup });
   }
 
   static async setGlobalMarkup(req: any, res: Response) {
     try {
       const updates = req.body as Record<string, number>;
-      const before = { ...ProductService.markup };
+      const before = await ProductService.getMarkupConfig();
+      const validUpdates: Record<string, number> = {};
       for (const [category, pct] of Object.entries(updates)) {
-        if (typeof pct === 'number' && pct >= 0) {
-          ProductService.markup[category] = pct;
-        }
+        if (typeof pct === 'number' && pct >= 0) validUpdates[category] = pct;
       }
+      const after = await ProductService.setMarkupConfig(validUpdates);
+
       const actor = await getActor(req);
       AuditLogService.log({
         admin: actor, action: 'pricing.markup_update', targetType: 'system', targetLabel: 'Global Markup',
-        before, after: { ...ProductService.markup }, ip: AuditLogService.getClientIp(req),
+        before, after, ip: AuditLogService.getClientIp(req),
       });
 
-      res.json({ success: true, message: 'Markup updated successfully', markup: ProductService.markup });
+      res.json({ success: true, message: 'Markup updated successfully', markup: after });
     } catch (e: any) {
       res.status(400).json({ success: false, error: e.message });
     }

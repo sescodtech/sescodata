@@ -88,7 +88,6 @@ export class ProviderOrchestrator {
 
     const balanceCheck = await this.gladtidings.getBalance();
     if (!balanceCheck.success || balanceCheck.balance < settings.minBalanceThreshold) {
-      console.log(`[purchase] balance check failed: success=${balanceCheck.success} balance=${balanceCheck.balance} error=${balanceCheck.error || 'none'} minRequired=${settings.minBalanceThreshold}`);
       return { success: false, error: genericError, failReason: 'config_error', data: { error: balanceCheck.error } };
     }
 
@@ -96,13 +95,11 @@ export class ProviderOrchestrator {
     try {
       const result = await (this.gladtidings as any)[serviceType](params);
       const durationMs = Date.now() - startedAt;
-      console.log(`[purchase] method=${String(serviceType)} durationMs=${durationMs} success=${!!result.success} reference=${result.reference || 'none'}`);
       logProviderCall({ provider: 'gladtidings', method: serviceType, success: !!result.success, durationMs, error: result.success ? undefined : result.error });
       if (result.success) return { ...result, usedProvider: 'gladtidings' };
       return { success: false, error: genericError, failReason: result.failReason, data: { rawError: result.error } };
     } catch (e: any) {
       const durationMs = Date.now() - startedAt;
-      console.log(`[purchase] method=${String(serviceType)} durationMs=${durationMs} EXCEPTION status=${e.response?.status || 'n/a'} message=${e.message}`);
       logProviderCall({ provider: 'gladtidings', method: serviceType, success: false, durationMs, error: e.message });
       return { success: false, error: genericError, failReason: 'network_error', data: { rawError: e.message } };
     }

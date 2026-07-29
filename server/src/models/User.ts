@@ -16,6 +16,11 @@ const UserSchema = new mongoose.Schema({
 
   walletBalance: { type: Number, default: 0 },
 
+  // Set atomically at the start of a purchase attempt, cleared at the end.
+  // A second concurrent purchase request for the same user is rejected while
+  // this is in the future — see WalletService/PurchaseController.
+  purchaseLockUntil: { type: Date, default: null },
+
   status: {
     type: String,
     enum: ['active', 'suspended'],

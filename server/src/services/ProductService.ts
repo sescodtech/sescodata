@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ProductOverride } from '../models/ProductOverride';
+import { MarkupSettings } from '../models/MarkupSettings';
 
 export interface Product {
   id: string;
@@ -50,9 +51,9 @@ export class ProductService {
   private static readonly DYNAMIC_CACHE_TTL = 10 * 60 * 1000;
 
   // Single, platform-wide markup config (category -> % added on top of provider cost).
-  // Replaces the old per-tenant markupSettings map. Admin can update this at runtime
-  // via AdminController.setGlobalMarkup.
-  static markup: Record<string, number> = {
+  // Persisted in MongoDB (MarkupSettings) — see getMarkupConfig/setMarkupConfig below.
+  // A previous in-memory-only version of this was lost on every server restart.
+  private static readonly DEFAULT_MARKUP: Record<string, number> = {
     data: 10,
     airtime: 3,
     cable: 6,
@@ -60,6 +61,27 @@ export class ProductService {
     recharge: 3,
     bills: 8
   };
+  private static _markupCache: { data: Record<string, number>; expiresAt: number } | null = null;
+
+  static async getMarkupConfig(): Promise<Record<string, number>> {
+    if (this._markupCache && this._markupCache.expiresAt > Date.now()) return this._markupCache.data;
+    let doc = await MarkupSettings.findOne({ singleton: 'default' });
+    if (!doc) {
+      doc = await MarkupSettings.create({ singleton: 'default', markup: this.DEFAULT_MARKUP });
+    }
+    const data = { ...this.DEFAULT_MARKUP, ...Object.fromEntries(doc.markup as any) };
+    this._markupCache = { data, expiresAt: Date.now() + 10_000 };
+    return data;
+  }
+
+  /** Admin-facing write path — persists to MongoDB and invalidates the cache immediately so the next read (including this same request's response) reflects it. */
+  static async setMarkupConfig(updates: Record<string, number>): Promise<Record<string, number>> {
+    const current = await this.getMarkupConfig();
+    const merged = { ...current, ...updates };
+    await MarkupSettings.findOneAndUpdate({ singleton: 'default' }, { $set: { markup: merged } }, { upsert: true });
+    this._markupCache = null;
+    return merged;
+  }
 
   private static readonly RAW: RawPlan[] = [
     // ── DATA ──
@@ -191,9 +213,10 @@ export class ProductService {
    * resolvable here, since getProductById relies on this for purchases.
    */
   static async getCatalog() {
-    const [allPlans, overrides] = await Promise.all([
+    const [allPlans, overrides, markup] = await Promise.all([
       this.getAllPlans(),
       ProductOverride.find(),
+      this.getMarkupConfig(),
     ]);
     const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
 
@@ -201,7 +224,7 @@ export class ProductService {
       .map(plan => {
         const category = plan.cat || 'data';
         const override = overrideMap.get(plan.id);
-        const markupPct = override?.customMarkupPct ?? this.markup[category] ?? 10;
+        const markupPct = override?.customMarkupPct ?? markup[category] ?? 10;
         const computedPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
         const sellingPrice = override?.customSellingPrice ?? computedPrice;
 
@@ -250,16 +273,17 @@ export class ProductService {
    * unlike getCatalog() which is purchase-safe and excludes disabled items.
    */
   static async getFullCatalogForAdmin(): Promise<Product[]> {
-    const [allPlans, overrides] = await Promise.all([
+    const [allPlans, overrides, markup] = await Promise.all([
       this.getAllPlans(),
       ProductOverride.find(),
+      this.getMarkupConfig(),
     ]);
     const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
 
     const catalogProducts: Product[] = allPlans.map((plan) => {
       const category = plan.cat || 'data';
       const override = overrideMap.get(plan.id);
-      const markupPct = override?.customMarkupPct ?? this.markup[category] ?? 10;
+      const markupPct = override?.customMarkupPct ?? markup[category] ?? 10;
       const computedPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
       return {
         id: plan.id,
@@ -303,8 +327,11 @@ export class ProductService {
 
   /** Effective markup % for a given disco — a per-disco override if the admin set one, otherwise the global 'bills' category markup (identical to pre-Module-5 behavior). */
   static async getElectricityMarkup(disco: string): Promise<number> {
-    const override = await ProductOverride.findOne({ productId: `electricity_${disco}` });
-    return override?.customMarkupPct ?? this.markup['bills'] ?? 8;
+    const [override, markup] = await Promise.all([
+      ProductOverride.findOne({ productId: `electricity_${disco}` }),
+      this.getMarkupConfig(),
+    ]);
+    return override?.customMarkupPct ?? markup['bills'] ?? 8;
   }
 
   /** Whether an admin has disabled purchases for a given disco. Defaults to enabled — identical to pre-Module-5 behavior when no override exists. */

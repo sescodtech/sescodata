@@ -1,37 +1,56 @@
 import { User } from '../models/User';
 
 /**
- * Pure balance mutation only. FIXED: this used to also call Transaction.create()
- * internally, while PurchaseController *also* created its own Transaction record
- * for the same purchase — every purchase was logged twice (one negative "debit"
- * row, one positive "delivery" row), corrupting the Transactions page, wallet
- * ledger, and admin revenue stats. Ledger entries are now created exactly once,
- * by whichever controller has the full context (PurchaseController for
- * purchases, PaymentController for deposits).
+ * All balance mutations use atomic MongoDB $inc, guarded in the same query
+ * where relevant (debit requires walletBalance >= amount in the filter).
+ * This removes the read-check-write race that previously let two concurrent
+ * requests both read the same starting balance before either had committed.
+ * Ledger entries (Transaction rows) are created by the caller with full
+ * purchase context — this class only ever mutates the balance itself.
  */
 export class WalletService {
-  static async hasSufficientBalance(userId: string, amount: number): Promise<boolean> {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
-    return user.walletBalance >= amount;
+  /**
+   * Atomically acquires a short-lived per-user lock so a second concurrent
+   * purchase request (duplicate tap, browser retry, network retry, or a
+   * direct duplicate API call) is rejected outright instead of being
+   * processed twice. Acquisition and the expiry check happen in one
+   * findOneAndUpdate, so it's race-free even under real concurrency.
+   */
+  static async acquirePurchaseLock(userId: string, ttlMs: number = 20_000): Promise<boolean> {
+    const now = new Date();
+    const updated = await User.findOneAndUpdate(
+      { _id: userId, $or: [{ purchaseLockUntil: null }, { purchaseLockUntil: { $lt: now } }] },
+      { $set: { purchaseLockUntil: new Date(now.getTime() + ttlMs) } },
+      { new: true }
+    );
+    return !!updated;
   }
 
-  static async credit(userId: string, amount: number) {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
-    user.walletBalance += amount;
-    await user.save({ validateModifiedOnly: true });
-    return user.walletBalance;
+  static async releasePurchaseLock(userId: string): Promise<void> {
+    await User.updateOne({ _id: userId }, { $set: { purchaseLockUntil: null } });
   }
 
-  static async debit(userId: string, amount: number) {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
-    if (user.walletBalance < amount) {
-      throw new Error('Insufficient wallet balance');
+  static async credit(userId: string, amount: number): Promise<number> {
+    const updated = await User.findOneAndUpdate(
+      { _id: userId },
+      { $inc: { walletBalance: amount } },
+      { new: true }
+    );
+    if (!updated) throw new Error('User not found');
+    return updated.walletBalance;
+  }
+
+  /** Atomically debits only if the balance can cover it — insufficient-balance and the deduction are checked in a single database operation, not two separate steps. */
+  static async debit(userId: string, amount: number): Promise<number> {
+    const updated = await User.findOneAndUpdate(
+      { _id: userId, walletBalance: { $gte: amount } },
+      { $inc: { walletBalance: -amount } },
+      { new: true }
+    );
+    if (!updated) {
+      const exists = await User.exists({ _id: userId });
+      throw new Error(exists ? 'Insufficient wallet balance' : 'User not found');
     }
-    user.walletBalance -= amount;
-    await user.save({ validateModifiedOnly: true });
-    return user.walletBalance;
+    return updated.walletBalance;
   }
 }

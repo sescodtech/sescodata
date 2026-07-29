@@ -261,7 +261,7 @@ export class AdminProductController {
   }
 
   // ============================================================
-  // CATEGORY MARKUP (global) — reuses ProductService.markup, same as before
+  // CATEGORY MARKUP (global) — persisted via ProductService.getMarkupConfig/setMarkupConfig
   // ============================================================
 
   static async getCategories(_req: any, res: Response) {

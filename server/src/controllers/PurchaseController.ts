@@ -7,11 +7,19 @@ import { User } from '../models/User';
 import { EmailService } from '../services/EmailService';
 
 /**
- * Shared purchase pattern used by every buy-* endpoint:
- *   1. Verify sufficient balance (read-only — no mutation yet).
- *   2. Attempt delivery directly via GladTidingsProvider.
- *   3. Only on confirmed success: debit the wallet and log a delivered transaction.
- *   4. On failure: nothing was debited, so there's nothing to refund — just log a failed transaction.
+ * Production-safe purchase flow:
+ *   1. Atomically acquire a per-user purchase lock — a concurrent duplicate
+ *      request (double-tap, browser retry, network retry, duplicate API
+ *      call) is rejected immediately instead of being processed twice.
+ *   2. Atomically debit the wallet ($inc guarded by walletBalance >= amount
+ *      in the same query) — this reserves the funds before calling
+ *      GladTidings, closing the race window completely; no separate
+ *      check-then-write steps exist to race against.
+ *   3. Attempt delivery via GladTidingsProvider.
+ *   4. On success: log a delivered transaction.
+ *      On failure: atomically refund the exact amount just debited, log a
+ *      failed (refunded) transaction.
+ *   5. Always release the lock, success or failure.
  */
 async function executePurchase(opts: {
   userId: string;
@@ -25,59 +33,74 @@ async function executePurchase(opts: {
 }) {
   const { userId, userPrice, cost, productMeta, refPrefix, providerMethod, providerParams, successMessage } = opts;
 
-  const canAfford = await WalletService.hasSufficientBalance(userId, userPrice);
-  if (!canAfford) throw new Error('Insufficient wallet balance');
+  const gotLock = await WalletService.acquirePurchaseLock(userId);
+  if (!gotLock) throw new Error('A purchase is already in progress. Please wait a moment and check your transaction history before trying again.');
 
   const ref = `${refPrefix}-${Date.now()}`;
-  const result = await providerOrchestrator.executePurchase(providerMethod, { ...providerParams, ref });
 
-  if (result.success) {
+  try {
+    // Reserve funds up front — atomic, so a concurrent request for the same
+    // user cannot also pass this check before this one commits.
     await WalletService.debit(userId, userPrice);
 
-    // Single ledger row per purchase: negative amount = what left the wallet.
+    let result;
+    try {
+      result = await providerOrchestrator.executePurchase(providerMethod, { ...providerParams, ref });
+    } catch (e: any) {
+      result = { success: false, error: 'Transaction could not be completed at the moment. Please try again shortly.', reference: undefined, usedProvider: undefined };
+      console.error(`[purchase] ref=${ref} unexpected provider exception: ${e.message}`);
+    }
+
+    if (result.success) {
+      await Transaction.create({
+        userId,
+        amount: -userPrice,
+        cost,
+        profit: userPrice - cost,
+        type: 'purchase',
+        status: 'success',
+        deliveryStatus: 'delivered',
+        product: productMeta,
+        provider: { name: result.usedProvider, reference: result.reference },
+        providerMethod,
+        providerParams: { ...providerParams, ref },
+        paymentReference: ref
+      });
+
+      User.findById(userId).then((user) => {
+        if (user) EmailService.sendPurchaseSuccess(user, { product: productMeta.name, recipient: productMeta.recipient, amount: userPrice, ref }).catch(() => {});
+      }).catch(() => {});
+
+      return { ok: true as const, ref, message: successMessage };
+    }
+
+    // Delivery failed — refund the exact amount just reserved.
+    const balanceAfterRefund = await WalletService.credit(userId, userPrice);
+    console.log(`[purchase] ref=${ref} userId=${userId} FAILED and refunded amount=${userPrice} balanceAfterRefund=${balanceAfterRefund} reason=${result.error}`);
+
     await Transaction.create({
       userId,
-      amount: -userPrice,
-      cost,
-      profit: userPrice - cost,
+      amount: 0,
+      cost: 0,
+      profit: 0,
       type: 'purchase',
-      status: 'success',
-      deliveryStatus: 'delivered',
+      status: 'failed',
+      deliveryStatus: 'failed',
       product: productMeta,
-      provider: { name: result.usedProvider, reference: result.reference },
       providerMethod,
       providerParams: { ...providerParams, ref },
-      paymentReference: ref
+      paymentReference: ref,
+      failReason: result.error
     });
 
     User.findById(userId).then((user) => {
-      if (user) EmailService.sendPurchaseSuccess(user, { product: productMeta.name, recipient: productMeta.recipient, amount: userPrice, ref }).catch(() => {});
+      if (user) EmailService.sendPurchaseFailed(user, { product: productMeta.name, amount: userPrice, ref, reason: result.error }).catch(() => {});
     }).catch(() => {});
 
-    return { ok: true as const, ref, message: successMessage };
+    return { ok: false as const, error: result.error || 'Transaction could not be completed. Please try again shortly.' };
+  } finally {
+    await WalletService.releasePurchaseLock(userId);
   }
-
-  // Delivery failed — nothing was ever debited, so just log the failed attempt.
-  await Transaction.create({
-    userId,
-    amount: 0,
-    cost: 0,
-    profit: 0,
-    type: 'purchase',
-    status: 'failed',
-    deliveryStatus: 'failed',
-    product: productMeta,
-    providerMethod,
-    providerParams: { ...providerParams, ref },
-    paymentReference: ref,
-    failReason: result.error
-  });
-
-  User.findById(userId).then((user) => {
-    if (user) EmailService.sendPurchaseFailed(user, { product: productMeta.name, amount: userPrice, ref, reason: result.error }).catch(() => {});
-  }).catch(() => {});
-
-  return { ok: false as const, error: result.error || 'Transaction could not be completed. Please try again shortly.' };
 }
 
 /**
