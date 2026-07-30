@@ -10,7 +10,7 @@
 // any trailing '/api' (and trailing slashes) so BASE_URL is always just the
 // bare origin, no matter how the env var was set.
 const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api$/i, '');
+export const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api$/i, '');
 
 const normalizeProvider = (value?: string) =>
   String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
@@ -104,34 +104,46 @@ async function apiFetch<T = any>(
   const contentType = res.headers.get('content-type') || '';
 
   if (!rawBody) {
-    throw new Error(
-      res.ok
-        ? 'Server returned an empty response.'
-        : `Request failed (HTTP ${res.status} ${res.statusText || ''}). The server returned no response body — this usually means the request never reached the API (wrong base URL, or the route doesn't accept this method).`.trim()
-    );
+    const detail = `Request failed (HTTP ${res.status} ${res.statusText || ''}). Empty response body — likely wrong base URL or a route/method mismatch.`.trim();
+    if (res.ok) throw new Error('Something went wrong on our end. Please try again in a moment.');
+    console.error('[api] empty response body:', path, detail);
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
   }
 
   if (!contentType.includes('application/json')) {
     // Most commonly: the SPA's index.html (or some other HTML error page)
     // was returned instead of the API response — a routing/base-URL
-    // mismatch, not something the API itself produced.
+    // mismatch, not something the API itself produced. Logged for us,
+    // shown to the customer as a plain "try again" message.
     const looksLikeHtml = /^\s*</.test(rawBody);
-    throw new Error(
+    console.error(
+      '[api] non-JSON response:',
+      path,
       looksLikeHtml
-        ? `Request failed (HTTP ${res.status}). Received an HTML page instead of a JSON API response — this endpoint is likely being served by the wrong host (check VITE_API_URL / vercel.json rewrites) rather than the API.`
-        : `Request failed (HTTP ${res.status}). Expected JSON but received: ${rawBody.slice(0, 200)}`
+        ? `HTTP ${res.status} — received HTML instead of JSON (check VITE_API_URL / vercel.json rewrites)`
+        : `HTTP ${res.status} — expected JSON but received: ${rawBody.slice(0, 200)}`,
     );
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
   }
 
   let data: any;
   try {
     data = JSON.parse(rawBody);
   } catch {
-    throw new Error(`Request failed (HTTP ${res.status}). Response was not valid JSON.`);
+    console.error('[api] invalid JSON response:', path, rawBody.slice(0, 200));
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
   }
 
   if (!res.ok || data.success === false) {
-    throw new Error(data.error || data.message || `HTTP ${res.status}`);
+    // data.error / data.message are backend-authored, customer-facing
+    // messages already (e.g. "Insufficient wallet balance") — those pass
+    // through unchanged. Only the raw `HTTP {status}` fallback (which fires
+    // when the backend sends no message at all) is replaced with something
+    // a customer can actually act on.
+    const backendMessage = data.error || data.message;
+    if (backendMessage) throw new Error(backendMessage);
+    console.error('[api] request failed with no backend message:', path, res.status);
+    throw new Error('This request could not be completed. Please try again.');
   }
   return data as T;
 }

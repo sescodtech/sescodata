@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers } from '../lib/localPrefs';
+import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -199,8 +200,18 @@ export default function BuyAirtime() {
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-[12px] text-red-700">
-            <AlertCircle size={13} /> {error}
+            className="p-2.5 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2 text-[12px] text-red-700">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={13} /> {error}
+            </div>
+            <a
+              href={getSupportWhatsAppUrl('my airtime purchase failed')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="self-start text-[11.5px] font-bold underline hover:no-underline"
+            >
+              Contact Support on WhatsApp
+            </a>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { auth as authApi, wallet as walletApi, token as tokenStore, type AuthUser } from '../lib/api';
 
 type UIRole = 'USER' | 'ADMIN';
@@ -86,35 +86,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+  const login = useCallback(async (email: string, password: string, rememberMe: boolean = false) => {
     const res = await authApi.login(email, password, rememberMe);
     tokenStore.set(res.token, rememberMe);
     const u = buildUser(res.user);
     setUser(u);
     return u; // Return user for immediate redirection
-  };
+  }, []);
 
-  const register = async (name: string, email: string, password: string, phone?: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
     const res = await authApi.register(name, email, password, phone);
     tokenStore.set(res.token);
     const u = buildUser(res.user);
     setUser(u);
     return u; // Return user for immediate redirection
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     tokenStore.clear();
     localStorage.removeItem('dh_user');
     setUser(null);
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const me = await fetchMe();
     if (me) setUser(buildUser(me));
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, isLoading, login, register, logout, refreshUser }),
+    [user, isLoading, login, register, logout, refreshUser],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

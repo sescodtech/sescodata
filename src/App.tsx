@@ -1,9 +1,10 @@
 import { ReactNode, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useApplyBranding } from './lib/theme';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import FloatingSupportButtons from './components/FloatingSupportButtons';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 // Route-level code splitting: everything except the landing page and login
@@ -74,12 +75,35 @@ function PaymentCallbackPage() {
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Payment Issue</h1>
           <p className="text-gray-500 mb-8">Something went wrong with your payment. No funds were charged. Please try again.</p>
-          <a href="/app/buy-data" className="shb-btn-primary block w-full text-center">
+          <Link to="/app/wallet" className="shb-btn-primary block w-full text-center">
             Try Again
-          </a>
-          <a href="/app/transactions" className="block mt-3 text-sm text-gray-500 hover:underline">
+          </Link>
+          <Link to="/app/transactions" className="block mt-3 text-sm text-gray-500 hover:underline">
             View transactions
-          </a>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Loader2 className="text-amber-500 animate-spin" size={40} />
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Payment Processing</h1>
+          <p className="text-gray-500 mb-4">We're still confirming your payment with the bank. This can take a few minutes for bank transfers — your wallet will be credited automatically once it clears.</p>
+          {trxref && (
+            <div className="bg-gray-50 rounded-xl p-4 mb-8">
+              <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Reference</p>
+              <p className="font-mono text-sm text-gray-700 font-bold">{trxref}</p>
+            </div>
+          )}
+          <Link to="/app/wallet" className="shb-btn-primary block w-full text-center">
+            Go to Wallet
+          </Link>
         </div>
       </div>
     );
@@ -100,12 +124,12 @@ function PaymentCallbackPage() {
             <p className="font-mono text-sm text-gray-700 font-bold">{trxref}</p>
           </div>
         )}
-        <a href="/app/transactions" className="shb-btn-primary block w-full text-center">
-          View Transactions
-        </a>
-        <a href="/app" className="block mt-3 text-sm text-gray-500 hover:underline">
+        <Link to="/app/wallet" className="shb-btn-primary block w-full text-center">
+          Go to Wallet
+        </Link>
+        <Link to="/app" className="block mt-3 text-sm text-gray-500 hover:underline">
           Back to Dashboard
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -173,6 +197,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        <FloatingSupportButtons />
       </BrowserRouter>
     </AuthProvider>
   );

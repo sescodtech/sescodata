@@ -100,6 +100,11 @@ export class EmailService {
     await deliver(user.email, subject, html);
   }
 
+  static async sendDepositAmountMismatch(data: { userName: string; userEmail: string; expectedAmount: number; receivedAmount: number; reference: string }) {
+    const admin = emailTemplates.depositAmountMismatch(data);
+    await deliver(ADMIN_EMAIL, admin.subject, admin.html);
+  }
+
   static async sendContactFormNotifications(data: { name: string; email: string; message: string }) {
     const admin = emailTemplates.contactFormAdmin(data);
     const confirm = emailTemplates.contactFormConfirmation(data.name);

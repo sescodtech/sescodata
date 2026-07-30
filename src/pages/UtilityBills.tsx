@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
+import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 
 // IDs MUST match backend `provider` field exactly
 const TV_PROVIDERS = [
@@ -179,10 +180,20 @@ export default function UtilityBills() {
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-[12px] text-red-700" role="alert">
-            <AlertCircle size={13} className="shrink-0 mt-0.5" />
-            <span className="flex-1">{error}</span>
-            <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
+            className="p-2.5 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2 text-[12px] text-red-700" role="alert">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={13} className="shrink-0 mt-0.5" />
+              <span className="flex-1">{error}</span>
+              <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
+            </div>
+            <a
+              href={getSupportWhatsAppUrl('my bill payment failed')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="self-start text-[11.5px] font-bold underline hover:no-underline"
+            >
+              Contact Support on WhatsApp
+            </a>
           </motion.div>
         )}
       </AnimatePresence>

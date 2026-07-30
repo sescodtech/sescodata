@@ -266,6 +266,29 @@ export const emailTemplates = {
     };
   },
 
+  depositAmountMismatch(data: { userName: string; userEmail: string; expectedAmount: number; receivedAmount: number; reference: string }) {
+    const diff = data.receivedAmount - data.expectedAmount;
+    const diffLabel = diff > 0 ? `Overpaid by ${naira(diff)}` : `Underpaid by ${naira(Math.abs(diff))}`;
+    return {
+      subject: `Deposit amount mismatch \u2014 ${data.reference}`,
+      html: baseTemplate({
+        preheader: 'A wallet deposit was credited for a different amount than requested.',
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Deposit amount mismatch</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">A customer's bank transfer deposit did not match the amount originally requested. The wallet has already been credited with the amount actually received; this is a record for reconciliation.</p>
+          ${infoTable([
+            ['Customer', `${escapeHtml(data.userName)} (${escapeHtml(data.userEmail)})`],
+            ['Reference', `<code>${escapeHtml(data.reference)}</code>`],
+            ['Requested Amount', naira(data.expectedAmount)],
+            ['Amount Received & Credited', naira(data.receivedAmount)],
+            ['Difference', `<span style="color:${diff > 0 ? BRAND.success : BRAND.danger}">${diffLabel}</span>`],
+          ])}`,
+        ctaLabel: 'Review in Admin',
+        ctaUrl: `${APP_URL}/admin/operations`,
+      }),
+    };
+  },
+
   contactFormConfirmation(name: string) {
     return {
       subject: 'We received your message',

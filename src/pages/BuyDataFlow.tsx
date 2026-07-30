@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers, favoritePlans } from '../lib/localPrefs';
+import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -337,10 +338,20 @@ export default function BuyDataFlow() {
             {paymentError && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                className="my-2.5 p-2.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-[12px] text-red-700"
+                className="my-2.5 p-2.5 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2 text-[12px] text-red-700"
               >
-                <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                {paymentError}
+                <div className="flex items-start gap-2">
+                  <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                  {paymentError}
+                </div>
+                <a
+                  href={getSupportWhatsAppUrl('my data purchase failed')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="self-start text-[11.5px] font-bold underline hover:no-underline"
+                >
+                  Contact Support on WhatsApp
+                </a>
               </motion.div>
             )}
           </AnimatePresence>

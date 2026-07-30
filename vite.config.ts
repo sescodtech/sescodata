@@ -16,6 +16,19 @@ export default defineConfig({
     outDir: 'dist',
     // Inline small assets so cPanel uploads are simpler
     assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Rarely changes between deploys — keeps this cacheable across
+          // releases instead of being re-downloaded every time app code changes.
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Large animation library used across the app — split out so it
+          // downloads in parallel with app code rather than being bundled
+          // inline with it.
+          'vendor-motion': ['motion'],
+        },
+      },
+    },
   },
   server: {
     port: 5173,

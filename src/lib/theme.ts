@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { settings } from './api';
 
 const CACHE_KEY = 'shb_primary_color';
+const CACHE_TS_KEY = 'shb_primary_color_ts';
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — branding changes rarely
 
 function clamp(n: number) {
   return Math.max(0, Math.min(255, n));
@@ -47,15 +49,27 @@ export function applyBrandColor(hex: string) {
   localStorage.setItem(CACHE_KEY, hex);
 }
 
+function isCacheFresh() {
+  const ts = localStorage.getItem(CACHE_TS_KEY);
+  if (!ts) return false;
+  return Date.now() - Number(ts) < CACHE_TTL_MS;
+}
+
 /** Fetches and applies the platform brand color on mount. Applies a cached value instantly (no flash of default color), then reconciles with the server. */
 export function useApplyBranding() {
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) applyBrandColor(cached);
 
+    // Skip the network round-trip entirely if we fetched recently — branding
+    // is essentially static, so re-fetching on every single page load was an
+    // unnecessary request (and an avoidable hit on a cold-starting backend).
+    if (isCacheFresh()) return;
+
     settings.getBranding()
       .then((res) => {
         if (res.primaryColor) applyBrandColor(res.primaryColor);
+        localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
       })
       .catch(() => {
         // Network hiccup or backend asleep — keep whatever's already applied

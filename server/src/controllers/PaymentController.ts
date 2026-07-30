@@ -38,32 +38,74 @@ export async function creditIfPending(reference: string) {
   const user = await User.findById(txn.userId);
   if (!user) return { credited: false, reason: 'user_not_found' };
 
-  user.walletBalance += txn.amount;
+  // Bank transfer (and USSD) deposits aren't amount-locked the way a card
+  // charge is — Paystack hands the customer a one-time account number for
+  // the reference, but nothing stops them sending more or less than what
+  // was originally requested. verification.amount is what Paystack actually
+  // confirms was received, which can differ from txn.amount (what the
+  // customer originally requested). We credit what was really paid — the
+  // customer expects to see the money they sent, not the amount they typed
+  // in first — and flag any mismatch for admin review so overpayments and
+  // underpayments are traceable instead of silently absorbed or lost.
+  const expectedAmount = txn.amount;
+  const receivedAmount = verification.amount;
+  const amountMismatch = receivedAmount !== expectedAmount;
+
+  user.walletBalance += receivedAmount;
   await user.save({ validateModifiedOnly: true });
 
+  txn.amount = receivedAmount;
   txn.status = 'success';
   txn.deliveryStatus = 'delivered';
+
+  if (amountMismatch) {
+    const review: any = txn.manualReview || {};
+    review.status = 'pending';
+    review.notes = review.notes || [];
+    review.notes.push({
+      adminName: 'System',
+      note: `Deposit amount mismatch: requested \u20a6${expectedAmount}, Paystack confirmed \u20a6${receivedAmount} received. Wallet credited with the amount actually received.`,
+    });
+    txn.manualReview = review;
+  }
+
   await txn.save({ validateModifiedOnly: true });
 
-  EmailService.sendWalletFunded(user, txn.amount, user.walletBalance, reference).catch(() => {});
+  EmailService.sendWalletFunded(user, receivedAmount, user.walletBalance, reference).catch(() => {});
+  if (amountMismatch) {
+    EmailService.sendDepositAmountMismatch({
+      userName: user.name,
+      userEmail: user.email,
+      expectedAmount,
+      receivedAmount,
+      reference,
+    }).catch(() => {});
+  }
 
-  return { credited: true, reference };
+  return { credited: true, reference, ...(amountMismatch ? { amountMismatch: true, expectedAmount, receivedAmount } : {}) };
 }
 
 export class PaymentController {
   static async callback(req: Request, res: Response) {
     try {
       const reference = (req.query.reference as string) || (req.query.trxref as string);
-      const frontendUrl = process.env.FRONTEND_URL || '/';
-      if (!reference) return res.redirect(`${frontendUrl}?payment=error`);
+      // Redirect to the dedicated /payment/callback route (which the
+      // frontend already has a purpose-built success/failure screen for),
+      // not the bare frontend root — landing on the public homepage after
+      // a real deposit looked like the user had been logged out, since the
+      // public nav always shows "Login" regardless of actual auth state.
+      const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+      const callbackPath = `${frontendUrl}/payment/callback`;
+      if (!reference) return res.redirect(`${callbackPath}?payment=error`);
 
       const result = await creditIfPending(reference);
-      if (result.credited) return res.redirect(`${frontendUrl}?payment=success&trxref=${reference}`);
-      if (result.reason === 'still_pending') return res.redirect(`${frontendUrl}?payment=pending&trxref=${reference}`);
-      return res.redirect(`${frontendUrl}?payment=failed&trxref=${reference}`);
+      if (result.credited) return res.redirect(`${callbackPath}?payment=success&trxref=${reference}`);
+      if (result.reason === 'still_pending') return res.redirect(`${callbackPath}?payment=pending&trxref=${reference}`);
+      return res.redirect(`${callbackPath}?payment=failed&trxref=${reference}`);
     } catch (e: any) {
       console.error('Payment callback error:', e);
-      res.redirect(`${process.env.FRONTEND_URL || '/'}?payment=error`);
+      const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+      res.redirect(`${frontendUrl}/payment/callback?payment=error`);
     }
   }
 

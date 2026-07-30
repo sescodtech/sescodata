@@ -265,7 +265,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Details Drawer — full digital receipt */}
-      <Drawer open={!!selected} onClose={() => setSelected(null)} title="Transaction Receipt">
+      <Drawer open={!!selected} onClose={() => setSelected(null)} title="Transaction Receipt" wide>
         {selected && (
           <div className="space-y-3">
             <TransactionReceipt txn={selected} customer={{ name: user?.name ?? '', email: user?.email ?? '' }} status={resolvedStatus(selected)} />
