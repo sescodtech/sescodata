@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, DollarSign, TrendingUp, Package, Wallet,
   CheckCircle2, Clock, XCircle, Zap, RefreshCw, AlertTriangle,
-  AlertCircle, Info, ShoppingCart, ArrowDownLeft, Ticket,
+  AlertCircle, Info, ShoppingCart, ArrowDownLeft, Ticket, ArrowRight,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { cn } from '../../lib/utils';
@@ -80,7 +80,9 @@ function ProviderRow({ p }: { p: ProviderHealth }) {
   );
 }
 
-export default function AdminOverview() {
+type AdminTab = 'USERS' | 'TRANSACTIONS' | 'PRICING' | 'BRANDING' | 'SUPPORT';
+
+export default function AdminOverview({ onNavigateTab }: { onNavigateTab?: (tab: AdminTab) => void }) {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [series, setSeries] = useState<RevenuePoint[]>([]);
   const [recentTxns, setRecentTxns] = useState<any[]>([]);
@@ -277,18 +279,28 @@ export default function AdminOverview() {
             Refresh Dashboard <RefreshCw size={15} />
           </button>
           {stats.openTickets > 0 && (
-            <div className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-50 text-sm font-bold text-blue-700">
+            <button
+              onClick={() => onNavigateTab?.('SUPPORT')}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-blue-50 hover:brightness-95 transition-all text-sm font-bold text-blue-700"
+            >
               {stats.openTickets} Open Ticket{stats.openTickets !== 1 ? 's' : ''} <Ticket size={15} />
-            </div>
+            </button>
           )}
-          {/* User/Transaction/Product/Settings management ship as their own modules —
-              intentionally not linked here yet rather than pointing at pages that don't exist. */}
           <div className="pt-2 space-y-2">
-            {['User Management', 'Transaction Management', 'Product & Pricing', 'Settings'].map((label) => (
-              <div key={label} className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 text-sm font-semibold text-gray-400">
+            {([
+              { label: 'User Management', tab: 'USERS' },
+              { label: 'Transaction Management', tab: 'TRANSACTIONS' },
+              { label: 'Product & Pricing', tab: 'PRICING' },
+              { label: 'Settings', tab: 'BRANDING' },
+            ] as { label: string; tab: AdminTab }[]).map(({ label, tab }) => (
+              <button
+                key={label}
+                onClick={() => onNavigateTab?.(tab)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 hover:bg-admin-blue-soft hover:text-admin-blue transition-colors text-sm font-semibold text-gray-600"
+              >
                 {label}
-                <span className="text-[9px] font-black uppercase tracking-widest bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Next Module</span>
-              </div>
+                <ArrowRight size={14} />
+              </button>
             ))}
           </div>
         </div>

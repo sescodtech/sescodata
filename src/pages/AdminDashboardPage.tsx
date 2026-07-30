@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'OVERVIEW' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
-            <AdminOverview />
+            <AdminOverview onNavigateTab={(tab) => setActiveTab(tab)} />
           </div>
         )}
 
