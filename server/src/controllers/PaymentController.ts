@@ -82,7 +82,7 @@ export async function creditIfPending(reference: string) {
     }).catch(() => {});
   }
 
-  return { credited: true, reference, ...(amountMismatch ? { amountMismatch: true, expectedAmount, receivedAmount } : {}) };
+  return { credited: true, reference, amount: receivedAmount, ...(amountMismatch ? { amountMismatch: true, expectedAmount, receivedAmount } : {}) };
 }
 
 export class PaymentController {
@@ -99,7 +99,13 @@ export class PaymentController {
       if (!reference) return res.redirect(`${callbackPath}?payment=error`);
 
       const result = await creditIfPending(reference);
-      if (result.credited) return res.redirect(`${callbackPath}?payment=success&trxref=${reference}`);
+      if (result.credited) {
+        // Pass the amount actually credited (not just the reference) so the
+        // frontend success screen shows what really landed in the wallet —
+        // important for bank-transfer deposits where a customer may have
+        // sent more or less than they originally requested.
+        return res.redirect(`${callbackPath}?payment=success&trxref=${reference}&amount=${result.amount}`);
+      }
       if (result.reason === 'still_pending') return res.redirect(`${callbackPath}?payment=pending&trxref=${reference}`);
       return res.redirect(`${callbackPath}?payment=failed&trxref=${reference}`);
     } catch (e: any) {
