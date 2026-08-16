@@ -159,6 +159,7 @@ export interface AuthUser {
   role: 'customer' | 'admin';
   walletBalance?: number;
   kycStatus?: 'not_started' | 'pending' | 'verified' | 'rejected';
+  kycRejectionReason?: string;
 }
 
 export interface AuthResponse {
@@ -228,14 +229,64 @@ export interface ProductsResponse {
   products: Product[];
 }
 
+export interface Promotion {
+  _id: string;
+  title: string;
+  description: string;
+  ctaText?: string;
+  ctaLink?: string;
+  startDate: string;
+  endDate: string;
+  enabled: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// The product catalog barely changes minute-to-minute, but customers commonly
+// bounce between Buy Data → Buy Airtime → TV → Exam PINs and back within a
+// single session — each of those pages calls products.list()/byCategory()
+// independently on mount. Without a cache that's a full-catalog refetch on
+// every navigation. A short TTL cache (and de-duping concurrent calls into
+// one in-flight request) cuts that down without ever showing stale prices
+// for more than a few seconds. Admin screens use separate endpoints, so this
+// only affects the customer-facing catalog.
+const PRODUCTS_CACHE_TTL_MS = 60_000;
+let productsCache: { data: ProductsResponse; expiresAt: number } | null = null;
+let productsInFlight: Promise<ProductsResponse> | null = null;
+
+export const promotions = {
+  // Public, unauthenticated — the dashboard "Active Promotions" card needs
+  // this before we know anything about caching/auth state.
+  active: () => apiFetch<{ success: boolean; promotions: Promotion[] }>('/api/promotions/active'),
+};
+
 export const products = {
-  list: async () => {
-    const res = await apiFetch<ProductsResponse>('/api/products', {}, true);
-    // FIXED: backend returns `sellingPrice`, but every page in this app reads
-    // `.price` — that mismatch meant prices rendered as NaN/blank everywhere.
-    // Normalize once here instead of touching every call site.
-    res.products = res.products.map((p: any) => ({ ...p, price: p.price ?? p.sellingPrice }));
-    return res;
+  /** Pass `{ force: true }` to bypass the cache (e.g. after an admin action that changes pricing). */
+  list: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && productsCache && productsCache.expiresAt > Date.now()) {
+      return productsCache.data;
+    }
+    if (!opts.force && productsInFlight) {
+      return productsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<ProductsResponse>('/api/products', {}, true);
+      // FIXED: backend returns `sellingPrice`, but every page in this app reads
+      // `.price` — that mismatch meant prices rendered as NaN/blank everywhere.
+      // Normalize once here instead of touching every call site.
+      res.products = res.products.map((p: any) => ({ ...p, price: p.price ?? p.sellingPrice }));
+      productsCache = { data: res, expiresAt: Date.now() + PRODUCTS_CACHE_TTL_MS };
+      return res;
+    })();
+
+    productsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      productsInFlight = null;
+    }
   },
 
   byNetwork: async (network: string, cat = 'data') => {
@@ -730,6 +781,53 @@ export const admin = {
   // Branding — primary brand color for the customer app
   setBranding: (primaryColor: string) =>
     apiFetch<{ success: boolean; primaryColor: string }>('/api/admin/branding', { method: 'PUT', body: JSON.stringify({ primaryColor }) }, true),
+
+  // Support contact settings (WhatsApp number + support email)
+  setSupportSettings: (supportEmail: string, whatsappNumber: string) =>
+    apiFetch<{ success: boolean; supportEmail: string; whatsappNumber: string }>(
+      '/api/admin/support-settings',
+      { method: 'PUT', body: JSON.stringify({ supportEmail, whatsappNumber }) },
+      true,
+    ),
+
+  // Module 9 — Promotion Management
+  listPromotions: () => apiFetch<{ success: boolean; promotions: Promotion[] }>('/api/admin/promotions', {}, true),
+  createPromotion: (data: Partial<Promotion>) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>('/api/admin/promotions', { method: 'POST', body: JSON.stringify(data) }, true),
+  updatePromotion: (id: string, data: Partial<Promotion>) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>(`/api/admin/promotions/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  togglePromotion: (id: string, enabled: boolean) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>(`/api/admin/promotions/${id}/enabled`, { method: 'PUT', body: JSON.stringify({ enabled }) }, true),
+  deletePromotion: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/promotions/${id}`, { method: 'DELETE' }, true),
+
+  // Simple KYC review (BVN + NIN only)
+  listKyc: (status: string = 'pending') =>
+    apiFetch<{ success: boolean; submissions: KycSubmission[] }>(`/api/admin/kyc?status=${status}`, {}, true),
+  approveKyc: (userId: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>(`/api/admin/kyc/${userId}/approve`, { method: 'POST' }, true),
+  rejectKyc: (userId: string, reason?: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>(`/api/admin/kyc/${userId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+};
+
+export interface KycSubmission {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  bvn?: string;
+  nin?: string;
+  kycStatus: 'not_started' | 'pending' | 'verified' | 'rejected';
+  kycSubmittedAt?: string;
+  kycReviewedAt?: string;
+  kycReviewedBy?: string;
+  kycRejectionReason?: string;
+}
+
+export const kyc = {
+  // Customer-facing: submit BVN + NIN for review.
+  submit: (bvn: string, nin: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>('/api/my/kyc', { method: 'POST', body: JSON.stringify({ bvn, nin }) }, true),
 };
 
 export interface ProviderStats {
@@ -811,6 +909,9 @@ export interface AuditLogsResponse {
 // Public — no auth required, since the color has to apply before login
 export const settings = {
   getBranding: () => apiFetch<{ success: boolean; primaryColor: string }>('/api/settings/branding'),
+  // Public — every customer-facing page reads support contact details from
+  // here instead of a hardcoded constant.
+  getSupport: () => apiFetch<{ success: boolean; supportEmail: string; whatsappNumber: string }>('/api/settings/support'),
 };
 
 // ============================================================

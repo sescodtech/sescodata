@@ -11,6 +11,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Drawer from '../components/Drawer';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 
 const FAQS = [
   { q: 'How long does it take for data to be delivered?', a: 'Most data purchases are delivered within seconds of payment. If you experience a delay over 5 minutes, contact us with your transaction reference and we will resolve it immediately.' },
@@ -19,16 +20,6 @@ const FAQS = [
   { q: 'What payment methods are accepted?', a: 'All wallet funding is processed by Paystack. You can pay with debit/credit cards, USSD, or bank transfer.' },
   { q: 'I paid but my order was not delivered. What do I do?', a: 'Failed deliveries are automatically refunded to your wallet — check your Transactions page for the status. If you don\u2019t see a refund within a few minutes, send us your transaction reference via WhatsApp or email.' },
   { q: 'Can I get a refund?', a: 'If your order failed and was not delivered, it is refunded automatically to your wallet. Successful deliveries cannot be refunded as the value has already been sent.' },
-];
-
-const SUPPORT_PHONE = '08140112803';
-const SUPPORT_EMAIL = 'support@sescohub.com';
-const WHATSAPP_URL = `https://wa.me/234${SUPPORT_PHONE.slice(1)}?text=Hi%20SescoHub%20Support%2C%20I%20need%20help%20with%20my%20order.`;
-
-const CHANNELS = [
-  { href: WHATSAPP_URL, external: true, icon: MessageCircle, title: 'WhatsApp', sub: 'Fastest reply' },
-  { href: `mailto:${SUPPORT_EMAIL}`, icon: Mail, title: 'Email', sub: 'A few hours' },
-  { href: `tel:+234${SUPPORT_PHONE.slice(1)}`, icon: Phone, title: 'Call', sub: '8AM–10PM' },
 ];
 
 /** Chat-style thread — customer messages right, admin replies left. */
@@ -115,6 +106,14 @@ function TicketConversationDrawer({ ticketId, onClose, onUpdated }: { ticketId: 
 export default function SupportPage() {
   useDocumentTitle('Support');
   useAuth();
+  const { supportEmail, whatsappNumber, getWhatsAppUrl } = useSupportSettings();
+  const digits = whatsappNumber.replace(/\D/g, '');
+  const international = digits.startsWith('234') ? digits : `234${digits.replace(/^0/, '')}`;
+  const CHANNELS = [
+    { href: getWhatsAppUrl('my order'), external: true, icon: MessageCircle, title: 'WhatsApp', sub: 'Fastest reply' },
+    { href: `mailto:${supportEmail}`, icon: Mail, title: 'Email', sub: 'A few hours' },
+    { href: `tel:+${international}`, icon: Phone, title: 'Call', sub: '8AM–10PM' },
+  ];
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({ subject: '', message: '' });

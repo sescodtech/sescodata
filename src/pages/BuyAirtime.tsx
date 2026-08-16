@@ -3,9 +3,9 @@ import { Smartphone, Loader2, AlertCircle, Wallet, Clock, PartyPopper, ChevronDo
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers } from '../lib/localPrefs';
-import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -14,6 +14,7 @@ const AIRTIME_AMOUNTS = [50, 100, 200, 500, 1000, 2000, 5000];
 export default function BuyAirtime() {
   useDocumentTitle('Buy Airtime');
   const { user, refreshUser } = useAuth();
+  const { getWhatsAppUrl } = useSupportSettings();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [manualNetworkId, setManualNetworkId] = useState<string | null>(null);
@@ -205,7 +206,7 @@ export default function BuyAirtime() {
               <AlertCircle size={13} /> {error}
             </div>
             <a
-              href={getSupportWhatsAppUrl('my airtime purchase failed')}
+              href={getWhatsAppUrl('my airtime purchase failed')}
               target="_blank"
               rel="noopener noreferrer"
               className="self-start text-[11.5px] font-bold underline hover:no-underline"

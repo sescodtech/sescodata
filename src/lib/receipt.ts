@@ -12,7 +12,7 @@ const MUTED = '#8B93A7';
  * user actually clicks "Download PDF", instead of bloating the main bundle
  * that every visitor downloads on first load.
  */
-export async function downloadReceiptPdf(txn: Transaction, customer: ReceiptCustomer, status: string) {
+export async function downloadReceiptPdf(txn: Transaction, customer: ReceiptCustomer, status: string, supportEmail = 'support@sescohub.com') {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -94,7 +94,7 @@ export async function downloadReceiptPdf(txn: Transaction, customer: ReceiptCust
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(MUTED);
-  doc.text('Need help with this transaction? support@sescohub.com', pageWidth / 2, y + 28, { align: 'center' });
+  doc.text(`Need help with this transaction? ${supportEmail}`, pageWidth / 2, y + 28, { align: 'center' });
 
   doc.save(`SescoHub-Receipt-${txn.ref}.pdf`);
 }

@@ -5,6 +5,8 @@ import { AdminProductController } from '../controllers/AdminProductController';
 import { AdminProviderController } from '../controllers/AdminProviderController';
 import { AdminReportsController } from '../controllers/AdminReportsController';
 import { AdminSupportController } from '../controllers/AdminSupportController';
+import { AdminPromotionController } from '../controllers/AdminPromotionController';
+import { AdminKycController } from '../controllers/AdminKycController';
 import { SettingsController } from '../controllers/SettingsController';
 import { protect, authorize } from '../middlewares/authMiddleware';
 
@@ -94,5 +96,21 @@ router.post('/support/tickets/:id/priority', AdminSupportController.changePriori
 router.post('/support/tickets/:id/category', AdminSupportController.changeCategory);
 router.post('/support/tickets/:id/assign', AdminSupportController.assign);
 router.delete('/support/tickets/:id', AdminSupportController.deleteTicket);
+
+// Module 9 — Promotion Management (dashboard "Active Promotions" card)
+router.get('/promotions', AdminPromotionController.list);
+router.post('/promotions', AdminPromotionController.create);
+router.put('/promotions/:id', AdminPromotionController.update);
+router.put('/promotions/:id/enabled', AdminPromotionController.toggleEnabled);
+router.delete('/promotions/:id', AdminPromotionController.remove);
+
+// Support contact settings — WhatsApp number + support email used across every
+// customer-facing page (floating WhatsApp button, footer, Support/Contact pages).
+router.put('/support-settings', SettingsController.setSupportSettings);
+
+// Simple KYC review — BVN + NIN only, no document uploads.
+router.get('/kyc', AdminKycController.list);
+router.post('/kyc/:userId/approve', AdminKycController.approve);
+router.post('/kyc/:userId/reject', AdminKycController.reject);
 
 export default router;

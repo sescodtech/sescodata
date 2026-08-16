@@ -5,6 +5,7 @@ import { Transaction } from '../models/Transaction';
 import { ProductService } from '../services/ProductService';
 import { User } from '../models/User';
 import { EmailService } from '../services/EmailService';
+import { getTransactionLimit } from '../config/accountTiers';
 
 /**
  * Production-safe purchase flow:
@@ -32,6 +33,16 @@ async function executePurchase(opts: {
   successMessage: string;
 }) {
   const { userId, userPrice, cost, productMeta, refPrefix, providerMethod, providerParams, successMessage } = opts;
+
+  // Account tier limit: Basic accounts (no approved KYC) are capped per
+  // transaction; Verified accounts (BVN + NIN reviewed and approved) get a
+  // higher ceiling. Checked before the lock/debit so a request that would be
+  // rejected never reserves funds.
+  const buyer = await User.findById(userId).select('kycStatus');
+  const limit = getTransactionLimit(buyer?.kycStatus);
+  if (userPrice > limit) {
+    throw new Error(`This transaction exceeds your account's limit of \u20a6${limit.toLocaleString('en-NG')}. Verify your account (BVN + NIN) in Settings to increase your limit.`);
+  }
 
   const gotLock = await WalletService.acquirePurchaseLock(userId);
   if (!gotLock) throw new Error('A purchase is already in progress. Please wait a moment and check your transaction history before trying again.');

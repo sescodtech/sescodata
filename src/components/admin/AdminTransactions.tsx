@@ -13,6 +13,7 @@ import StatusBadge from '../StatusBadge';
 import Drawer from '../Drawer';
 import TransactionReceipt from '../TransactionReceipt';
 import { downloadReceiptPdf, printReceipt, shareReceipt } from '../../lib/receipt';
+import { useSupportSettings } from '../../context/SupportSettingsContext';
 import AdminPagination from './AdminPagination';
 
 const CATEGORY_OPTIONS = ['', 'data', 'airtime', 'cable', 'electricity', 'education', 'recharge', 'admin_adjustment', 'deposit'];
@@ -35,6 +36,7 @@ function toReceiptShape(tx: AdminTransaction): Transaction {
 }
 
 export default function AdminTransactions() {
+  const { supportEmail } = useSupportSettings();
   const [txns, setTxns] = useState<AdminTransaction[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -230,7 +232,7 @@ export default function AdminTransactions() {
                     await downloadReceiptPdf(toReceiptShape(selected), {
                       name: typeof selected.userId === 'object' ? selected.userId.name : '',
                       email: typeof selected.userId === 'object' ? selected.userId.email : '',
-                    }, selected.deliveryStatus);
+                    }, selected.deliveryStatus, supportEmail);
                   } finally {
                     setIsGeneratingPdf(false);
                   }

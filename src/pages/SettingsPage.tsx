@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader';
 import Input from '../components/ui/Input';
 import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
+import KycBadge from '../components/KycBadge';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 type Tab = 'profile' | 'security' | 'preferences';
@@ -79,8 +80,11 @@ export default function SettingsPage() {
         <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[13px] font-black border-2 border-white shrink-0 bg-gradient-to-br from-shb-gold to-shb-gold-dark" style={{ boxShadow: 'var(--shadow-gold)' }}>
           {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
         </div>
-        <div className="min-w-0">
-          <p className="font-bold text-gray-900 text-[13.5px] truncate">{user?.name}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="font-bold text-gray-900 text-[13.5px] truncate">{user?.name}</p>
+            <KycBadge kycStatus={user?.kycStatus} />
+          </div>
           <p className="text-gray-500 text-[12px] truncate">{user?.email}</p>
         </div>
       </div>

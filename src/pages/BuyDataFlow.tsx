@@ -4,15 +4,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 import { products as productsApi, matchesProvider, purchase, NETWORKS, detectNetworkId, formatNaira, type Product } from '../lib/api';
 import { recentNumbers, favoritePlans } from '../lib/localPrefs';
-import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 export default function BuyDataFlow() {
   useDocumentTitle('Buy Data');
   const { user, refreshUser } = useAuth();
+  const { getWhatsAppUrl } = useSupportSettings();
   const [searchParams] = useSearchParams();
   const productIdParam = searchParams.get('productId');
 
@@ -345,7 +346,7 @@ export default function BuyDataFlow() {
                   {paymentError}
                 </div>
                 <a
-                  href={getSupportWhatsAppUrl('my data purchase failed')}
+                  href={getWhatsAppUrl('my data purchase failed')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="self-start text-[11.5px] font-bold underline hover:no-underline"

@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Twitter, Instagram, Facebook, Mail, Phone } from 'lucide-react';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 
 export default function PublicFooter() {
+  const { supportEmail, whatsappNumber } = useSupportSettings();
+  const digits = whatsappNumber.replace(/\D/g, '');
+  const formatted = digits.length === 11 ? `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}` : whatsappNumber;
   return (
     <footer className="bg-shb-navy text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,8 +58,8 @@ export default function PublicFooter() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-sm">© {new Date().getFullYear()} SescoHub Digital Marketplace. All rights reserved.</p>
           <div className="flex items-center gap-6 text-gray-400 text-sm">
-            <a href="mailto:support@sescohub.com" className="flex items-center gap-2 hover:text-white transition-colors"><Mail size={14} /> support@sescohub.com</a>
-            <a href="tel:08140112803" className="flex items-center gap-2 hover:text-white transition-colors"><Phone size={14} /> 0814 011 2803</a>
+            <a href={`mailto:${supportEmail}`} className="flex items-center gap-2 hover:text-white transition-colors"><Mail size={14} /> {supportEmail}</a>
+            <a href={`tel:${digits}`} className="flex items-center gap-2 hover:text-white transition-colors"><Phone size={14} /> {formatted}</a>
           </div>
         </div>
       </div>

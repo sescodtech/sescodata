@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, DollarSign, Building2,
   Smartphone, Tv, Wallet, Receipt, Sparkles, RotateCcw,
-  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3, Headset, ChevronDown,
+  Database, GraduationCap, CreditCard, Zap, Package, Palette, Check, Radio, ScrollText, BarChart3, Headset, ChevronDown, Megaphone, MessageCircle, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { admin, settings } from '../lib/api';
@@ -19,15 +19,19 @@ import AdminProviders from '../components/admin/AdminProviders';
 import AdminReports from '../components/admin/AdminReports';
 import AdminSupport from '../components/admin/AdminSupport';
 import AdminAuditLogs from '../components/admin/AdminAuditLogs';
+import AdminPromotions from '../components/admin/AdminPromotions';
+import AdminKyc from '../components/admin/AdminKyc';
 
 const TABS = [
   { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
   { id: 'USERS', label: 'Users', icon: Users },
+  { id: 'KYC', label: 'KYC', icon: ShieldCheck },
   { id: 'WALLET', label: 'Wallet', icon: Wallet },
   { id: 'TRANSACTIONS', label: 'Transactions', icon: Receipt },
   { id: 'OPERATIONS', label: 'Operations', icon: RotateCcw },
   { id: 'PRICING', label: 'Pricing', icon: DollarSign },
   { id: 'PROVIDERS', label: 'Providers', icon: Radio },
+  { id: 'PROMOTIONS', label: 'Promotions', icon: Megaphone },
   { id: 'REPORTS', label: 'Reports', icon: BarChart3 },
   { id: 'SUPPORT', label: 'Support', icon: Headset },
   { id: 'AUDIT', label: 'Audit Logs', icon: ScrollText },
@@ -43,11 +47,42 @@ export default function AdminDashboardPage() {
   const [brandColor, setBrandColor] = useState('#2563EB');
   const [savedBrandColor, setSavedBrandColor] = useState('#2563EB');
   const [savingBrand, setSavingBrand] = useState(false);
+  const [supportEmail, setSupportEmail] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [savedSupportSettings, setSavedSupportSettings] = useState({ supportEmail: '', whatsappNumber: '' });
+  const [savingSupport, setSavingSupport] = useState(false);
 
   useEffect(() => {
     fetchMarkup();
     fetchBranding();
+    fetchSupportSettings();
   }, []);
+
+  async function fetchSupportSettings() {
+    try {
+      const res = await settings.getSupport();
+      setSupportEmail(res.supportEmail);
+      setWhatsappNumber(res.whatsappNumber);
+      setSavedSupportSettings({ supportEmail: res.supportEmail, whatsappNumber: res.whatsappNumber });
+    } catch {
+      // Non-critical — defaults already cover the customer-facing side.
+    }
+  }
+
+  async function handleSaveSupportSettings() {
+    setSavingSupport(true);
+    try {
+      const res = await admin.setSupportSettings(supportEmail, whatsappNumber);
+      setSupportEmail(res.supportEmail);
+      setWhatsappNumber(res.whatsappNumber);
+      setSavedSupportSettings({ supportEmail: res.supportEmail, whatsappNumber: res.whatsappNumber });
+      toast.success('Support contact details updated — live across the site now');
+    } catch (e: any) {
+      toast.error(`Couldn't save support settings: ${e.message}`);
+    } finally {
+      setSavingSupport(false);
+    }
+  }
 
   async function fetchBranding() {
     try {
@@ -173,6 +208,12 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {activeTab === 'KYC' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminKyc />
+          </div>
+        )}
+
         {activeTab === 'WALLET' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
             <AdminWallet />
@@ -252,6 +293,12 @@ export default function AdminDashboardPage() {
         {activeTab === 'PROVIDERS' && (
           <div className="animate-in fade-in slide-in-from-bottom-4">
             <AdminProviders />
+          </div>
+        )}
+
+        {activeTab === 'PROMOTIONS' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <AdminPromotions />
           </div>
         )}
 
@@ -346,6 +393,50 @@ export default function AdminDashboardPage() {
               {!/^#[0-9A-Fa-f]{6}$/.test(brandColor) && (
                 <p className="text-[11px] font-semibold text-red-500 mt-2.5">Enter a valid 6-digit hex color, e.g. #2563EB</p>
               )}
+            </div>
+
+            <div className="admin-card p-3 sm:p-4 max-w-xl mt-3">
+              <h3 className="text-[14px] font-extrabold text-admin-navy flex items-center gap-1.5 font-display mb-0.5">
+                <MessageCircle size={16} className="text-admin-blue" />
+                Support Contact Settings
+              </h3>
+              <p className="text-[12px] text-gray-500 mb-3.5">
+                Used by the floating WhatsApp button, the Support and Contact pages, the footer, and receipts across the whole site. Update once here — every customer-facing page picks it up automatically.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Support Email</label>
+                  <input
+                    type="email"
+                    value={supportEmail}
+                    onChange={(e) => setSupportEmail(e.target.value)}
+                    placeholder="support@sescohub.com"
+                    className="admin-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">WhatsApp Number</label>
+                  <input
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="08140112803"
+                    className="admin-input"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5 mt-3.5">
+                <button
+                  onClick={handleSaveSupportSettings}
+                  disabled={savingSupport || !supportEmail.trim() || !whatsappNumber.trim()}
+                  className="admin-btn-primary flex items-center gap-1.5"
+                >
+                  <Check size={14} />
+                  {savingSupport ? 'Saving…' : 'Save Support Settings'}
+                </button>
+                {supportEmail === savedSupportSettings.supportEmail && whatsappNumber === savedSupportSettings.whatsappNumber && (
+                  <span className="text-[11px] font-semibold text-gray-400">Currently live</span>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -15,7 +15,7 @@ import crypto from 'crypto';
  */
 export async function creditIfPending(reference: string) {
   const txn = await Transaction.findOne({ paymentReference: reference, type: 'deposit', status: 'pending' });
-  if (!txn) return { credited: false, reason: 'not_found_or_already_processed' };
+  if (!txn) return { credited: false as const, reason: 'not_found_or_already_processed' };
 
   const verification = await paymentService.verifyPayment('paystack', reference);
 
@@ -26,17 +26,17 @@ export async function creditIfPending(reference: string) {
   if (verification.status === 'pending' || verification.status === 'processing') {
     const user = await User.findById(txn.userId);
     if (user) EmailService.sendPurchasePending(user, { label: 'Wallet funding', amount: txn.amount, ref: reference }).catch(() => {});
-    return { credited: false, reason: 'still_pending' };
+    return { credited: false as const, reason: 'still_pending' };
   }
 
   if (!verification.success) {
     txn.status = 'failed';
     await txn.save({ validateModifiedOnly: true });
-    return { credited: false, reason: 'verification_failed' };
+    return { credited: false as const, reason: 'verification_failed' };
   }
 
   const user = await User.findById(txn.userId);
-  if (!user) return { credited: false, reason: 'user_not_found' };
+  if (!user) return { credited: false as const, reason: 'user_not_found' };
 
   // Bank transfer (and USSD) deposits aren't amount-locked the way a card
   // charge is — Paystack hands the customer a one-time account number for
@@ -82,7 +82,7 @@ export async function creditIfPending(reference: string) {
     }).catch(() => {});
   }
 
-  return { credited: true, reference, amount: receivedAmount, ...(amountMismatch ? { amountMismatch: true, expectedAmount, receivedAmount } : {}) };
+  return { credited: true as const, reference, amount: receivedAmount, ...(amountMismatch ? { amountMismatch: true, expectedAmount, receivedAmount } : {}) };
 }
 
 export class PaymentController {

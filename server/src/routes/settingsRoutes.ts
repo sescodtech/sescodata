@@ -8,4 +8,8 @@ const router = express.Router();
 // logged in, so this can't sit behind `protect`.
 router.get('/branding', SettingsController.getBranding);
 
+// Public and unauthenticated on purpose: the WhatsApp floating button, footer,
+// and public contact/support pages need these values before anyone logs in.
+router.get('/support', SettingsController.getSupportSettings);
+
 export default router;

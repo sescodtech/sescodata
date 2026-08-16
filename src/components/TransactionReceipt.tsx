@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { formatNaira, formatDate, type Transaction } from '../lib/api';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 
 export type ReceiptCustomer = { name: string; email: string };
 
@@ -12,6 +13,7 @@ export type ReceiptCustomer = { name: string; email: string };
 const TransactionReceipt = forwardRef<HTMLDivElement, { txn: Transaction; customer: ReceiptCustomer; status: string }>(
   ({ txn, customer, status }, ref) => {
     const statusColor = status === 'delivered' ? '#22C55E' : status === 'failed' ? '#EF4444' : '#F59E0B';
+    const { supportEmail } = useSupportSettings();
 
     return (
       <div ref={ref} className="receipt-print-area bg-white rounded-2xl overflow-hidden border border-gray-100" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -67,7 +69,7 @@ const TransactionReceipt = forwardRef<HTMLDivElement, { txn: Transaction; custom
         </div>
 
         <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t border-gray-100 text-center">
-          <p className="text-[10.5px] sm:text-[11px] text-gray-400">Need help with this transaction? support@sescohub.com</p>
+          <p className="text-[10.5px] sm:text-[11px] text-gray-400">Need help with this transaction? {supportEmail}</p>
         </div>
       </div>
     );

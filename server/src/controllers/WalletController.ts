@@ -53,7 +53,15 @@ export class WalletController {
   /** GET /api/my/transactions */
   static async getMyTransactions(req: any, res: Response) {
     try {
-      await reconcileStalePendingDeposits(req.user.id);
+      // PERF FIX: this used to `await reconcileStalePendingDeposits()` before
+      // querying, meaning every dashboard/transactions-page load blocked on
+      // live Paystack verification calls for any stale pending deposit. That
+      // turned an otherwise-fast DB read into a slow one at the mercy of
+      // Paystack's response time. Reconciliation is a backup safety net (the
+      // primary path is the webhook + payment callback), so it's safe to run
+      // in the background without the request waiting on it — a stale
+      // deposit will simply reconcile by the next load instead of this one.
+      reconcileStalePendingDeposits(req.user.id).catch(() => {});
       const transactions = await Transaction.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(200);
       res.json({ success: true, transactions });
     } catch (e: any) {

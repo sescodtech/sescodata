@@ -15,6 +15,7 @@ interface User {
   walletBalance: number;
   backendRole: AuthUser['role'];
   kycStatus: AuthUser['kycStatus'];
+  kycRejectionReason?: string;
 }
 
 interface AuthContextType {
@@ -43,6 +44,7 @@ function buildUser(raw: AuthUser): User {
     walletBalance: raw.walletBalance ?? 0,
     backendRole: raw.role,
     kycStatus: raw.kycStatus ?? 'not_started',
+    kycRejectionReason: raw.kycRejectionReason,
   };
 }
 

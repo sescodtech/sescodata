@@ -70,6 +70,16 @@ export class EmailService {
     await deliver(user.email, subject, html);
   }
 
+  static async sendKycApproved(user: { name: string; email: string }) {
+    const { subject, html } = emailTemplates.kycApproved(user.name);
+    await deliver(user.email, subject, html);
+  }
+
+  static async sendKycRejected(user: { name: string; email: string }, reason?: string) {
+    const { subject, html } = emailTemplates.kycRejected(user.name, reason);
+    await deliver(user.email, subject, html);
+  }
+
   static async sendWalletFunded(user: { name: string; email: string }, amount: number, newBalance: number, reference: string) {
     const { subject, html } = emailTemplates.walletFunded(user.name, amount, newBalance, reference);
     await deliver(user.email, subject, html);

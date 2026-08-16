@@ -13,6 +13,7 @@ import contactRoutes from './routes/contactRoutes';
 import agentRoutes from './routes/agentRoutes';
 import supportRoutes from './routes/supportRoutes';
 import settingsRoutes from './routes/settingsRoutes';
+import promotionRoutes from './routes/promotionRoutes';
 import { protect } from './middlewares/authMiddleware';
 import { AuthController } from './controllers/AuthController';
 import { generalLimiter } from './middlewares/rateLimiter';
@@ -75,6 +76,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

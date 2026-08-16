@@ -2,27 +2,26 @@ import { useState } from 'react';
 import { MessageCircle, Headset } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
-// Same phone number + WhatsApp URL pattern already used in SupportPage.tsx —
-// kept identical rather than introducing a new source of truth or an extra
-// API call just to render a floating button.
-const SUPPORT_PHONE = '08140112803';
-const WHATSAPP_URL = `https://wa.me/234${SUPPORT_PHONE.slice(1)}?text=${encodeURIComponent(
-  'Hi SescoHub Support, I need help with my account.',
-)}`;
+import { useSupportSettings } from '../context/SupportSettingsContext';
+import FAQChatbot from './FAQChatbot';
 
 /**
  * Global floating action buttons: WhatsApp (bottom-right, always) and a
  * Support shortcut stacked just above it. Rendered once at the app root so
  * it persists across every route without needing to be added page-by-page.
  *
- * Deliberately lightweight: no extra network requests, no heavy animation
- * library usage beyond plain CSS transitions, so it can't regress the perf
- * work done elsewhere in the app.
+ * The WhatsApp number and message come from SupportSettingsContext (backed
+ * by Admin Settings), not a hardcoded constant — an admin can update the
+ * number once and every customer-facing surface picks it up automatically.
+ *
+ * Deliberately lightweight: no extra network requests of its own (the
+ * context fetches once, app-wide), no heavy animation library usage beyond
+ * plain CSS transitions, so it can't regress the perf work done elsewhere.
  */
 export default function FloatingSupportButtons() {
   const [justOpened, setJustOpened] = useState(false);
   const { user } = useAuth();
+  const { getWhatsAppUrl } = useSupportSettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,25 +60,19 @@ export default function FloatingSupportButtons() {
         </span>
       </button>
 
-      {/* WhatsApp button */}
-      <a
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat with us on WhatsApp"
-        className="flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl hover:brightness-95 transition-all duration-200 hover:-translate-y-0.5"
-      >
-        <MessageCircle size={26} />
-      </a>
+      {/* FAQ chatbot + WhatsApp button, side by side */}
+      <div className="flex items-end gap-3">
+        <FAQChatbot />
+        <a
+          href={getWhatsAppUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat with us on WhatsApp"
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl hover:brightness-95 transition-all duration-200 hover:-translate-y-0.5"
+        >
+          <MessageCircle size={26} />
+        </a>
+      </div>
     </div>
   );
-}
-
-// Exported so failed-purchase flows (Priority 4) can link straight into a
-// prefilled WhatsApp chat without duplicating the URL-building logic.
-export function getSupportWhatsAppUrl(context?: string) {
-  const text = context
-    ? `Hi SescoHub Support, I need help — ${context}`
-    : 'Hi SescoHub Support, I need help with my account.';
-  return `https://wa.me/234${SUPPORT_PHONE.slice(1)}?text=${encodeURIComponent(text)}`;
 }

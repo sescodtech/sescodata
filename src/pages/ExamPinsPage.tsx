@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, Loader2, AlertCircle, ArrowLeft, Minus, Plus, RefreshCw, PartyPopper } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 import { products as productsApi, purchase, formatNaira, type Product } from '../lib/api';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/ui/Button';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 import EmptyState from '../components/EmptyState';
 import { SkeletonList } from '../components/Skeleton';
-import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 
 export default function ExamPinsPage() {
   useDocumentTitle('Exam PINs');
   const { user, refreshUser } = useAuth();
+  const { getWhatsAppUrl } = useSupportSettings();
   const [plans, setPlans] = useState<Product[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -92,7 +93,7 @@ export default function ExamPinsPage() {
               <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
             </div>
             <a
-              href={getSupportWhatsAppUrl('my exam PIN purchase failed')}
+              href={getWhatsAppUrl('my exam PIN purchase failed')}
               target="_blank"
               rel="noopener noreferrer"
               className="self-start text-[12.5px] font-bold underline hover:no-underline"

@@ -135,6 +135,36 @@ export const emailTemplates = {
     };
   },
 
+  kycApproved(name: string) {
+    return {
+      subject: 'Your account is now Verified',
+      html: baseTemplate({
+        preheader: 'Your identity verification was approved — higher transaction limits are now active.',
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">You're verified!</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">Hi ${escapeHtml(name)}, your BVN and NIN were reviewed and approved. Your account is now <strong>Verified</strong> with higher transaction limits.</p>`,
+        ctaLabel: 'Go to Dashboard',
+        ctaUrl: `${APP_URL}/app`,
+      }),
+    };
+  },
+
+  kycRejected(name: string, reason?: string) {
+    return {
+      subject: 'Verification update needed',
+      html: baseTemplate({
+        preheader: 'Your identity verification submission needs another look.',
+        bodyHtml: `
+          <h1 style="margin:0 0 12px;font-size:20px;color:${BRAND.navy};">Verification not approved</h1>
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">Hi ${escapeHtml(name)}, we couldn't approve your verification submission${reason ? ':' : '.'}</p>
+          ${reason ? `<p style="margin:0 0 8px;color:#444;font-size:14px;font-style:italic;">"${escapeHtml(reason)}"</p>` : ''}
+          <p style="margin:0 0 8px;color:#444;font-size:14px;">You can resubmit your BVN and NIN once ready.</p>`,
+        ctaLabel: 'Resubmit Verification',
+        ctaUrl: `${APP_URL}/app/kyc`,
+      }),
+    };
+  },
+
   walletFunded(name: string, amount: number, newBalance: number, reference: string) {
     return {
       subject: `Wallet funded: ${naira(amount)}`,

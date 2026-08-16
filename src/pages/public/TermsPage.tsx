@@ -1,7 +1,9 @@
 import PublicPageShell from '../../components/PublicPageShell';
 import { useDocumentTitle } from '../../lib/useDocumentTitle';
+import { useSupportSettings } from '../../context/SupportSettingsContext';
 
-const SECTIONS = [
+function buildSections(supportEmail: string) {
+  return [
   {
     title: '1. Acceptance of Terms',
     body: `By creating an account and using SescoHub, you agree to these Terms & Conditions. If you do not agree,
@@ -55,12 +57,15 @@ const SECTIONS = [
   },
   {
     title: '10. Contact',
-    body: `Questions about these terms can be sent to support@sescohub.com.`,
+    body: `Questions about these terms can be sent to ${supportEmail}.`,
   },
-];
+  ];
+}
 
 export default function TermsPage() {
   useDocumentTitle('Terms & Conditions', 'The terms governing your use of the SescoHub platform.');
+  const { supportEmail } = useSupportSettings();
+  const SECTIONS = buildSections(supportEmail);
   return (
     <PublicPageShell eyebrow="Legal" title="Terms & Conditions" description={`Last updated: ${new Date().toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}`}>
       <div className="max-w-3xl mx-auto space-y-10">
@@ -71,7 +76,7 @@ export default function TermsPage() {
           </div>
         ))}
         <div className="pt-6 border-t border-gray-100 text-sm text-gray-500">
-          Questions about these terms? Contact us at <a href="mailto:support@sescohub.com" className="text-shb-gold-dark font-bold hover:underline">support@sescohub.com</a>.
+          Questions about these terms? Contact us at <a href={`mailto:${supportEmail}`} className="text-shb-gold-dark font-bold hover:underline">{supportEmail}</a>.
         </div>
       </div>
     </PublicPageShell>

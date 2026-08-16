@@ -32,15 +32,22 @@ const UserSchema = new mongoose.Schema({
   // (e.g. suspected compromise) without changing the account's business status.
   isLocked: { type: Boolean, default: false },
 
-  // No KYC verification flow (ID capture, third-party verification) exists in
-  // this platform yet — this field honestly reflects that: every account
-  // starts and stays 'not_started' until a real verification flow is built.
-  // Not faked as 'verified' for anyone.
+  // Simple KYC: BVN + NIN only. No document uploads, no third-party storage —
+  // just the two ID numbers, reviewed manually by an admin. select:false
+  // keeps them out of default queries (User.find, /api/me, etc.) since
+  // they're sensitive PII; only the admin KYC review endpoint explicitly
+  // selects them.
+  bvn: { type: String, select: false },
+  nin: { type: String, select: false },
   kycStatus: {
     type: String,
     enum: ['not_started', 'pending', 'verified', 'rejected'],
     default: 'not_started'
   },
+  kycSubmittedAt: { type: Date },
+  kycReviewedAt: { type: Date },
+  kycReviewedBy: { type: String },
+  kycRejectionReason: { type: String },
 
   lastLogin: { type: Date },
   resetPasswordTokenHash: { type: String, select: false },

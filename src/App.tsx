@@ -1,6 +1,7 @@
 import { ReactNode, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SupportSettingsProvider } from './context/SupportSettingsContext';
 import { useApplyBranding } from './lib/theme';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -159,6 +160,7 @@ export default function App() {
   useApplyBranding();
   return (
     <AuthProvider>
+      <SupportSettingsProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Suspense fallback={<RouteFallback />}>
         <Routes>
@@ -218,6 +220,7 @@ export default function App() {
         </Suspense>
         <FloatingSupportButtons />
       </BrowserRouter>
+      </SupportSettingsProvider>
     </AuthProvider>
   );
 }

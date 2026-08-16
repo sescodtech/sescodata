@@ -11,6 +11,7 @@ import Drawer from '../components/Drawer';
 import TransactionReceipt from '../components/TransactionReceipt';
 import { downloadReceiptPdf, printReceipt, shareReceipt } from '../lib/receipt';
 import { useAuth } from '../context/AuthContext';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 function txIcon(category: string, amount: number) {
@@ -46,6 +47,7 @@ function exportCsv(txns: Transaction[]) {
 export default function TransactionsPage() {
   useDocumentTitle('Transactions');
   const { user } = useAuth();
+  const { supportEmail } = useSupportSettings();
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -275,7 +277,7 @@ export default function TransactionsPage() {
                 onClick={async () => {
                   setIsGeneratingPdf(true);
                   try {
-                    await downloadReceiptPdf(selected, { name: user?.name ?? '', email: user?.email ?? '' }, resolvedStatus(selected));
+                    await downloadReceiptPdf(selected, { name: user?.name ?? '', email: user?.email ?? '' }, resolvedStatus(selected), supportEmail);
                   } finally {
                     setIsGeneratingPdf(false);
                   }

@@ -3,15 +3,18 @@ import { Mail, Phone, MessageCircle, Send, CheckCircle2, AlertCircle, Loader2 } 
 import PublicPageShell from '../../components/PublicPageShell';
 import { contact } from '../../lib/api';
 import { useDocumentTitle } from '../../lib/useDocumentTitle';
-
-const CHANNELS = [
-  { icon: Mail, title: 'Email', value: 'support@sescohub.com', href: 'mailto:support@sescohub.com' },
-  { icon: Phone, title: 'Phone', value: '0814 011 2803', href: 'tel:08140112803' },
-  { icon: MessageCircle, title: 'In-app Support', value: 'Chat with us after signing in', href: '/login' },
-];
+import { useSupportSettings } from '../../context/SupportSettingsContext';
 
 export default function ContactPage() {
   useDocumentTitle('Contact Us', 'Reach the SescoHub team for support, partnership inquiries, or general questions.');
+  const { supportEmail, whatsappNumber } = useSupportSettings();
+  const digits = whatsappNumber.replace(/\D/g, '');
+  const formatted = digits.length === 11 ? `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}` : whatsappNumber;
+  const CHANNELS = [
+    { icon: Mail, title: 'Email', value: supportEmail, href: `mailto:${supportEmail}` },
+    { icon: Phone, title: 'Phone', value: formatted, href: `tel:${digits}` },
+    { icon: MessageCircle, title: 'In-app Support', value: 'Chat with us after signing in', href: '/login' },
+  ];
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');

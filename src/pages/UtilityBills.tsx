@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSupportSettings } from '../context/SupportSettingsContext';
 import { products as productsApi, matchesProvider, purchase, formatNaira, type Product } from '../lib/api';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
-import { getSupportWhatsAppUrl } from '../components/FloatingSupportButtons';
 
 // IDs MUST match backend `provider` field exactly
 const TV_PROVIDERS = [
@@ -39,6 +39,7 @@ const CABLE_TEMPORARILY_DISABLED = true;
 
 export default function UtilityBills() {
   const { user, refreshUser } = useAuth();
+  const { getWhatsAppUrl } = useSupportSettings();
   const location = useLocation();
   const isElectricity = location.pathname.includes('electricity');
   useDocumentTitle(isElectricity ? 'Electricity' : 'TV Subscription');
@@ -187,7 +188,7 @@ export default function UtilityBills() {
               <button onClick={() => setError('')} className="font-bold" aria-label="Dismiss">✕</button>
             </div>
             <a
-              href={getSupportWhatsAppUrl('my bill payment failed')}
+              href={getWhatsAppUrl('my bill payment failed')}
               target="_blank"
               rel="noopener noreferrer"
               className="self-start text-[11.5px] font-bold underline hover:no-underline"

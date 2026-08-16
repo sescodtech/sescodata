@@ -1,7 +1,9 @@
 import PublicPageShell from '../../components/PublicPageShell';
 import { useDocumentTitle } from '../../lib/useDocumentTitle';
+import { useSupportSettings } from '../../context/SupportSettingsContext';
 
-const SECTIONS = [
+function buildSections(supportEmail: string) {
+  return [
   {
     title: '1. Information We Collect',
     body: `We collect information you provide directly \u2014 your name, email address, phone number, and password
@@ -35,7 +37,7 @@ const SECTIONS = [
   {
     title: '6. Your Rights',
     body: `You can review and update your profile information at any time from Settings. To request account
-    deletion or a copy of your data, contact support@sescohub.com.`,
+    deletion or a copy of your data, contact ${supportEmail}.`,
   },
   {
     title: '7. Cookies',
@@ -48,10 +50,13 @@ const SECTIONS = [
     body: `We may update this policy from time to time. Material changes will be reflected here with an updated
     effective date.`,
   },
-];
+  ];
+}
 
 export default function PrivacyPolicyPage() {
   useDocumentTitle('Privacy Policy', 'How SescoHub collects, uses and protects your information.');
+  const { supportEmail } = useSupportSettings();
+  const SECTIONS = buildSections(supportEmail);
   return (
     <PublicPageShell eyebrow="Legal" title="Privacy Policy" description={`Last updated: ${new Date().toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}`}>
       <div className="max-w-3xl mx-auto space-y-10">
@@ -62,7 +67,7 @@ export default function PrivacyPolicyPage() {
           </div>
         ))}
         <div className="pt-6 border-t border-gray-100 text-sm text-gray-500">
-          Questions about this policy? Contact us at <a href="mailto:support@sescohub.com" className="text-shb-gold-dark font-bold hover:underline">support@sescohub.com</a>.
+          Questions about this policy? Contact us at <a href={`mailto:${supportEmail}`} className="text-shb-gold-dark font-bold hover:underline">{supportEmail}</a>.
         </div>
       </div>
     </PublicPageShell>
