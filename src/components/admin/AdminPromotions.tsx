@@ -2,15 +2,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, Megaphone, Loader2, X, Calendar } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { admin, formatDate, type Promotion } from '../../lib/api';
+import { admin, adminProducts, formatDate, formatNaira, type Promotion, type AdminProduct } from '../../lib/api';
 import EmptyState from '../EmptyState';
 import { SkeletonList } from '../Skeleton';
 
+const CATEGORIES: { value: Promotion['category']; label: string }[] = [
+  { value: 'data', label: 'Data' },
+  { value: 'airtime', label: 'Airtime' },
+  { value: 'electricity', label: 'Electricity' },
+  { value: 'education', label: 'Exam PIN' },
+];
+
+const NETWORKS = ['mtn', 'glo', 'airtel', '9mobile'];
+
 type FormState = {
-  title: string;
-  description: string;
-  ctaText: string;
-  ctaLink: string;
+  category: Promotion['category'] | '';
+  network: string;
+  productId: string;
+  promotionType: 'percentage' | 'fixed';
+  discountPercent: string;
+  promoPrice: string;
   startDate: string;
   endDate: string;
   sortOrder: string;
@@ -18,10 +29,12 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
-  title: '',
-  description: '',
-  ctaText: '',
-  ctaLink: '',
+  category: '',
+  network: '',
+  productId: '',
+  promotionType: 'percentage',
+  discountPercent: '10',
+  promoPrice: '',
   startDate: '',
   endDate: '',
   sortOrder: '0',
@@ -50,7 +63,7 @@ const STATUS_STYLES: Record<string, string> = {
   red: 'bg-red-50 text-red-600',
 };
 
-/** Create/Edit modal — one form covers both since the fields are identical. */
+/** Create/Edit modal — picks a real product from the catalog instead of free text. */
 function PromotionFormModal({
   open, initial, onClose, onSubmit,
 }: {
@@ -62,18 +75,47 @@ function PromotionFormModal({
   const [form, setForm] = useState<FormState>(initial);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   useEffect(() => {
     if (open) { setForm(initial); setError(''); }
   }, [open, initial]);
 
+  // Load real products for the chosen category (+ network, for Data) from
+  // ProductService via the existing admin products endpoint.
+  useEffect(() => {
+    if (!open || !form.category) { setProducts([]); return; }
+    setIsLoadingProducts(true);
+    adminProducts.list({ category: form.category })
+      .then((res) => {
+        const filtered = form.category === 'data' && form.network
+          ? res.products.filter((p) => p.provider === form.network)
+          : res.products;
+        setProducts(filtered);
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setIsLoadingProducts(false));
+  }, [open, form.category, form.network]);
+
   if (!open) return null;
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  const handleCategoryChange = (category: Promotion['category']) => {
+    setForm((f) => ({ ...f, category, network: '', productId: '' }));
+  };
+
   const handleSubmit = async () => {
-    if (!form.title.trim()) { setError('Title is required.'); return; }
-    if (!form.description.trim()) { setError('Description is required.'); return; }
+    if (!form.category) { setError('Category is required.'); return; }
+    if (!form.productId) { setError('Select a product.'); return; }
+    if (form.promotionType === 'percentage') {
+      const pct = Number(form.discountPercent);
+      if (!pct || pct <= 0 || pct >= 100) { setError('Discount percent must be between 1 and 99.'); return; }
+    } else {
+      const price = Number(form.promoPrice);
+      if (!price || price <= 0) { setError('Promo price must be greater than 0.'); return; }
+    }
     if (!form.startDate || !form.endDate) { setError('Start and end dates are required.'); return; }
     if (new Date(form.endDate) < new Date(form.startDate)) { setError('End date must be on or after the start date.'); return; }
 
@@ -89,6 +131,8 @@ function PromotionFormModal({
     }
   };
 
+  const isEditing = !!initial.productId;
+
   return (
     <>
       <div onClick={onClose} className="fixed inset-0 bg-black/40 z-[60]" />
@@ -99,46 +143,94 @@ function PromotionFormModal({
               <div className="w-8 h-8 rounded-lg bg-admin-blue-soft text-admin-blue flex items-center justify-center shrink-0">
                 <Megaphone size={15} />
               </div>
-              <h3 className="font-bold text-admin-navy text-[13.5px]">{initial.title ? 'Edit Promotion' : 'Create Promotion'}</h3>
+              <h3 className="font-bold text-admin-navy text-[13.5px]">{isEditing ? 'Edit Promotion' : 'Create Promotion'}</h3>
             </div>
             <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600 p-1"><X size={18} /></button>
           </div>
 
           <div className="p-3.5 space-y-3 overflow-y-auto">
             <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">Title *</label>
-              <input
-                value={form.title} onChange={(e) => set('title', e.target.value)} maxLength={120}
-                placeholder="e.g. Weekend Data Bonus"
+              <label className="text-xs font-bold text-gray-600 block mb-1">Category *</label>
+              <select
+                value={form.category}
+                onChange={(e) => handleCategoryChange(e.target.value as Promotion['category'])}
                 className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
-              />
+              >
+                <option value="">Select category…</option>
+                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
             </div>
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">Description *</label>
-              <textarea
-                value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} maxLength={500}
-                placeholder="Short description shown on the dashboard card"
-                className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue resize-none"
-              />
-            </div>
+
+            {form.category === 'data' && (
+              <div>
+                <label className="text-xs font-bold text-gray-600 block mb-1">Network *</label>
+                <select
+                  value={form.network}
+                  onChange={(e) => setForm((f) => ({ ...f, network: e.target.value, productId: '' }))}
+                  className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
+                >
+                  <option value="">Select network…</option>
+                  {NETWORKS.map((n) => <option key={n} value={n}>{n.toUpperCase()}</option>)}
+                </select>
+              </div>
+            )}
+
+            {form.category && (
+              <div>
+                <label className="text-xs font-bold text-gray-600 block mb-1">Product *</label>
+                <select
+                  value={form.productId}
+                  onChange={(e) => set('productId', e.target.value)}
+                  disabled={isLoadingProducts || (form.category === 'data' && !form.network)}
+                  className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue disabled:opacity-50"
+                >
+                  <option value="">
+                    {isLoadingProducts ? 'Loading products…' : form.category === 'data' && !form.network ? 'Select a network first…' : 'Select product…'}
+                  </option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} — {formatNaira(p.sellingPrice)}</option>
+                  ))}
+                </select>
+                {!isLoadingProducts && form.category && (form.category !== 'data' || form.network) && products.length === 0 && (
+                  <p className="text-[11px] text-gray-400 mt-1">No products found for this selection.</p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="text-xs font-bold text-gray-600 block mb-1">CTA Text (optional)</label>
-                <input
-                  value={form.ctaText} onChange={(e) => set('ctaText', e.target.value)} maxLength={40}
-                  placeholder="e.g. Buy Now"
+                <label className="text-xs font-bold text-gray-600 block mb-1">Promotion Type *</label>
+                <select
+                  value={form.promotionType}
+                  onChange={(e) => set('promotionType', e.target.value as 'percentage' | 'fixed')}
                   className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
-                />
+                >
+                  <option value="percentage">Percentage off</option>
+                  <option value="fixed">Fixed price</option>
+                </select>
               </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600 block mb-1">CTA Link (optional)</label>
-                <input
-                  value={form.ctaLink} onChange={(e) => set('ctaLink', e.target.value)}
-                  placeholder="/app/buy-data"
-                  className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
-                />
-              </div>
+              {form.promotionType === 'percentage' ? (
+                <div>
+                  <label className="text-xs font-bold text-gray-600 block mb-1">Discount % *</label>
+                  <input
+                    type="number" min={1} max={99} value={form.discountPercent}
+                    onChange={(e) => set('discountPercent', e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-bold text-gray-600 block mb-1">Promo Price (\u20a6) *</label>
+                  <input
+                    type="number" min={1} value={form.promoPrice}
+                    onChange={(e) => set('promoPrice', e.target.value)}
+                    placeholder="e.g. 500"
+                    className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-md text-[12.5px] outline-none focus:ring-2 focus:ring-admin-blue"
+                  />
+                </div>
+              )}
             </div>
+
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">Start Date *</label>
@@ -182,7 +274,7 @@ function PromotionFormModal({
               className="flex-1 py-2 rounded-lg text-[12.5px] font-bold text-white admin-btn-primary !py-2 flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : null}
-              {initial.title ? 'Save Changes' : 'Create Promotion'}
+              {isEditing ? 'Save Changes' : 'Create Promotion'}
             </button>
           </div>
         </div>
@@ -215,10 +307,12 @@ export default function AdminPromotions() {
   const openEdit = (p: Promotion) => { setEditing(p); setModalOpen(true); };
 
   const formFor = (p: Promotion | null): FormState => p ? {
-    title: p.title,
-    description: p.description,
-    ctaText: p.ctaText || '',
-    ctaLink: p.ctaLink || '',
+    category: p.category,
+    network: p.network || '',
+    productId: p.productId,
+    promotionType: p.promotionType,
+    discountPercent: p.discountPercent != null ? String(p.discountPercent) : '10',
+    promoPrice: p.promoPrice != null ? String(p.promoPrice) : '',
     startDate: toDateInputValue(p.startDate),
     endDate: toDateInputValue(p.endDate),
     sortOrder: String(p.sortOrder ?? 0),
@@ -226,11 +320,13 @@ export default function AdminPromotions() {
   } : EMPTY_FORM;
 
   const handleSubmit = async (form: FormState) => {
-    const payload = {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      ctaText: form.ctaText.trim() || undefined,
-      ctaLink: form.ctaLink.trim() || undefined,
+    const payload: Partial<Promotion> = {
+      productId: form.productId,
+      category: form.category as Promotion['category'],
+      network: form.network || undefined,
+      promotionType: form.promotionType,
+      discountPercent: form.promotionType === 'percentage' ? Number(form.discountPercent) : undefined,
+      promoPrice: form.promotionType === 'fixed' ? Number(form.promoPrice) : undefined,
       startDate: form.startDate,
       endDate: form.endDate,
       sortOrder: Number(form.sortOrder) || 0,
@@ -257,7 +353,7 @@ export default function AdminPromotions() {
   };
 
   const handleDelete = async (p: Promotion) => {
-    if (!window.confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete this promotion (${p.productId})? This cannot be undone.`)) return;
     try {
       await admin.deletePromotion(p._id);
       toast.success('Promotion deleted');
@@ -266,6 +362,8 @@ export default function AdminPromotions() {
       toast.error(e.message || 'Failed to delete promotion');
     }
   };
+
+  const categoryLabel = (c: Promotion['category']) => CATEGORIES.find((x) => x.value === c)?.label || c;
 
   return (
     <div className="space-y-3">
@@ -280,7 +378,7 @@ export default function AdminPromotions() {
           </button>
         </div>
         <p className="text-[12px] text-gray-500 mb-3.5">
-          Controls the "Active Promotions" card on the customer dashboard. Only enabled promotions within their date range are shown to customers — expired or disabled ones are hidden automatically.
+          Promotions are tied to real products from the catalog. Only enabled promotions within their date range are shown to customers — expired or disabled ones are hidden automatically.
         </p>
 
         {isLoading ? (
@@ -295,16 +393,17 @@ export default function AdminPromotions() {
                 <div key={p._id} className="flex items-start justify-between gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-bold text-gray-900 text-[13px] truncate">{p.title}</span>
+                      <span className="font-bold text-gray-900 text-[13px] truncate">{p.productId}</span>
                       <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0', STATUS_STYLES[status.tone])}>
                         {status.label}
                       </span>
                     </div>
-                    <p className="text-[12px] text-gray-500 mb-1.5 line-clamp-2">{p.description}</p>
+                    <p className="text-[12px] text-gray-500 mb-1.5">
+                      {categoryLabel(p.category)}{p.network ? ` \u00b7 ${p.network.toUpperCase()}` : ''} \u00b7 {p.promotionType === 'percentage' ? `${p.discountPercent}% off` : `Fixed at ${formatNaira(p.promoPrice || 0)}`}
+                    </p>
                     <div className="flex items-center gap-3 flex-wrap text-[11px] text-gray-400">
                       <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(p.startDate)} &ndash; {formatDate(p.endDate)}</span>
                       <span>Sort: {p.sortOrder}</span>
-                      {p.ctaText && <span>CTA: "{p.ctaText}"</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { Promotion } from '../models/Promotion';
 import { User } from '../models/User';
+import { ProductService } from '../services/ProductService';
 import { AuditLogService } from '../services/AuditLogService';
 
 async function getActor(req: any): Promise<{ id: string; name: string }> {
@@ -8,13 +9,26 @@ async function getActor(req: any): Promise<{ id: string; name: string }> {
   return { id: req.user.id, name: admin?.name || req.user.email || 'Unknown Admin' };
 }
 
-function validatePayload(body: any, { partial = false } = {}) {
+const VALID_CATEGORIES = ['data', 'airtime', 'electricity', 'education'];
+
+/** Validates the payload against the real product catalog — a promotion can only ever point at a product that actually exists. */
+async function validatePayload(body: any, { partial = false } = {}) {
   const errors: string[] = [];
-  if (!partial || body.title !== undefined) {
-    if (!body.title || !String(body.title).trim()) errors.push('Title is required.');
+
+  if (!partial || body.category !== undefined) {
+    if (!VALID_CATEGORIES.includes(body.category)) errors.push('A valid category is required.');
   }
-  if (!partial || body.description !== undefined) {
-    if (!body.description || !String(body.description).trim()) errors.push('Description is required.');
+  if (!partial || body.productId !== undefined) {
+    if (!body.productId || !String(body.productId).trim()) errors.push('A product is required.');
+  }
+  if (!partial || body.promotionType !== undefined) {
+    if (!['percentage', 'fixed'].includes(body.promotionType)) errors.push('Promotion type must be percentage or fixed.');
+  }
+  if (body.promotionType === 'percentage' && (body.discountPercent === undefined || Number(body.discountPercent) <= 0 || Number(body.discountPercent) >= 100)) {
+    errors.push('Discount percent must be between 1 and 99.');
+  }
+  if (body.promotionType === 'fixed' && (body.promoPrice === undefined || Number(body.promoPrice) <= 0)) {
+    errors.push('Promo price must be greater than 0.');
   }
   if (!partial || body.startDate !== undefined) {
     if (!body.startDate || Number.isNaN(new Date(body.startDate).getTime())) errors.push('A valid start date is required.');
@@ -25,6 +39,14 @@ function validatePayload(body: any, { partial = false } = {}) {
   if (body.startDate && body.endDate && !Number.isNaN(new Date(body.startDate).getTime()) && !Number.isNaN(new Date(body.endDate).getTime())) {
     if (new Date(body.endDate) < new Date(body.startDate)) errors.push('End date must be on or after the start date.');
   }
+
+  // Cross-check the product actually exists in the catalog and belongs to the stated category.
+  if (errors.length === 0 && body.productId && body.category) {
+    const product = await ProductService.getProductById(String(body.productId));
+    if (!product) errors.push('Selected product was not found in the catalog.');
+    else if (product.category !== body.category) errors.push('Selected product does not belong to the chosen category.');
+  }
+
   return errors;
 }
 
@@ -42,15 +64,17 @@ export class AdminPromotionController {
   /** POST /api/admin/promotions */
   static async create(req: any, res: Response) {
     try {
-      const errors = validatePayload(req.body);
+      const errors = await validatePayload(req.body);
       if (errors.length) return res.status(400).json({ success: false, error: errors.join(' ') });
 
-      const { title, description, ctaText, ctaLink, startDate, endDate, sortOrder, enabled } = req.body;
+      const { productId, category, network, promotionType, discountPercent, promoPrice, startDate, endDate, sortOrder, enabled } = req.body;
       const promotion = await Promotion.create({
-        title: String(title).trim(),
-        description: String(description).trim(),
-        ctaText: ctaText ? String(ctaText).trim() : undefined,
-        ctaLink: ctaLink ? String(ctaLink).trim() : undefined,
+        productId: String(productId).trim(),
+        category,
+        network: network ? String(network).trim() : undefined,
+        promotionType,
+        discountPercent: promotionType === 'percentage' ? Number(discountPercent) : undefined,
+        promoPrice: promotionType === 'fixed' ? Number(promoPrice) : undefined,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         sortOrder: Number.isFinite(Number(sortOrder)) ? Number(sortOrder) : 0,
@@ -63,7 +87,7 @@ export class AdminPromotionController {
         action: 'promotion.create',
         targetType: 'system',
         targetId: String(promotion._id),
-        targetLabel: promotion.title,
+        targetLabel: promotion.productId,
         after: promotion.toObject(),
         ip: AuditLogService.getClientIp(req),
       });
@@ -77,17 +101,26 @@ export class AdminPromotionController {
   /** PUT /api/admin/promotions/:id */
   static async update(req: any, res: Response) {
     try {
-      const errors = validatePayload(req.body, { partial: true });
-      if (errors.length) return res.status(400).json({ success: false, error: errors.join(' ') });
-
       const before = await Promotion.findById(req.params.id);
       if (!before) return res.status(404).json({ success: false, error: 'Promotion not found' });
 
-      const { title, description, ctaText, ctaLink, startDate, endDate, sortOrder, enabled } = req.body;
-      if (title !== undefined) before.title = String(title).trim();
-      if (description !== undefined) before.description = String(description).trim();
-      if (ctaText !== undefined) before.ctaText = ctaText ? String(ctaText).trim() : undefined;
-      if (ctaLink !== undefined) before.ctaLink = ctaLink ? String(ctaLink).trim() : undefined;
+      const merged = { ...before.toObject(), ...req.body };
+      const errors = await validatePayload(merged, { partial: true });
+      if (errors.length) return res.status(400).json({ success: false, error: errors.join(' ') });
+
+      const { productId, category, network, promotionType, discountPercent, promoPrice, startDate, endDate, sortOrder, enabled } = req.body;
+      if (productId !== undefined) before.productId = String(productId).trim();
+      if (category !== undefined) before.category = category;
+      if (network !== undefined) before.network = network ? String(network).trim() : undefined;
+      if (promotionType !== undefined) before.promotionType = promotionType;
+      const effectiveType = promotionType ?? before.promotionType;
+      if (effectiveType === 'percentage') {
+        if (discountPercent !== undefined) before.discountPercent = Number(discountPercent);
+        before.promoPrice = undefined;
+      } else if (effectiveType === 'fixed') {
+        if (promoPrice !== undefined) before.promoPrice = Number(promoPrice);
+        before.discountPercent = undefined;
+      }
       if (startDate !== undefined) before.startDate = new Date(startDate);
       if (endDate !== undefined) before.endDate = new Date(endDate);
       if (sortOrder !== undefined) before.sortOrder = Number(sortOrder) || 0;
@@ -102,7 +135,7 @@ export class AdminPromotionController {
         action: 'promotion.update',
         targetType: 'system',
         targetId: String(before._id),
-        targetLabel: before.title,
+        targetLabel: before.productId,
         before: beforeSnapshot,
         after: before.toObject(),
         ip: AuditLogService.getClientIp(req),
@@ -131,7 +164,7 @@ export class AdminPromotionController {
         action: 'promotion.toggle',
         targetType: 'system',
         targetId: String(promotion._id),
-        targetLabel: promotion.title,
+        targetLabel: promotion.productId,
         before: { enabled: wasEnabled },
         after: { enabled: promotion.enabled },
         ip: AuditLogService.getClientIp(req),
@@ -158,7 +191,7 @@ export class AdminPromotionController {
         action: 'promotion.delete',
         targetType: 'system',
         targetId: String(snapshot._id),
-        targetLabel: snapshot.title,
+        targetLabel: snapshot.productId,
         before: snapshot,
         ip: AuditLogService.getClientIp(req),
       });

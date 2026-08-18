@@ -231,16 +231,32 @@ export interface ProductsResponse {
 
 export interface Promotion {
   _id: string;
-  title: string;
-  description: string;
-  ctaText?: string;
-  ctaLink?: string;
+  productId: string;
+  category: 'data' | 'airtime' | 'electricity' | 'education';
+  network?: string;
+  promotionType: 'percentage' | 'fixed';
+  discountPercent?: number;
+  promoPrice?: number;
   startDate: string;
   endDate: string;
   enabled: boolean;
   sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Public, resolved shape returned by GET /api/promotions/active — product name/price come live from the catalog. */
+export interface ActivePromotion {
+  _id: string;
+  productId: string;
+  productName: string;
+  category: 'data' | 'airtime' | 'electricity' | 'education';
+  network?: string;
+  originalPrice: number;
+  discountedPrice: number;
+  promotionType: 'percentage' | 'fixed';
+  discountPercent?: number;
+  sortOrder: number;
 }
 
 // The product catalog barely changes minute-to-minute, but customers commonly
@@ -258,7 +274,7 @@ let productsInFlight: Promise<ProductsResponse> | null = null;
 export const promotions = {
   // Public, unauthenticated — the dashboard "Active Promotions" card needs
   // this before we know anything about caching/auth state.
-  active: () => apiFetch<{ success: boolean; promotions: Promotion[] }>('/api/promotions/active'),
+  active: () => apiFetch<{ success: boolean; promotions: ActivePromotion[] }>('/api/promotions/active'),
 };
 
 export const products = {

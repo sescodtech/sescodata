@@ -6,7 +6,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
-import { transactions as txnApi, promotions as promotionsApi, formatNaira, formatDate, type Transaction, type Promotion } from '../lib/api';
+import { transactions as txnApi, promotions as promotionsApi, formatNaira, formatDate, type Transaction, type ActivePromotion } from '../lib/api';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { SkeletonList, Skeleton } from '../components/Skeleton';
@@ -21,6 +21,14 @@ const QUICK_ACTIONS = [
   { title: 'Exam PINs',   icon: GraduationCap,  to: '/app/exam-pins' },
   { title: 'Wallet',      icon: Wallet,         to: '/app/wallet' },
 ];
+
+// Maps a promotion's product category to the correct purchase page.
+const PROMOTION_CATEGORY_ROUTE: Record<string, string> = {
+  data: '/app/buy-data',
+  airtime: '/app/buy-airtime',
+  electricity: '/app/electricity',
+  education: '/app/exam-pins',
+};
 
 const SECURITY_TIPS = [
   'Never share your password or OTP with anyone, including SescoHub staff.',
@@ -40,7 +48,7 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [isLoadingTxns, setIsLoadingTxns] = useState(true);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promotions, setPromotions] = useState<ActivePromotion[]>([]);
   const { favorites, toggleFavorite, isFavorite } = useFavoriteNumbers();
   const tipOfTheDay = SECURITY_TIPS[new Date().getDate() % SECURITY_TIPS.length];
 
@@ -165,26 +173,25 @@ export default function DashboardHome() {
             <p className="text-xs text-gray-400 py-3">No active promotions right now — check back soon.</p>
           ) : (
             <div className="space-y-2">
-              {promotions.slice(0, 2).map((p) => {
-                const content = (
-                  <div className="p-2.5 rounded-xl hover:bg-shb-gold-soft/10 transition-colors">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-bold text-gray-900">{p.title}</p>
-                      {p.ctaText && <span className="text-[10px] font-bold text-shb-gold-dark shrink-0 whitespace-nowrap">{p.ctaText} &rarr;</span>}
-                    </div>
-                    <p className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{p.description}</p>
+              {promotions.slice(0, 2).map((p) => (
+                <Link
+                  key={p._id}
+                  to={PROMOTION_CATEGORY_ROUTE[p.category] || '/app'}
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl hover:bg-shb-gold-soft/10 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-gray-900 truncate">{p.productName}</p>
+                    <p className="text-[11px] text-gray-400">{p.network ? p.network.toUpperCase() : ''}</p>
                   </div>
-                );
-                return p.ctaLink ? (
-                  p.ctaLink.startsWith('http') ? (
-                    <a key={p._id} href={p.ctaLink} target="_blank" rel="noopener noreferrer">{content}</a>
-                  ) : (
-                    <Link key={p._id} to={p.ctaLink}>{content}</Link>
-                  )
-                ) : (
-                  <div key={p._id}>{content}</div>
-                );
-              })}
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="text-xs font-extrabold text-shb-gold-dark">{formatNaira(p.discountedPrice)}</p>
+                    {p.originalPrice > p.discountedPrice && (
+                      <p className="text-[10px] text-gray-300 line-through">{formatNaira(p.originalPrice)}</p>
+                    )}
+                    <p className="text-[10px] font-bold text-shb-gold-dark whitespace-nowrap">Buy Now &rarr;</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
         </div>
