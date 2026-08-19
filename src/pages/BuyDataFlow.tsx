@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Smartphone, CheckCircle2, Loader2, ArrowLeft, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search, PartyPopper, ChevronDown } from 'lucide-react';
+import { Smartphone, CheckCircle2, Loader2, Database, AlertCircle, RefreshCw, Wallet, Star, Clock, Search, PartyPopper } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -10,6 +10,9 @@ import { recentNumbers, favoritePlans } from '../lib/localPrefs';
 import PageHeader from '../components/PageHeader';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
+// UI-only redesign (OPay-style single page). All state, validation, network
+// detection, productId preload, and the purchase call below are unchanged
+// from before — only the JSX layout/styling was restructured.
 export default function BuyDataFlow() {
   useDocumentTitle('Buy Data');
   const { user, refreshUser } = useAuth();
@@ -19,7 +22,6 @@ export default function BuyDataFlow() {
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [manualNetworkId, setManualNetworkId] = useState<string | null>(null);
-  const [networkPickerOpen, setNetworkPickerOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Product | null>(null);
   const [planFilter, setPlanFilter] = useState<'all' | 'sme' | 'gifting' | 'corporate' | 'favorites'>('all');
   const [planSearch, setPlanSearch] = useState('');
@@ -88,6 +90,8 @@ export default function BuyDataFlow() {
     setFavorites(favoritePlans.toggle(planId));
   };
 
+  const insufficientBalance = !!selectedPlan && user?.walletBalance != null && user.walletBalance < selectedPlan.price;
+
   const handlePay = async () => {
     if (!selectedPlan || !phoneNumber || !user?.email) return;
     if (user.walletBalance == null || user.walletBalance < selectedPlan.price) {
@@ -124,71 +128,36 @@ export default function BuyDataFlow() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0 pb-28 sm:pb-3">
       <PageHeader title="Buy Data" description="Instant delivery to any network." icon={Database} backTo="/app" />
 
-      {/* Phone number — the single entry point. Network is detected live as you type. */}
+      {/* Wallet Balance — always visible at the top, OPay-style */}
+      <div className="shb-card p-3.5 flex items-center justify-between bg-shb-navy text-white">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+            <Wallet size={16} />
+          </div>
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-widest text-white/60">Wallet Balance</p>
+            <p className="text-[17px] font-extrabold leading-tight">{formatNaira(user?.walletBalance || 0)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Phone Number */}
       <div className="shb-card p-3.5">
         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Phone Number</label>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              type="tel"
-              autoFocus
-              value={phoneNumber}
-              onChange={(e) => { setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11)); setSelectedPlan(null); }}
-              className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-[15px] tracking-wide"
-              placeholder="08012345678"
-              maxLength={11}
-            />
-          </div>
-
-          {/* Network chip — auto-filled from detection, tappable to override */}
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setNetworkPickerOpen((v) => !v)}
-              className={cn(
-                'flex items-center gap-1.5 pl-2 pr-2.5 py-2.5 rounded-lg border font-bold text-[12px] transition-colors',
-                activeNetwork ? 'border-gray-200' : 'border-dashed border-gray-300 text-gray-400',
-              )}
-            >
-              {activeNetwork ? (
-                <>
-                  <span className={cn('w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black', activeNetwork.bg, activeNetwork.textColor)}>
-                    {activeNetwork.id[0].toUpperCase()}
-                  </span>
-                  <span className="hidden xs:inline">{activeNetwork.name.split(' ')[0]}</span>
-                </>
-              ) : (
-                'Network'
-              )}
-              <ChevronDown size={13} />
-            </button>
-            <AnimatePresence>
-              {networkPickerOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                  className="absolute right-0 top-full mt-1.5 w-40 bg-white rounded-lg border border-gray-100 shadow-lg z-20 p-1"
-                >
-                  {NETWORKS.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => { setManualNetworkId(n.id); setNetworkPickerOpen(false); setSelectedPlan(null); }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 text-left"
-                    >
-                      <span className={cn('w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0', n.bg, n.textColor)}>
-                        {n.id[0].toUpperCase()}
-                      </span>
-                      <span className="text-[12.5px] font-semibold text-gray-700">{n.name}</span>
-                      {n.id === activeNetworkId && <CheckCircle2 size={13} className="ml-auto text-shb-gold-dark shrink-0" />}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+        <div className="relative">
+          <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="tel"
+            autoFocus
+            value={phoneNumber}
+            onChange={(e) => { setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11)); setSelectedPlan(null); }}
+            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-[15px] tracking-wide"
+            placeholder="08012345678"
+            maxLength={11}
+          />
         </div>
 
         {phoneNumber.length > 0 && !isValidPhone && (
@@ -215,9 +184,35 @@ export default function BuyDataFlow() {
         )}
       </div>
 
-      {/* Once a network is known, plans load right below — no separate step. */}
-      {activeNetwork && !selectedPlan && (
+      {/* Network — always visible as its own row of tappable options, auto-filled from the phone number but overridable */}
+      <div className="shb-card p-3.5">
+        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Network</label>
+        <div className="grid grid-cols-4 gap-2">
+          {NETWORKS.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => { setManualNetworkId(n.id); setSelectedPlan(null); }}
+              className={cn(
+                'flex flex-col items-center gap-1 py-2.5 rounded-lg border-2 transition-all',
+                activeNetworkId === n.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-gray-200',
+              )}
+            >
+              <span className={cn('w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-black', n.bg, n.textColor)}>
+                {n.id[0].toUpperCase()}
+              </span>
+              <span className="text-[10.5px] font-bold text-gray-700 truncate w-full text-center px-0.5">{n.name.split(' ')[0]}</span>
+              {activeNetworkId === n.id && <CheckCircle2 size={11} className="text-shb-gold-dark" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Data Plan — grid stays visible; the chosen plan is highlighted rather than replacing the section */}
+      {activeNetwork && (
         <div className="shb-card p-3.5">
+          <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Data Plan</label>
+
           {isLoadingPlans ? (
             <div className="flex items-center gap-2.5 text-gray-500 py-6 justify-center text-[13px]">
               <Loader2 className="animate-spin" size={16} /> Loading {activeNetwork.name} plans…
@@ -282,7 +277,10 @@ export default function BuyDataFlow() {
                     <button
                       key={plan.id}
                       onClick={() => setSelectedPlan(plan)}
-                      className="p-2.5 rounded-lg border border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10 transition-all text-left group relative"
+                      className={cn(
+                        'p-2.5 rounded-lg border-2 transition-all text-left group relative',
+                        selectedPlan?.id === plan.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10',
+                      )}
                     >
                       <button
                         onClick={(e) => toggleFavorite(e, plan.id)}
@@ -291,7 +289,10 @@ export default function BuyDataFlow() {
                       >
                         <Star size={12} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
                       </button>
-                      <p className="font-bold text-gray-900 text-[13px] leading-tight pr-4">{plan.name}</p>
+                      {selectedPlan?.id === plan.id && (
+                        <CheckCircle2 size={13} className="absolute top-1.5 left-1.5 text-shb-gold-dark" />
+                      )}
+                      <p className={cn('font-bold text-gray-900 text-[13px] leading-tight pr-4', selectedPlan?.id === plan.id && 'pl-4')}>{plan.name}</p>
                       {plan.validity && <p className="text-[11px] text-gray-500 mt-0.5">{plan.validity}</p>}
                       <div className="flex items-center justify-between mt-1.5">
                         <span className="text-shb-navy font-extrabold text-[14px] whitespace-nowrap">{formatNaira(plan.price)}</span>
@@ -311,70 +312,62 @@ export default function BuyDataFlow() {
       {!activeNetwork && phoneNumber.length === 0 && (
         <div className="text-center py-10 text-gray-400">
           <Smartphone size={26} className="mx-auto mb-2 opacity-40" />
-          <p className="text-[13px] font-semibold">Type a phone number to see plans</p>
+          <p className="text-[13px] font-semibold">Type a phone number or pick a network to see plans</p>
         </div>
       )}
 
-      {/* Confirm & pay — replaces the plan grid in place, no page navigation */}
-      {selectedPlan && activeNetwork && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="shb-card p-3.5">
-          <button onClick={() => setSelectedPlan(null)} className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-shb-navy mb-3">
-            <ArrowLeft size={13} /> Change plan
-          </button>
-
-          <div className="bg-shb-gold-soft/20 border border-shb-gold-soft rounded-lg p-3 mb-3.5">
-            <div className="flex justify-between items-center text-[13px] mb-1">
-              <span className="text-gray-600">{selectedPlan.name} · {activeNetwork.name.split(' ')[0]}</span>
-              {selectedPlan.validity && <span className="text-gray-500 text-[11px]">{selectedPlan.validity}</span>}
+      <AnimatePresence>
+        {paymentError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="shb-card p-2.5 border-red-200 bg-red-50 flex flex-col gap-2 text-[12px] text-red-700"
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle size={13} className="shrink-0 mt-0.5" />
+              {paymentError}
             </div>
-            <div className="flex justify-between items-center pt-1.5 mt-1.5 border-t border-shb-gold-soft">
-              <span className="font-bold text-gray-900 text-[13px]">Total</span>
-              <span className="text-[17px] font-extrabold text-shb-navy">{formatNaira(selectedPlan.price)}</span>
-            </div>
+            <a
+              href={getWhatsAppUrl('my data purchase failed')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="self-start text-[11.5px] font-bold underline hover:no-underline"
+            >
+              Contact Support on WhatsApp
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Amount + Buy — sticky summary bar, OPay-style, always at the bottom of the flow */}
+      <div className="sm:relative fixed sm:static bottom-0 left-0 right-0 sm:mt-0 bg-white sm:bg-transparent border-t sm:border-t-0 border-gray-100 sm:shadow-none shadow-[0_-4px_16px_rgba(0,0,0,0.06)] p-3.5 sm:p-0 z-30">
+        <div className="max-w-2xl mx-auto shb-card p-3.5 sm:!shadow-none sm:!border sm:border-gray-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Amount</span>
+            <span className="text-[17px] font-extrabold text-shb-navy">{selectedPlan ? formatNaira(selectedPlan.price) : '\u2014'}</span>
           </div>
-
-          <p className="text-[12.5px] text-gray-600 mb-1">Sending to <span className="font-mono font-bold text-gray-900">{phoneNumber}</span></p>
-
-          <AnimatePresence>
-            {paymentError && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                className="my-2.5 p-2.5 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2 text-[12px] text-red-700"
-              >
-                <div className="flex items-start gap-2">
-                  <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                  {paymentError}
-                </div>
-                <a
-                  href={getWhatsAppUrl('my data purchase failed')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="self-start text-[11.5px] font-bold underline hover:no-underline"
-                >
-                  Contact Support on WhatsApp
-                </a>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="my-2.5 p-2.5 bg-gray-50 border border-gray-200 rounded-lg flex items-start gap-2 text-[11.5px] text-gray-600">
-            <Wallet size={13} className="shrink-0 mt-0.5 text-shb-gold-dark" />
-            Deducted from your wallet. Data delivers automatically.
-          </div>
-
+          {selectedPlan && (
+            <p className="text-[11.5px] text-gray-500 mb-2.5">
+              {selectedPlan.name}{selectedPlan.validity ? ` \u00b7 ${selectedPlan.validity}` : ''} to <span className="font-mono font-bold text-gray-800">{phoneNumber || '\u2014'}</span>
+            </p>
+          )}
+          {insufficientBalance && (
+            <p className="text-[11.5px] text-red-600 font-semibold flex items-center gap-1 mb-2">
+              <AlertCircle size={12} /> Insufficient wallet balance
+            </p>
+          )}
           <button
             onClick={handlePay}
-            disabled={!isValidPhone || isProcessing}
-            className="shb-btn-primary w-full text-[15px] flex items-center justify-center gap-2"
+            disabled={!selectedPlan || !isValidPhone || isProcessing}
+            className="shb-btn-primary w-full text-[15px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
               <><Loader2 className="animate-spin" size={17} /> Processing…</>
             ) : (
-              <>Pay {formatNaira(selectedPlan.price)}</>
+              <>Buy {selectedPlan ? formatNaira(selectedPlan.price) : 'Data'}</>
             )}
           </button>
-        </motion.div>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

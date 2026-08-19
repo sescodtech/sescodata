@@ -176,7 +176,7 @@ export default function DashboardHome() {
               {promotions.slice(0, 2).map((p) => (
                 <Link
                   key={p._id}
-                  to={PROMOTION_CATEGORY_ROUTE[p.category] || '/app'}
+                  to={`${PROMOTION_CATEGORY_ROUTE[p.category] || '/app'}?productId=${encodeURIComponent(p.productId)}`}
                   className="flex items-center justify-between gap-2 p-2.5 rounded-xl hover:bg-shb-gold-soft/10 transition-colors"
                 >
                   <div className="min-w-0">

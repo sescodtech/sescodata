@@ -57,11 +57,11 @@ export default function TransactionsPage() {
   const [copied, setCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  const loadTransactions = async () => {
+  const loadTransactions = async (opts: { force?: boolean } = {}) => {
     setIsLoading(true);
     setError('');
     try {
-      const res = await txnApi.list();
+      const res = await txnApi.list(opts);
       setTxns(res.transactions);
     } catch (err: any) {
       setError(err.message || 'Failed to load transactions');
@@ -100,7 +100,7 @@ export default function TransactionsPage() {
         actions={
           <>
             <button
-              onClick={loadTransactions}
+              onClick={() => loadTransactions({ force: true })}
               disabled={isLoading}
               className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
             >
@@ -173,7 +173,7 @@ export default function TransactionsPage() {
           <EmptyState
             icon={AlertCircle}
             title={error}
-            action={<button onClick={loadTransactions} className="shb-btn-primary mt-2 px-3.5 py-2 text-sm">Try Again</button>}
+            action={<button onClick={() => loadTransactions({ force: true })} className="shb-btn-primary mt-2 px-3.5 py-2 text-sm">Try Again</button>}
           />
         ) : filteredTxns.length === 0 ? (
           <EmptyState

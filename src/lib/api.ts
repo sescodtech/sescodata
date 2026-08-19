@@ -271,10 +271,36 @@ const PRODUCTS_CACHE_TTL_MS = 60_000;
 let productsCache: { data: ProductsResponse; expiresAt: number } | null = null;
 let productsInFlight: Promise<ProductsResponse> | null = null;
 
+// Same reasoning as products.list(): promotions barely change minute-to-minute,
+// but the customer dashboard fetches this on every visit.
+const PROMOTIONS_CACHE_TTL_MS = 60_000;
+let promotionsCache: { data: { success: boolean; promotions: ActivePromotion[] }; expiresAt: number } | null = null;
+let promotionsInFlight: Promise<{ success: boolean; promotions: ActivePromotion[] }> | null = null;
+
 export const promotions = {
   // Public, unauthenticated — the dashboard "Active Promotions" card needs
   // this before we know anything about caching/auth state.
-  active: () => apiFetch<{ success: boolean; promotions: ActivePromotion[] }>('/api/promotions/active'),
+  active: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && promotionsCache && promotionsCache.expiresAt > Date.now()) {
+      return promotionsCache.data;
+    }
+    if (!opts.force && promotionsInFlight) {
+      return promotionsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<{ success: boolean; promotions: ActivePromotion[] }>('/api/promotions/active');
+      promotionsCache = { data: res, expiresAt: Date.now() + PROMOTIONS_CACHE_TTL_MS };
+      return res;
+    })();
+
+    promotionsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      promotionsInFlight = null;
+    }
+  },
 };
 
 export const products = {
@@ -453,10 +479,36 @@ function normalizeTransaction(raw: any): Transaction {
   };
 }
 
+// DashboardHome and TransactionsPage both call transactions.list() on mount —
+// a short TTL cache avoids refetching the same data twice within a few
+// seconds of navigating between them. `force: true` bypasses it (used by
+// TransactionsPage's manual refresh button).
+const TRANSACTIONS_CACHE_TTL_MS = 20_000;
+let transactionsCache: { data: { success: boolean; transactions: any[] }; expiresAt: number } | null = null;
+let transactionsInFlight: Promise<{ success: boolean; transactions: any[] }> | null = null;
+
 export const transactions = {
-  list: async () => {
-    const res = await apiFetch<{ success: boolean; transactions: any[] }>('/api/my/transactions', {}, true);
-    return { success: res.success, transactions: (res.transactions || []).map(normalizeTransaction) };
+  list: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && transactionsCache && transactionsCache.expiresAt > Date.now()) {
+      return transactionsCache.data;
+    }
+    if (!opts.force && transactionsInFlight) {
+      return transactionsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<{ success: boolean; transactions: any[] }>('/api/my/transactions', {}, true);
+      const result = { success: res.success, transactions: (res.transactions || []).map(normalizeTransaction) };
+      transactionsCache = { data: result, expiresAt: Date.now() + TRANSACTIONS_CACHE_TTL_MS };
+      return result;
+    })();
+
+    transactionsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      transactionsInFlight = null;
+    }
   },
 };
 
