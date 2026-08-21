@@ -47,8 +47,25 @@ const TransactionSchema = new mongoose.Schema({
   providerParams: { type: mongoose.Schema.Types.Mixed },
 
   paymentReference: { type: String },
-  failReason: { type: String },
+  failReason: { type: String }, // customer-safe message, unchanged behavior — still shown in transaction history
   deliveryError: { type: String },
+
+  // Internal only — never serialized to the client (see toJSON below).
+  // Real GladTidings failure detail for admin debugging, kept separate from
+  // the customer-safe `failReason` above so the customer-facing message
+  // never changes.
+  providerDiagnostics: {
+    reference: String,        // our internal purchase reference for this attempt
+    productId: String,        // our product/plan ID at time of purchase
+    network: String,          // network/disco/cable provider involved, if applicable
+    purchaseType: String,     // 'buyData' | 'buyAirtime' | 'buyCable' | 'buyElectricity' | 'buyExamPin' | 'buyRechargeCard'
+    maskedRecipient: String,  // masked phone/meter/smartcard, e.g. "080***1234"
+    providerFailReason: String, // GladTidings failure category (invalid_params, provider_error, network_error, config_error, etc.)
+    providerError: String,    // actual raw error/response text returned by (or about) GladTidings
+    providerStatus: String,   // raw status value returned by the provider, or 'exception' / 'not_attempted'
+    durationMs: Number,       // time spent on the provider call
+    recordedAt: { type: Date, default: Date.now },
+  },
 
   // ── Module 4: Retry & Manual Processing ──────────────────────
   // Retries update this same document in place (status/deliveryStatus)
@@ -95,6 +112,7 @@ const TransactionSchema = new mongoose.Schema({
       if (ret.provider) delete ret.provider.apiResponse;
       delete ret.providerMethod;
       delete ret.providerParams;
+      delete ret.providerDiagnostics;
       return ret;
     }
   }

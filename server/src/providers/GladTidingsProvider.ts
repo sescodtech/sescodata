@@ -55,15 +55,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful' || d.status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id || d.ident,
         message: d.api_response || d.message || (ok ? 'Data delivered' : 'Data failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.api_response || d.message || 'Data purchase failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 
@@ -84,15 +88,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful' || d.status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id,
         message: d.api_response || d.message || (ok ? 'Airtime delivered' : 'Airtime failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.api_response || d.message || 'Airtime purchase failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 
@@ -110,15 +118,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful' || d.status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id,
         message: d.api_response || d.message || (ok ? 'Cable subscription done' : 'Cable subscription failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.api_response || d.message || 'Cable subscription failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 
@@ -148,15 +160,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful' || d.status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id,
         message: d.api_response || d.message || (ok ? 'Electricity token generated' : 'Electricity failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.api_response || d.message || 'Electricity purchase failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 
@@ -173,15 +189,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id,
         message: d.message || (ok ? 'Exam pin purchased' : 'Exam pin failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.message || 'Exam pin purchase failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 
@@ -210,15 +230,19 @@ export class GladTidingsProvider implements IProvider {
       }, { headers: this.headers(), timeout: 30000 });
 
       const d = r.data;
-      const ok = d.Status === 'successful';
+      const status = d.Status ?? d.status;
+      const ok = status === 'successful';
       return {
         success: ok,
         reference: d.id,
         message: d.message || (ok ? 'Recharge card generated' : 'Recharge card failed'),
         data: d,
+        providerStatus: status !== undefined ? String(status) : undefined,
+        error: ok ? undefined : (d.message || 'Recharge card purchase failed'),
+        failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error' };
+      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
     }
   }
 

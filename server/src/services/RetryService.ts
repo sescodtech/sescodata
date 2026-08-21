@@ -115,12 +115,25 @@ export class RetryService {
       await WalletService.credit(txn.userId.toString(), userPrice);
       debited = false;
       txn.retryCount = (txn.retryCount || 0) + 1;
-      txn.failReason = result.error;
+      txn.failReason = result.error; // customer-safe message — unchanged
       txn.retryHistory.push({
         adminId: admin.id, adminName: admin.name,
         previousDeliveryStatus, newDeliveryStatus: 'failed',
-        reason, error: result.error,
+        reason, error: result.error, // customer-safe message — unchanged
       });
+      // Internal only — overwrite with the latest attempt's real diagnostics
+      // so admins debugging a retried transaction see the freshest failure detail.
+      txn.providerDiagnostics = {
+        reference: txn.paymentReference,
+        productId: txn.product?.productId,
+        network: (result as any).data?.network || txn.providerParams?.network || txn.providerParams?.disco || txn.providerParams?.provider,
+        purchaseType: txn.providerMethod,
+        maskedRecipient: (result as any).data?.maskedRecipient,
+        providerFailReason: result.failReason,
+        providerError: (result as any).data?.rawError,
+        providerStatus: (result as any).data?.providerStatus,
+        durationMs: (result as any).data?.durationMs,
+      };
       txn.isRetryLocked = false;
       await txn.save({ validateModifiedOnly: true });
 

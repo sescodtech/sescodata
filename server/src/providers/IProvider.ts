@@ -7,6 +7,10 @@ export interface ProviderResponse {
   failReason?: 'insufficient_balance' | 'provider_error' | 'invalid_params' | 'network_error' | 'timeout' | 'config_error';
   actualCost?: number;
   usedProvider?: string;
+  /** Raw status string/value returned by the provider (e.g. GladTidings' d.Status),
+   *  kept separate from our own success/failReason interpretation of it. Used
+   *  purely for internal diagnostics — never shown to customers. */
+  providerStatus?: string;
 }
 
 export interface IProvider {

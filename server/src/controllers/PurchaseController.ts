@@ -54,11 +54,20 @@ async function executePurchase(opts: {
     // user cannot also pass this check before this one commits.
     await WalletService.debit(userId, userPrice);
 
-    let result;
+    let result: any;
     try {
-      result = await providerOrchestrator.executePurchase(providerMethod, { ...providerParams, ref });
+      // productId is included purely so ProviderOrchestrator can attach it to
+      // diagnostics/logs — providers themselves ignore unknown params.
+      result = await providerOrchestrator.executePurchase(providerMethod, { ...providerParams, productId: productMeta.productId, ref });
     } catch (e: any) {
-      result = { success: false, error: 'Transaction could not be completed at the moment. Please try again shortly.', reference: undefined, usedProvider: undefined };
+      result = {
+        success: false,
+        error: 'Transaction could not be completed at the moment. Please try again shortly.',
+        reference: undefined,
+        usedProvider: undefined,
+        failReason: 'network_error',
+        data: { rawError: e.message, providerStatus: 'exception', durationMs: 0 },
+      };
       console.error(`[purchase] ref=${ref} unexpected provider exception: ${e.message}`);
     }
 
@@ -101,7 +110,18 @@ async function executePurchase(opts: {
       providerMethod,
       providerParams: { ...providerParams, ref },
       paymentReference: ref,
-      failReason: result.error
+      failReason: result.error, // customer-safe message — unchanged
+      providerDiagnostics: {
+        reference: ref,
+        productId: productMeta.productId,
+        network: result.data?.network || providerParams?.network || providerParams?.disco || providerParams?.provider,
+        purchaseType: providerMethod,
+        maskedRecipient: result.data?.maskedRecipient,
+        providerFailReason: result.failReason,
+        providerError: result.data?.rawError,
+        providerStatus: result.data?.providerStatus,
+        durationMs: result.data?.durationMs,
+      }
     });
 
     User.findById(userId).then((user) => {
