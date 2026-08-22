@@ -97,6 +97,14 @@ async function executePurchase(opts: {
     // Delivery failed — refund the exact amount just reserved.
     const balanceAfterRefund = await WalletService.credit(userId, userPrice);
     console.log(`[purchase] ref=${ref} userId=${userId} FAILED and refunded amount=${userPrice} balanceAfterRefund=${balanceAfterRefund} reason=${result.error}`);
+    // Internal diagnostics only — never sent to the customer. Logged
+    // separately from the line above so Render's log stream shows the real
+    // cause without needing a DB lookup.
+    console.error(
+      `[purchase-diagnostics] ref=${ref} product=${productMeta.productId} network=${result.data?.network || providerParams?.network || providerParams?.disco || providerParams?.provider || 'n/a'} ` +
+      `purchaseType=${providerMethod} failReason=${result.failReason || 'n/a'} providerStatus=${result.data?.providerStatus || 'n/a'} durationMs=${result.data?.durationMs ?? 'n/a'} ` +
+      `providerError=${result.data?.rawError || 'n/a'}`
+    );
 
     await Transaction.create({
       userId,

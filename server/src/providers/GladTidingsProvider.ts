@@ -3,6 +3,29 @@ import { IProvider, ProviderResponse } from './IProvider';
 
 const BASE_URL = 'https://www.gladtidingsdata.com/api';
 
+/** Pulls the real error text out of a failed axios call. GladTidings doesn't
+ *  use one consistent field name for errors (detail/message/error/api_response
+ *  all show up depending on the endpoint), so we check the common ones before
+ *  falling back to dumping the whole response body, and only use axios' own
+ *  generic "Request failed with status code NNN" as a last resort. */
+function extractHttpError(e: any): string {
+  const body = e?.response?.data;
+  if (body) {
+    const detail = body.detail || body.message || body.error || body.api_response || body.Status;
+    if (detail) return typeof detail === 'string' ? detail : JSON.stringify(detail).slice(0, 500);
+    try { return JSON.stringify(body).slice(0, 500); } catch { /* fall through */ }
+  }
+  return e?.message || 'Unknown provider error';
+}
+
+/** Distinguishes "GladTidings responded with an HTTP error status" (request
+ *  itself was rejected — bad params/auth/payload) from "no response at all"
+ *  (true network/timeout failure) for diagnostics. */
+function extractHttpStatus(e: any): string {
+  if (e?.response?.status) return `http_${e.response.status}`;
+  return 'exception';
+}
+
 export class GladTidingsProvider implements IProvider {
   public name = 'gladtidings';
   private readonly apiKey = process.env.GLADTIDINGS_API_KEY || '';
@@ -34,7 +57,7 @@ export class GladTidingsProvider implements IProvider {
       const balance = parseFloat(data.user?.wallet_balance || data.user?.Account_Balance || data.wallet_balance || data.Account_Balance || data.balance || 0);
       return { success: true, balance };
     } catch (e: any) {
-      return { success: false, balance: 0, error: e.response?.data?.detail || e.message };
+      return { success: false, balance: 0, error: extractHttpError(e) };
     }
   }
 
@@ -67,7 +90,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
@@ -100,7 +123,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
@@ -130,7 +153,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
@@ -172,7 +195,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
@@ -201,7 +224,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
@@ -242,7 +265,7 @@ export class GladTidingsProvider implements IProvider {
         failReason: ok ? undefined : 'provider_error',
       };
     } catch (e: any) {
-      return { success: false, error: e.response?.data?.detail || e.message, failReason: 'provider_error', providerStatus: 'exception' };
+      return { success: false, error: extractHttpError(e), failReason: 'provider_error', providerStatus: extractHttpStatus(e) };
     }
   }
 
