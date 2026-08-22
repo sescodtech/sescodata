@@ -25,6 +25,12 @@ const app = express();
 // Security headers. CSP is left to Helmet's defaults rather than a custom
 // policy, since this API serves no HTML/templates of its own — the SPA
 // frontend is a separate deployment with its own CSP concerns.
+// Render sits behind a trusted reverse proxy and forwards X-Forwarded-For.
+// Trusting the first proxy hop lets express-rate-limit identify clients
+// correctly without treating Render's forwarded header as spoofed input —
+// without this, rate-limit middleware throws on every request behind Render.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 
 // Allowlist instead of the previous cors() (no options), which reflected

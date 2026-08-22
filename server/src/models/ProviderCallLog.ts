@@ -31,5 +31,6 @@ const ProviderCallLogSchema = new mongoose.Schema({
 
 ProviderCallLogSchema.index({ provider: 1, createdAt: -1 });
 ProviderCallLogSchema.index({ createdAt: -1 });
+ProviderCallLogSchema.index({ method: 1, success: 1, createdAt: -1 });
 
 export const ProviderCallLog = mongoose.model('ProviderCallLog', ProviderCallLogSchema);
