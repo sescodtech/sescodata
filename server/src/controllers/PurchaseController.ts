@@ -106,6 +106,27 @@ async function executePurchase(opts: {
       `providerError=${result.data?.rawError || 'n/a'}`
     );
 
+    // GladTidings can list a bundle as purchasable while its live catalog
+    // still shows it, then reject it as unavailable at purchase time. This
+    // is a narrow, exact-phrase match — only this specific unambiguous
+    // signal auto-hides the product; every other failure reason (balance,
+    // invalid phone, network error, etc.) leaves the catalog untouched.
+    const providerErrorText = String(result.data?.rawError || '');
+    const isPlanUnavailable = /not available (on|for) this network/i.test(providerErrorText);
+    if (isPlanUnavailable) {
+      const network = result.data?.network || providerParams?.network || providerParams?.disco || providerParams?.provider;
+      ProductService.suppressProduct(productMeta.productId, { providerMessage: providerErrorText, network }).catch(() => {});
+      console.warn(`[purchase-diagnostics] auto-suppressed product=${productMeta.productId} network=${network} for 6 days — provider says: ${providerErrorText}`);
+    }
+    // Customer-facing message: still no raw provider text leaked, but this
+    // one specific, well-understood case gets an honest, non-misleading
+    // message instead of "try again shortly" — we already know retrying
+    // won't help, and the bundle is being hidden from the catalog right now.
+    // Every other failure reason is completely unchanged.
+    const customerMessage = isPlanUnavailable
+      ? 'This plan is currently unavailable. Please choose a different plan.'
+      : (result.error || 'Transaction could not be completed. Please try again shortly.');
+
     await Transaction.create({
       userId,
       amount: 0,
@@ -118,7 +139,7 @@ async function executePurchase(opts: {
       providerMethod,
       providerParams: { ...providerParams, ref },
       paymentReference: ref,
-      failReason: result.error, // customer-safe message — unchanged
+      failReason: customerMessage, // customer-safe message
       providerDiagnostics: {
         reference: ref,
         productId: productMeta.productId,
@@ -133,10 +154,10 @@ async function executePurchase(opts: {
     });
 
     User.findById(userId).then((user) => {
-      if (user) EmailService.sendPurchaseFailed(user, { product: productMeta.name, amount: userPrice, ref, reason: result.error }).catch(() => {});
+      if (user) EmailService.sendPurchaseFailed(user, { product: productMeta.name, amount: userPrice, ref, reason: customerMessage }).catch(() => {});
     }).catch(() => {});
 
-    return { ok: false as const, error: result.error || 'Transaction could not be completed. Please try again shortly.' };
+    return { ok: false as const, error: customerMessage };
   } finally {
     await WalletService.releasePurchaseLock(userId);
   }

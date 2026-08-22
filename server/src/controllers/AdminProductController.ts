@@ -92,6 +92,31 @@ export class AdminProductController {
     }
   }
 
+  /** Manually brings a bundle back into the catalog immediately, instead of
+   *  waiting out the 6-day auto-suppression window. Used when an admin has
+   *  confirmed (e.g. checked GladTidings directly) that the bundle is
+   *  actually available again. */
+  static async unsuppressProduct(req: any, res: Response) {
+    try {
+      const { productId } = req.params;
+      const { reason } = req.body;
+      if (!reason || !reason.trim()) return res.status(400).json({ success: false, error: 'A reason is required' });
+
+      const actor = await getActor(req);
+      const wasSuppressed = await ProductService.unsuppressProduct(productId);
+
+      AuditLogService.log({
+        admin: actor, action: 'product.unsuppress', targetType: 'system', targetLabel: productId,
+        before: { suppressed: wasSuppressed }, after: { suppressed: false }, reason: reason.trim(),
+        ip: AuditLogService.getClientIp(req),
+      });
+
+      res.json({ success: true, wasSuppressed });
+    } catch (e: any) {
+      res.status(400).json({ success: false, error: e.message });
+    }
+  }
+
   static async toggleVisibility(req: any, res: Response) {
     try {
       const { productId } = req.params;

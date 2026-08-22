@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ProductOverride } from '../models/ProductOverride';
+import { SuppressedProduct } from '../models/SuppressedProduct';
 import { MarkupSettings } from '../models/MarkupSettings';
 
 export interface Product {
@@ -168,6 +169,14 @@ export class ProductService {
           const cost = parseFloat(item.plan_amount || 0);
           const rawName = (item.plan || '').trim();
           if (!planId || !cost || !rawName) continue;
+          const rawType = (item.plan_type || '').toUpperCase();
+          let planType: string;
+          if (rawType.includes('SME')) planType = 'sme';
+          else if (rawType.includes('AWOOF')) planType = 'awoof';
+          else if (rawType.includes('TALKMORE') || rawType.includes('TALK MORE')) planType = 'talkmore';
+          else if (rawType.includes('CORPORATE')) planType = 'corporate_gifting';
+          else planType = 'gifting';
+
           plans.push({
             id: 'gtd_' + prov + '_' + planId,
             name: rawName,
@@ -176,7 +185,7 @@ export class ProductService {
             prov,
             providerId: String(planId),
             cost,
-            planType: (item.plan_type || '').toUpperCase().includes('SME') ? 'sme' : 'gifting',
+            planType,
           });
         }
       }
@@ -213,10 +222,11 @@ export class ProductService {
    * resolvable here, since getProductById relies on this for purchases.
    */
   static async getCatalog() {
-    const [allPlans, overrides, markup] = await Promise.all([
+    const [allPlans, overrides, markup, suppressedIds] = await Promise.all([
       this.getAllPlans(),
       ProductOverride.find(),
       this.getMarkupConfig(),
+      this.getSuppressedProductIds(),
     ]);
     const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
 
@@ -248,7 +258,43 @@ export class ProductService {
       // purchase-safe catalog entirely, so buyCable can never resolve a
       // product and no customer can reach a failed purchase.
       .filter((p) => !this.TEMP_DISABLED_CATEGORIES.includes(p.category))
-      .filter((p) => p.enabled);
+      .filter((p) => p.enabled)
+      // Temporarily withheld because GladTidings itself just rejected this
+      // exact product as unavailable — see SuppressedProduct. Self-expires,
+      // so this filter naturally stops applying once the window passes.
+      .filter((p) => !suppressedIds.has(p.id));
+  }
+
+  /** Product IDs GladTidings has explicitly rejected as unavailable recently.
+   *  Expired entries are already gone from Mongo (TTL index) — this is a
+   *  plain read, no cleanup needed here. */
+  static async getSuppressedProductIds(): Promise<Set<string>> {
+    const docs = await SuppressedProduct.find({}, { productId: 1 }).lean();
+    return new Set(docs.map((d: any) => d.productId));
+  }
+
+  /** Called by PurchaseController when GladTidings explicitly signals a
+   *  specific product is unavailable — not for generic failures. Self-heals
+   *  via TTL; if still unavailable next attempt, this just re-suppresses it
+   *  for another window. Default 6 days — long enough that a bundle GladTidings
+   *  pulls for a while doesn't quietly reappear and fail again; admins can
+   *  clear it early any time via unsuppressProduct(). */
+  static async suppressProduct(productId: string, opts: { providerMessage?: string; network?: string; ttlHours?: number }) {
+    const ttlHours = opts.ttlHours ?? 144;
+    const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
+    await SuppressedProduct.findOneAndUpdate(
+      { productId },
+      { productId, reason: 'provider_unavailable', providerMessage: opts.providerMessage, network: opts.network, suppressedAt: new Date(), expiresAt },
+      { upsert: true }
+    ).catch(() => {});
+  }
+
+  /** Admin manual override — brings a suppressed bundle back into the
+   *  catalog immediately instead of waiting out the TTL. No-op (still
+   *  succeeds) if the product wasn't suppressed. */
+  static async unsuppressProduct(productId: string): Promise<boolean> {
+    const result = await SuppressedProduct.deleteOne({ productId });
+    return result.deletedCount > 0;
   }
 
   static async getPublicCatalog() {
@@ -273,18 +319,21 @@ export class ProductService {
    * unlike getCatalog() which is purchase-safe and excludes disabled items.
    */
   static async getFullCatalogForAdmin(): Promise<Product[]> {
-    const [allPlans, overrides, markup] = await Promise.all([
+    const [allPlans, overrides, markup, suppressedDocs] = await Promise.all([
       this.getAllPlans(),
       ProductOverride.find(),
       this.getMarkupConfig(),
+      SuppressedProduct.find().lean(),
     ]);
     const overrideMap = new Map(overrides.map((o) => [o.productId, o]));
+    const suppressedMap = new Map(suppressedDocs.map((d: any) => [d.productId, d]));
 
     const catalogProducts: Product[] = allPlans.map((plan) => {
       const category = plan.cat || 'data';
       const override = overrideMap.get(plan.id);
       const markupPct = override?.customMarkupPct ?? markup[category] ?? 10;
       const computedPrice = Math.ceil(plan.cost * (1 + markupPct / 100));
+      const suppression = suppressedMap.get(plan.id);
       return {
         id: plan.id,
         name: plan.name,
@@ -298,6 +347,14 @@ export class ProductService {
         isPromo: false,
         enabled: override?.enabled ?? true,
         visible: override?.visible ?? true,
+        // Admin-only diagnostic info — not part of the customer-facing catalog.
+        // Present only when GladTidings has recently rejected this exact
+        // product as unavailable; disappears on its own once it expires.
+        ...(suppression ? {
+          suppressed: true,
+          suppressedReason: suppression.providerMessage,
+          suppressedUntil: suppression.expiresAt,
+        } as any : {}),
       };
     });
 

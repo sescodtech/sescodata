@@ -57,6 +57,7 @@ router.get('/products', AdminProductController.listProducts);
 router.get('/products/categories', AdminProductController.getCategories);
 router.get('/products/provider-mapping', AdminProductController.getProviderMapping);
 router.put('/products/:productId/enabled', AdminProductController.toggleEnabled);
+router.delete('/products/:productId/suppression', AdminProductController.unsuppressProduct);
 router.put('/products/:productId/visibility', AdminProductController.toggleVisibility);
 router.put('/products/:productId/pricing', AdminProductController.setCustomPricing);
 router.post('/products/bulk-pricing', AdminProductController.bulkUpdatePricing);
