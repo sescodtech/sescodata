@@ -284,8 +284,30 @@
    ============================================================ */
 .shb-page {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.shb-page *,
+.shb-page *::before,
+.shb-page *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.shb-page .grid,
+.shb-page .flex {
+  min-width: 0;
+}
+
+.shb-page button,
+.shb-page a,
+.shb-page input,
+.shb-page select,
+.shb-page textarea {
+  max-width: 100%;
 }
 .shb-page--narrow { max-width: 760px; }
 .shb-page--medium { max-width: 980px; }
@@ -310,6 +332,26 @@
   .shb-page--narrow,
   .shb-page--medium,
   .shb-page--wide { max-width: none; }
+}
+
+/* Mobile app geometry: keep every authenticated page inside the viewport.
+   Content should scroll vertically; horizontal scrolling is reserved only for
+   deliberately scrollable chip/tab rows. */
+@media (max-width: 639px) {
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .shb-page {
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .shb-card {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 /* Typography hierarchy — used consistently across every redesigned page

@@ -187,14 +187,14 @@ export default function BuyDataFlow() {
       {/* Network — always visible as its own row of tappable options, auto-filled from the phone number but overridable */}
       <div className="shb-card p-2.5 sm:p-3.5">
         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Network</label>
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-2 min-[480px]:grid-cols-4 gap-2 sm:gap-2.5">
           {NETWORKS.map((n) => (
             <button
               key={n.id}
               type="button"
               onClick={() => { setManualNetworkId(n.id); setSelectedPlan(null); }}
               className={cn(
-                'flex flex-col items-center gap-0.5 sm:gap-1 py-2 sm:py-2.5 rounded-lg border-2 transition-all min-w-0',
+                'flex min-w-0 w-full flex-col items-center justify-center gap-1 py-2.5 sm:py-3 rounded-xl border-2 transition-all',
                 activeNetworkId === n.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-gray-200',
               )}
             >
@@ -272,7 +272,7 @@ export default function BuyDataFlow() {
                   <button onClick={() => { setPlanFilter('all'); setPlanSearch(''); }} className="mt-1.5 text-[12px] text-shb-gold-dark hover:underline">Show all plans</button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 max-h-[52vh] sm:max-h-[420px] overflow-y-auto overflow-x-hidden pr-1">
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 max-h-[58vh] sm:max-h-[480px] overflow-y-auto overflow-x-hidden pr-1">
                   {filteredPlans.map((plan) => (
                     <div
                       key={plan.id}
@@ -287,14 +287,14 @@ export default function BuyDataFlow() {
                         }
                       }}
                       className={cn(
-                        'relative p-2 sm:p-2.5 rounded-lg border-2 transition-all text-left group min-h-0 min-w-0 overflow-hidden cursor-pointer focus:outline-none',
+                        'relative w-full min-w-0 p-3 sm:p-3.5 rounded-xl border-2 transition-all text-left group min-h-[78px] overflow-hidden cursor-pointer focus:outline-none',
                         selectedPlan?.id === plan.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10',
                       )}
                     >
                       <button
                         type="button"
                         onClick={(e) => toggleFavorite(e, plan.id)}
-                        className="icon-btn absolute top-1.5 right-1.5 p-1 rounded-full hover:bg-white transition-colors"
+                        className="icon-btn absolute top-2 right-2 p-1 rounded-full hover:bg-white transition-colors"
                         aria-label="Toggle favorite"
                       >
                         <Star size={12} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
@@ -302,7 +302,7 @@ export default function BuyDataFlow() {
                       {selectedPlan?.id === plan.id && (
                         <CheckCircle2 size={13} className="absolute top-1.5 left-1.5 text-shb-gold-dark" />
                       )}
-                      <p className={cn('font-bold text-gray-900 text-[12.5px] sm:text-[13px] leading-tight pr-4 break-words', selectedPlan?.id === plan.id && 'pl-4')}>{plan.name}</p>
+                      <p className={cn('font-bold text-gray-900 text-[13px] sm:text-[13.5px] leading-tight pr-5 break-words', selectedPlan?.id === plan.id && 'pl-4')}>{plan.name}</p>
                       {plan.validity && <p className="text-[10.5px] sm:text-[11px] text-gray-500 mt-0.5 truncate">{plan.validity}</p>}
                       <div className="flex items-center justify-between gap-1 mt-1 sm:mt-1.5">
                         <span className="text-shb-navy font-extrabold text-[13px] sm:text-[14px] whitespace-nowrap shrink-0">{formatNaira(plan.price)}</span>
@@ -350,7 +350,7 @@ export default function BuyDataFlow() {
 
       {/* Amount + Buy — sticky summary bar, OPay-style, always at the bottom of the flow */}
       <div className="sm:relative fixed sm:static bottom-0 left-0 right-0 sm:mt-0 bg-white sm:bg-transparent border-t sm:border-t-0 border-gray-100 sm:shadow-none shadow-[0_-4px_16px_rgba(0,0,0,0.06)] p-2.5 sm:p-0 z-30" style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}>
-        <div className="max-w-2xl mx-auto shb-card p-3 sm:p-3.5 sm:!shadow-none sm:!border sm:border-gray-100">
+        <div className="w-full max-w-2xl mx-auto shb-card p-3 sm:p-3.5 sm:!shadow-none sm:!border sm:border-gray-100">
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Amount</span>
             <span className="text-[17px] font-extrabold text-shb-navy">{selectedPlan ? formatNaira(selectedPlan.price) : '\u2014'}</span>

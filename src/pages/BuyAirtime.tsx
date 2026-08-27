@@ -174,7 +174,7 @@ export default function BuyAirtime() {
 
       <div className={cn('shb-card p-3.5 transition-opacity', !activeNetwork && 'opacity-40 pointer-events-none')}>
         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-2">Amount</label>
-        <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+        <div className="grid grid-cols-2 min-[480px]:grid-cols-4 gap-2 mb-2.5">
           {AIRTIME_AMOUNTS.map((a) => (
             <button
               key={a}

@@ -178,8 +178,8 @@ export default function DashboardLayout() {
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────── */}
-        <main className="flex-1 md:ml-56 min-h-screen">
-          <div className="w-full min-w-0 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 max-w-[1440px] mx-auto">
+        <main className="flex-1 min-w-0 md:ml-56 min-h-screen overflow-x-hidden">
+          <div className="w-full min-w-0 max-w-[1440px] mx-auto px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
             <Outlet />
           </div>
         </main>

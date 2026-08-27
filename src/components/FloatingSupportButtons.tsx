@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageCircle, Headset } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { cn } from '../lib/utils';
 import { useSupportSettings } from '../context/SupportSettingsContext';
 import FAQChatbot from './FAQChatbot';
 
@@ -30,6 +31,7 @@ export default function FloatingSupportButtons() {
   // helpful, and matches how these buttons are typically scoped on similar
   // fintech products.
   const hideOn = ['/login', '/signup', '/payment/callback'];
+  const hasStickyPurchaseBar = location.pathname === '/app/buy-data';
   if (hideOn.some((p) => location.pathname.startsWith(p))) return null;
 
   const goToSupport = () => {
@@ -40,7 +42,7 @@ export default function FloatingSupportButtons() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col items-end gap-3">
+    <div className={cn('fixed right-3 sm:right-6 z-[60] flex flex-col items-end gap-2.5 sm:gap-3', hasStickyPurchaseBar ? 'bottom-[calc(6rem+env(safe-area-inset-bottom))] sm:bottom-6' : 'bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6')}>
       {/* Support shortcut — sits above the WhatsApp button */}
       <button
         onClick={goToSupport}
@@ -68,7 +70,7 @@ export default function FloatingSupportButtons() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat with us on WhatsApp"
-          className="flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl hover:brightness-95 transition-all duration-200 hover:-translate-y-0.5"
+          className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl hover:brightness-95 transition-all duration-200 hover:-translate-y-0.5"
         >
           <MessageCircle size={26} />
         </a>

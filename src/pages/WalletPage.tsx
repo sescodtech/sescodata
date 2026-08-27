@@ -146,7 +146,7 @@ export default function WalletPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
         <div className="shb-card-sm relative overflow-hidden">
           <p className="shb-eyebrow mb-1.5">Total Spent</p>
           <p className="text-xl sm:text-lg font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>
