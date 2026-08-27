@@ -69,7 +69,7 @@ export default function BuyAirtime() {
 
   if (justPaid) {
     return (
-      <div className="shb-page shb-page--narrow py-14">
+      <div className="max-w-sm mx-auto py-14">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
             <PartyPopper size={22} className="text-green-500" />
@@ -83,7 +83,7 @@ export default function BuyAirtime() {
   }
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0">
       <PageHeader title="Buy Airtime" description="Top up any network instantly." icon={Smartphone} backTo="/app" />
 
       <div className="shb-card p-3.5">
@@ -174,7 +174,7 @@ export default function BuyAirtime() {
 
       <div className={cn('shb-card p-3.5 transition-opacity', !activeNetwork && 'opacity-40 pointer-events-none')}>
         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-2">Amount</label>
-        <div className="grid grid-cols-2 min-[480px]:grid-cols-4 gap-2 mb-2.5">
+        <div className="grid grid-cols-4 gap-1.5 mb-2.5">
           {AIRTIME_AMOUNTS.map((a) => (
             <button
               key={a}

@@ -103,7 +103,7 @@ export default function DashboardHome() {
   }));
 
   return (
-    <div className="shb-page shb-page--wide space-y-3 sm:space-y-4 content-reveal">
+    <div className="space-y-3 sm:space-y-4 content-reveal">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
         <div>

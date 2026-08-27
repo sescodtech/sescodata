@@ -127,7 +127,7 @@ export default function UtilityBills() {
 
   if (justPaid) {
     return (
-      <div className="shb-page shb-page--narrow py-14">
+      <div className="max-w-sm mx-auto py-14">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
             <PartyPopper size={22} className="text-green-500" />
@@ -142,7 +142,7 @@ export default function UtilityBills() {
 
   if (!isElectricity && CABLE_TEMPORARILY_DISABLED) {
     return (
-      <div className="shb-page shb-page--narrow py-14">
+      <div className="max-w-sm mx-auto py-14">
         <div className="text-center">
           <div className="w-11 h-11 rounded-xl bg-shb-gold-soft/40 flex items-center justify-center mx-auto mb-3">
             <Tv size={22} className="text-shb-gold-dark" />
@@ -155,7 +155,7 @@ export default function UtilityBills() {
   }
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal pb-8">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal px-3.5 sm:px-0 pb-8">
       <PageHeader
         title={isElectricity ? 'Electricity' : 'TV Subscription'}
         description={isElectricity ? 'Pay bills instantly from your wallet.' : 'Renew DStv, GOtv, StarTimes.'}

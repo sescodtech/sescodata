@@ -114,7 +114,7 @@ export default function BuyDataFlow() {
 
   if (justPaid) {
     return (
-      <div className="shb-page shb-page--narrow py-14">
+      <div className="shb-page shb-page--narrow py-10">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
             <PartyPopper size={22} className="text-green-500" />
@@ -128,25 +128,25 @@ export default function BuyDataFlow() {
   }
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal pb-40 sm:pb-3 overflow-x-hidden">
+    <div className="shb-page shb-page--narrow space-y-2 sm:space-y-2.5 content-reveal pb-36 sm:pb-3 overflow-x-hidden">
       <PageHeader title="Buy Data" description="Instant delivery to any network." icon={Database} backTo="/app" />
 
       {/* Wallet Balance — always visible at the top, OPay-style */}
-      <div className="shb-card p-2.5 sm:p-3.5 flex items-center justify-between bg-shb-navy text-white">
+      <div className="shb-card p-2 sm:p-2.5 flex items-center justify-between bg-shb-navy text-white">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
             <Wallet size={16} />
           </div>
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-widest text-white/60">Wallet Balance</p>
-            <p className="text-[17px] font-extrabold leading-tight">{formatNaira(user?.walletBalance || 0)}</p>
+            <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/60">Wallet Balance</p>
+            <p className="text-[15px] sm:text-[16px] font-extrabold leading-tight">{formatNaira(user?.walletBalance || 0)}</p>
           </div>
         </div>
       </div>
 
       {/* Phone Number */}
-      <div className="shb-card p-2.5 sm:p-3.5">
-        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Phone Number</label>
+      <div className="shb-card p-2.5 sm:p-3">
+        <label className="text-[10px] sm:text-[10.5px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Phone Number</label>
         <div className="relative">
           <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
@@ -154,7 +154,7 @@ export default function BuyDataFlow() {
             autoFocus
             value={phoneNumber}
             onChange={(e) => { setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11)); setSelectedPlan(null); }}
-            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-[15px] tracking-wide"
+            className="w-full pl-9 pr-3 py-2.25 sm:py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-shb-gold focus:border-transparent outline-none transition-all font-mono text-[13px] sm:text-[14px] tracking-wide"
             placeholder="08012345678"
             maxLength={11}
           />
@@ -167,15 +167,15 @@ export default function BuyDataFlow() {
         )}
 
         {recents.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-gray-50">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 mr-0.5">
+          <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-50">
+            <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider flex items-center gap-1 mr-0.5">
               <Clock size={10} /> Recent
             </span>
             {recents.slice(0, 4).map((num) => (
               <button
                 key={num}
                 onClick={() => { setPhoneNumber(num); setSelectedPlan(null); }}
-                className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold border border-gray-200 text-gray-600 hover:border-shb-gold hover:text-shb-navy transition-colors"
+                className="px-2 py-1 rounded-md text-[10px] font-mono font-bold border border-gray-200 text-gray-600 hover:border-shb-gold hover:text-shb-navy transition-colors"
               >
                 {num}
               </button>
@@ -185,23 +185,23 @@ export default function BuyDataFlow() {
       </div>
 
       {/* Network — always visible as its own row of tappable options, auto-filled from the phone number but overridable */}
-      <div className="shb-card p-2.5 sm:p-3.5">
-        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Network</label>
-        <div className="grid grid-cols-2 min-[480px]:grid-cols-4 gap-2 sm:gap-2.5">
+      <div className="shb-card p-2.5 sm:p-3">
+        <label className="text-[10px] sm:text-[10.5px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Network</label>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {NETWORKS.map((n) => (
             <button
               key={n.id}
               type="button"
               onClick={() => { setManualNetworkId(n.id); setSelectedPlan(null); }}
               className={cn(
-                'flex min-w-0 w-full flex-col items-center justify-center gap-1 py-2.5 sm:py-3 rounded-xl border-2 transition-all',
+                'flex min-w-0 w-full flex-col items-center justify-center gap-0.5 sm:gap-1 py-1.75 sm:py-2.5 rounded-lg border-2 transition-all',
                 activeNetworkId === n.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-gray-200',
               )}
             >
-              <span className={cn('w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[10px] sm:text-[11px] font-black', n.bg, n.textColor)}>
+              <span className={cn('w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[9px] sm:text-[10px] font-black', n.bg, n.textColor)}>
                 {n.id[0].toUpperCase()}
               </span>
-              <span className="text-[10px] sm:text-[10.5px] font-bold text-gray-700 truncate w-full text-center px-0.5">{n.name.split(' ')[0]}</span>
+              <span className="text-[9.5px] sm:text-[10px] font-bold text-gray-700 truncate w-full text-center px-0.5">{n.name.split(' ')[0]}</span>
               {activeNetworkId === n.id && <CheckCircle2 size={11} className="text-shb-gold-dark" />}
             </button>
           ))}
@@ -210,8 +210,8 @@ export default function BuyDataFlow() {
 
       {/* Data Plan — grid stays visible; the chosen plan is highlighted rather than replacing the section */}
       {activeNetwork && (
-        <div className="shb-card p-2.5 sm:p-3.5">
-          <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Data Plan</label>
+        <div className="shb-card p-2.5 sm:p-3">
+          <label className="text-[10px] sm:text-[10.5px] font-bold text-gray-500 uppercase tracking-wide block mb-1.5">Data Plan</label>
 
           {isLoadingPlans ? (
             <div className="flex items-center gap-2.5 text-gray-500 py-6 justify-center text-[13px]">
@@ -234,7 +234,7 @@ export default function BuyDataFlow() {
                     value={planSearch}
                     onChange={(e) => setPlanSearch(e.target.value)}
                     placeholder="Search plans (e.g. 2GB)"
-                    className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[12.5px] outline-none focus:ring-2 focus:ring-shb-gold"
+                    className="w-full pl-8 pr-3 py-1.75 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg text-[11.5px] sm:text-[12px] outline-none focus:ring-2 focus:ring-shb-gold"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export default function BuyDataFlow() {
                     key={f}
                     onClick={() => setPlanFilter(f as any)}
                     className={cn(
-                      'shb-chip px-2.5 py-1 rounded-md text-[10.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 transition-all',
+                      'shb-chip px-2 py-1 rounded-md text-[9px] sm:text-[9.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 transition-all',
                       planFilter === f ? 'bg-shb-navy text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100',
                     )}
                   >
@@ -255,7 +255,7 @@ export default function BuyDataFlow() {
                 <button
                   onClick={() => setPlanFilter('favorites')}
                   className={cn(
-                    'shb-chip px-2.5 py-1 rounded-md text-[10.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 flex items-center gap-1 transition-all',
+                    'shb-chip px-2 py-1 rounded-md text-[9px] sm:text-[9.5px] font-black uppercase tracking-wide whitespace-nowrap shrink-0 flex items-center gap-1 transition-all',
                     planFilter === 'favorites' ? 'bg-shb-navy text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100',
                   )}
                 >
@@ -272,44 +272,42 @@ export default function BuyDataFlow() {
                   <button onClick={() => { setPlanFilter('all'); setPlanSearch(''); }} className="mt-1.5 text-[12px] text-shb-gold-dark hover:underline">Show all plans</button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 max-h-[58vh] sm:max-h-[480px] overflow-y-auto overflow-x-hidden pr-1">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 max-h-[58vh] sm:max-h-[460px] overflow-y-auto overflow-x-hidden pr-0.5">
                   {filteredPlans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={selectedPlan?.id === plan.id}
-                      onClick={() => setSelectedPlan(plan)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedPlan(plan);
-                        }
-                      }}
-                      className={cn(
-                        'relative w-full min-w-0 p-3 sm:p-3.5 rounded-xl border-2 transition-all text-left group min-h-[78px] overflow-hidden cursor-pointer focus:outline-none',
-                        selectedPlan?.id === plan.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10',
-                      )}
-                    >
+                    <div key={plan.id} className={cn(
+                      'relative min-w-0 rounded-lg border-2 transition-all overflow-hidden',
+                      selectedPlan?.id === plan.id ? 'border-shb-gold bg-shb-gold-soft/20' : 'border-gray-100 hover:border-shb-gold hover:bg-shb-gold-soft/10',
+                    )}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan(plan)}
+                        className="w-full min-w-0 text-left p-2 sm:p-2.5 pr-7 focus:outline-none"
+                      >
+                        {selectedPlan?.id === plan.id && (
+                          <CheckCircle2 size={10} className="absolute top-1.5 left-1.5 text-shb-gold-dark" />
+                        )}
+                        <p className={cn(
+                          'font-bold text-gray-900 text-[10.5px] min-[390px]:text-[11px] sm:text-[12px] leading-tight break-words line-clamp-2',
+                          selectedPlan?.id === plan.id && 'pl-3'
+                        )}>{plan.name}</p>
+                        {plan.validity && <p className="text-[8.5px] min-[390px]:text-[9px] sm:text-[10px] text-gray-500 mt-0.5 leading-tight line-clamp-2">{plan.validity}</p>}
+                        <div className="flex items-end justify-between gap-1 mt-1">
+                          <span className="text-shb-navy font-extrabold text-[11px] min-[390px]:text-[11.5px] sm:text-[13px] whitespace-nowrap">{formatNaira(plan.price)}</span>
+                          {plan.planType && (
+                            <span className="max-w-[62%] px-1 py-0.5 bg-gray-100 text-gray-500 rounded text-[6.5px] min-[390px]:text-[7px] sm:text-[8px] font-bold uppercase leading-tight text-right break-words">
+                              {plan.planType}
+                            </span>
+                          )}
+                        </div>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => toggleFavorite(e, plan.id)}
-                        className="icon-btn absolute top-2 right-2 p-1 rounded-full hover:bg-white transition-colors"
+                        className="absolute top-1 right-1 p-1 rounded-full hover:bg-white transition-colors"
                         aria-label="Toggle favorite"
                       >
-                        <Star size={12} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
+                        <Star size={10} className={favorites.includes(plan.id) ? 'fill-shb-gold text-shb-gold' : 'text-gray-300'} />
                       </button>
-                      {selectedPlan?.id === plan.id && (
-                        <CheckCircle2 size={13} className="absolute top-1.5 left-1.5 text-shb-gold-dark" />
-                      )}
-                      <p className={cn('font-bold text-gray-900 text-[13px] sm:text-[13.5px] leading-tight pr-5 break-words', selectedPlan?.id === plan.id && 'pl-4')}>{plan.name}</p>
-                      {plan.validity && <p className="text-[10.5px] sm:text-[11px] text-gray-500 mt-0.5 truncate">{plan.validity}</p>}
-                      <div className="flex items-center justify-between gap-1 mt-1 sm:mt-1.5">
-                        <span className="text-shb-navy font-extrabold text-[13px] sm:text-[14px] whitespace-nowrap shrink-0">{formatNaira(plan.price)}</span>
-                        {plan.planType && (
-                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-bold uppercase tracking-tight truncate min-w-0">{plan.planType}</span>
-                        )}
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -350,7 +348,7 @@ export default function BuyDataFlow() {
 
       {/* Amount + Buy — sticky summary bar, OPay-style, always at the bottom of the flow */}
       <div className="sm:relative fixed sm:static bottom-0 left-0 right-0 sm:mt-0 bg-white sm:bg-transparent border-t sm:border-t-0 border-gray-100 sm:shadow-none shadow-[0_-4px_16px_rgba(0,0,0,0.06)] p-2.5 sm:p-0 z-30" style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}>
-        <div className="w-full max-w-2xl mx-auto shb-card p-3 sm:p-3.5 sm:!shadow-none sm:!border sm:border-gray-100">
+        <div className="max-w-2xl mx-auto shb-card p-3 sm:p-3.5 sm:!shadow-none sm:!border sm:border-gray-100">
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Amount</span>
             <span className="text-[17px] font-extrabold text-shb-navy">{selectedPlan ? formatNaira(selectedPlan.price) : '\u2014'}</span>

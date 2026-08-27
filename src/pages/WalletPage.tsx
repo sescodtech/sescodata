@@ -91,7 +91,7 @@ export default function WalletPage() {
   }, [ledger, ledgerSearch]);
 
   return (
-    <div className="shb-page shb-page--medium space-y-4 sm:space-y-6 content-reveal pb-8">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-8 content-reveal pb-8">
       <PageHeader
         title="Wallet"
         description="Fund your wallet and track spending."
@@ -146,7 +146,7 @@ export default function WalletPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="shb-card-sm relative overflow-hidden">
           <p className="shb-eyebrow mb-1.5">Total Spent</p>
           <p className="text-xl sm:text-lg font-extrabold text-gray-900 tracking-tight">{isLoading ? '...' : formatNaira(totalSpent)}</p>

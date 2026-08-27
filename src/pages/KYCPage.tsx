@@ -49,7 +49,7 @@ export default function KYCPage() {
   };
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal pb-8">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal pb-8 px-3.5 sm:px-0">
       <PageHeader title="Verification" description="Unlock higher transaction limits." icon={ShieldCheck} backTo="/app" />
 
       {/* Status card */}

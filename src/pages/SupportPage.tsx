@@ -168,7 +168,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="shb-page shb-page--medium space-y-3 content-reveal pb-8">
+    <div className="max-w-3xl mx-auto space-y-3 content-reveal pb-8 px-3.5 sm:px-0">
       <PageHeader
         title="Support"
         description="We're here to help with any issue."

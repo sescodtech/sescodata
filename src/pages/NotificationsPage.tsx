@@ -105,7 +105,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal pb-8">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal pb-8">
       <PageHeader
         title="Notifications"
         description={unreadCount > 0 ? `${unreadCount} unread update${unreadCount !== 1 ? 's' : ''}` : 'You\u2019re all caught up.'}

@@ -93,7 +93,7 @@ export default function TransactionsPage() {
   const pendingCount = useMemo(() => txns.filter((t) => resolvedStatus(t) === 'pending').length, [txns]);
 
   return (
-    <div className="shb-page shb-page--wide space-y-4 content-reveal">
+    <div className="space-y-4 content-reveal">
       <PageHeader
         title="Transaction History"
         description="Review all your purchases and receipts."

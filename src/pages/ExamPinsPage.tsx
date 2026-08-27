@@ -61,7 +61,7 @@ export default function ExamPinsPage() {
 
   if (justPaid) {
     return (
-      <div className="shb-page shb-page--narrow py-16">
+      <div className="max-w-md mx-auto py-16">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-11 h-11 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
             <PartyPopper size={28} className="text-green-500" />
@@ -75,7 +75,7 @@ export default function ExamPinsPage() {
   }
 
   return (
-    <div className="shb-page shb-page--narrow space-y-3 content-reveal pb-12">
+    <div className="max-w-2xl mx-auto space-y-3 content-reveal pb-12">
       <PageHeader
         title="Exam PINs"
         description="WAEC / NECO result checker PINs, delivered instantly."
