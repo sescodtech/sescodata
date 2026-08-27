@@ -1,0 +1,1281 @@
+// ============================================================
+// SescoHub API Service Layer
+// ============================================================
+
+// Every call site below passes a path that already starts with '/api/...'.
+// If VITE_API_URL is set to something like 'https://sescodata.onrender.com/api'
+// (an easy mistake given the variable name), naively concatenating it with
+// those paths produces '.../api/api/products' — a 404 that looks like the
+// backend is broken when it's actually a one-character env var typo. Strip
+// any trailing '/api' (and trailing slashes) so BASE_URL is always just the
+// bare origin, no matter how the env var was set.
+const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '').replace(/\/api$/i, '');
+
+const normalizeProvider = (value?: string) =>
+  String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
+
+const providerAliasMap: Record<string, string[]> = {
+  mtn: ['mtn'],
+  airtel: ['airtel'],
+  glo: ['glo', 'globacom'],
+  '9mobile': ['9mobile', 'etisalat'],
+  dstv: ['dstv', 'dstvsubscription', 'dstv_subscription'],
+  gotv: ['gotv', 'gotvsubscription', 'gotv_subscription'],
+  startimes: ['startimes', 'startimessubscription', 'startimes_subscription'],
+  ikedc: ['ikedc', 'ikejaelectric', 'ikejaelectricity'],
+  ekedc: ['ekedc', 'ekoelectric', 'ekoelectricity'],
+  aedc: ['aedc', 'abujaelectric', 'abujaelectricity'],
+  phden: ['phden', 'portharcourtelectricity'],
+  ibedc: ['ibedc', 'ibadandisco', 'ibadanelectricity'],
+  kedco: ['kedco', 'kanodisco', 'kanoelectricity'],
+};
+
+export const matchesProvider = (product: Product, providerId: string) => {
+  const normalizedProduct = normalizeProvider(product.provider || product.prov);
+  const normalizedTarget = normalizeProvider(providerId);
+  if (!normalizedProduct || !normalizedTarget) return false;
+  if (normalizedProduct === normalizedTarget) return true;
+
+  const normalizedAliases = providerAliasMap[normalizedTarget] ?? [normalizedTarget];
+  if (normalizedAliases.includes(normalizedProduct)) return true;
+
+  return normalizedProduct.includes(normalizedTarget) || normalizedTarget.includes(normalizedProduct);
+};
+
+// ── Token storage ─────────────────────────────────────────────
+// Default (no "Remember me"): sessionStorage — cleared when the browser/tab
+// is closed, so the user must sign in again next time, matching how most
+// platforms behave without an explicit "stay signed in" opt-in.
+// "Remember me" checked: localStorage — persists across browser restarts,
+// paired with a longer-lived backend token (see AuthService.generateToken).
+export const token = {
+  get: () => sessionStorage.getItem('dh_token') || localStorage.getItem('dh_token'),
+  set: (t: string, rememberMe: boolean = false) => {
+    if (rememberMe) {
+      localStorage.setItem('dh_token', t);
+      sessionStorage.removeItem('dh_token');
+    } else {
+      sessionStorage.setItem('dh_token', t);
+      localStorage.removeItem('dh_token');
+    }
+  },
+  clear: () => {
+    localStorage.removeItem('dh_token');
+    sessionStorage.removeItem('dh_token');
+  },
+};
+
+// ── Base fetch helper ──────────────────────────────────────────
+async function apiFetch<T = any>(
+  path: string,
+  options: RequestInit = {},
+  auth = false,
+): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  if (auth) {
+    const t = token.get();
+    if (t) headers['Authorization'] = `Bearer ${t}`;
+  }
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  } catch (networkErr: any) {
+    // fetch() itself throws for DNS failures, CORS-blocked requests, or the
+    // backend being unreachable — this is distinct from an HTTP error status
+    // and had no error path before, so it surfaced as an unhandled rejection.
+    // Message is intentionally generic and doesn't leak the backend URL —
+    // that's an implementation detail, not something an end user needs to see.
+    console.error('[api] network request failed:', BASE_URL + path, networkErr);
+    throw new Error('Unable to connect right now. Please check your internet connection and try again.');
+  }
+
+  // Read the body once, as text, regardless of what it turns out to be —
+  // res.json() throws its own opaque "Unexpected end of JSON input" for an
+  // empty body (e.g. a 405 from a static-file host, a 204, or a blocked
+  // preflight) and a confusing parse error for an HTML error page (e.g. a
+  // misrouted request landing on index.html). Reading as text first lets us
+  // detect and report both cases clearly instead of throwing the generic
+  // browser-level JSON error.
+  const rawBody = await res.text();
+  const contentType = res.headers.get('content-type') || '';
+
+  if (!rawBody) {
+    const detail = `Request failed (HTTP ${res.status} ${res.statusText || ''}). Empty response body — likely wrong base URL or a route/method mismatch.`.trim();
+    if (res.ok) throw new Error('Something went wrong on our end. Please try again in a moment.');
+    console.error('[api] empty response body:', path, detail);
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
+  }
+
+  if (!contentType.includes('application/json')) {
+    // Most commonly: the SPA's index.html (or some other HTML error page)
+    // was returned instead of the API response — a routing/base-URL
+    // mismatch, not something the API itself produced. Logged for us,
+    // shown to the customer as a plain "try again" message.
+    const looksLikeHtml = /^\s*</.test(rawBody);
+    console.error(
+      '[api] non-JSON response:',
+      path,
+      looksLikeHtml
+        ? `HTTP ${res.status} — received HTML instead of JSON (check VITE_API_URL / vercel.json rewrites)`
+        : `HTTP ${res.status} — expected JSON but received: ${rawBody.slice(0, 200)}`,
+    );
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    console.error('[api] invalid JSON response:', path, rawBody.slice(0, 200));
+    throw new Error('Something went wrong on our end. Please try again in a moment.');
+  }
+
+  if (!res.ok || data.success === false) {
+    // data.error / data.message are backend-authored, customer-facing
+    // messages already (e.g. "Insufficient wallet balance") — those pass
+    // through unchanged. Only the raw `HTTP {status}` fallback (which fires
+    // when the backend sends no message at all) is replaced with something
+    // a customer can actually act on.
+    const backendMessage = data.error || data.message;
+    if (backendMessage) throw new Error(backendMessage);
+    console.error('[api] request failed with no backend message:', path, res.status);
+    throw new Error('This request could not be completed. Please try again.');
+  }
+  return data as T;
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'customer' | 'admin';
+  walletBalance?: number;
+  kycStatus?: 'not_started' | 'pending' | 'verified' | 'rejected';
+  kycRejectionReason?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  token: string;
+  user: AuthUser;
+}
+
+export const auth = {
+  register: (name: string, email: string, password: string, phone?: string) =>
+    apiFetch<AuthResponse>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password, phone }),
+    }),
+
+  login: (email: string, password: string, rememberMe: boolean = false) =>
+    apiFetch<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, rememberMe }),
+    }),
+
+  requestPasswordReset: (email: string) =>
+    apiFetch<{ success: boolean; message: string }>('/api/auth/request-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, email: string, newPassword: string) =>
+    apiFetch<AuthResponse>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, email, newPassword }),
+    }),
+
+  updateProfile: (data: { name?: string; phone?: string }) =>
+    apiFetch('/api/auth/profile', { method: 'PUT', body: JSON.stringify(data) }, true),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }, true),
+
+  me: () => apiFetch<{ success: boolean; user: AuthUser }>('/api/me', {}, true),
+};
+
+// ============================================================
+// PRODUCTS / PLANS
+// ============================================================
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  provider: string;
+  price: number;
+  validity?: string;
+  planType?: string;
+  apiSource?: string;
+  is_promo?: boolean;
+  original_price?: number;
+  // Legacy aliases kept for safety
+  cat?: string;
+  prov?: string;
+}
+
+export interface ProductsResponse {
+  success: boolean;
+  products: Product[];
+}
+
+export interface Promotion {
+  _id: string;
+  productId: string;
+  category: 'data' | 'airtime' | 'electricity' | 'education';
+  network?: string;
+  promotionType: 'percentage' | 'fixed';
+  discountPercent?: number;
+  promoPrice?: number;
+  startDate: string;
+  endDate: string;
+  enabled: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Public, resolved shape returned by GET /api/promotions/active — product name/price come live from the catalog. */
+export interface ActivePromotion {
+  _id: string;
+  productId: string;
+  productName: string;
+  category: 'data' | 'airtime' | 'electricity' | 'education';
+  network?: string;
+  originalPrice: number;
+  discountedPrice: number;
+  promotionType: 'percentage' | 'fixed';
+  discountPercent?: number;
+  sortOrder: number;
+}
+
+// The product catalog barely changes minute-to-minute, but customers commonly
+// bounce between Buy Data → Buy Airtime → TV → Exam PINs and back within a
+// single session — each of those pages calls products.list()/byCategory()
+// independently on mount. Without a cache that's a full-catalog refetch on
+// every navigation. A short TTL cache (and de-duping concurrent calls into
+// one in-flight request) cuts that down without ever showing stale prices
+// for more than a few seconds. Admin screens use separate endpoints, so this
+// only affects the customer-facing catalog.
+const PRODUCTS_CACHE_TTL_MS = 60_000;
+let productsCache: { data: ProductsResponse; expiresAt: number } | null = null;
+let productsInFlight: Promise<ProductsResponse> | null = null;
+
+// Same reasoning as products.list(): promotions barely change minute-to-minute,
+// but the customer dashboard fetches this on every visit.
+const PROMOTIONS_CACHE_TTL_MS = 60_000;
+let promotionsCache: { data: { success: boolean; promotions: ActivePromotion[] }; expiresAt: number } | null = null;
+let promotionsInFlight: Promise<{ success: boolean; promotions: ActivePromotion[] }> | null = null;
+
+export const promotions = {
+  // Public, unauthenticated — the dashboard "Active Promotions" card needs
+  // this before we know anything about caching/auth state.
+  active: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && promotionsCache && promotionsCache.expiresAt > Date.now()) {
+      return promotionsCache.data;
+    }
+    if (!opts.force && promotionsInFlight) {
+      return promotionsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<{ success: boolean; promotions: ActivePromotion[] }>('/api/promotions/active');
+      promotionsCache = { data: res, expiresAt: Date.now() + PROMOTIONS_CACHE_TTL_MS };
+      return res;
+    })();
+
+    promotionsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      promotionsInFlight = null;
+    }
+  },
+};
+
+export const products = {
+  /** Pass `{ force: true }` to bypass the cache (e.g. after an admin action that changes pricing). */
+  list: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && productsCache && productsCache.expiresAt > Date.now()) {
+      return productsCache.data;
+    }
+    if (!opts.force && productsInFlight) {
+      return productsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<ProductsResponse>('/api/products', {}, true);
+      // FIXED: backend returns `sellingPrice`, but every page in this app reads
+      // `.price` — that mismatch meant prices rendered as NaN/blank everywhere.
+      // Normalize once here instead of touching every call site.
+      res.products = res.products.map((p: any) => ({ ...p, price: p.price ?? p.sellingPrice }));
+      productsCache = { data: res, expiresAt: Date.now() + PRODUCTS_CACHE_TTL_MS };
+      return res;
+    })();
+
+    productsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      productsInFlight = null;
+    }
+  },
+
+  byNetwork: async (network: string, cat = 'data') => {
+    const res = await products.list();
+    return res.products.filter((p) =>
+      matchesProvider(p, network) &&
+      ((p.category || p.cat) === cat || (cat === 'data' && !p.category && !p.cat)),
+    );
+  },
+
+  byCategory: async (cat: string) => {
+    const res = await products.list();
+    return res.products.filter((p) => (p.category || p.cat) === cat);
+  },
+};
+
+// ============================================================
+// PURCHASE
+// ============================================================
+export interface PurchaseResponse {
+  success: boolean;
+  message: string;
+  ref: string;
+}
+
+/**
+ * FIXED: the old `payment.walletBuy` / `payment.initiate` called
+ * /api/payment/wallet-buy and /api/payment/initiate — neither of which the
+ * backend ever implemented. Every "buy" button in the app was silently
+ * broken. This now points at the real, wired-up /api/purchase/* routes.
+ */
+export const purchase = {
+  buyData: (params: { productId: string; recipient: string; quantity?: number }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-data', {
+      method: 'POST',
+      body: JSON.stringify({ ...params, quantity: params.quantity ?? 1 }),
+    }, true),
+
+  buyAirtime: (params: { network: string; phone: string; amount: number; quantity?: number }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-airtime', {
+      method: 'POST',
+      body: JSON.stringify({ ...params, quantity: params.quantity ?? 1 }),
+    }, true),
+
+  buyCable: (params: { productId: string; smartcard: string; phone?: string }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-cable', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }, true),
+
+  buyElectricity: (params: { disco: string; meter: string; amount: number; phone?: string }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-electricity', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }, true),
+
+  buyExamPin: (params: { productId: string; quantity?: number }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-exam', {
+      method: 'POST',
+      body: JSON.stringify({ ...params, quantity: params.quantity ?? 1 }),
+    }, true),
+
+  buyRechargeCard: (params: { network: string; amount: number; quantity?: number }) =>
+    apiFetch<PurchaseResponse>('/api/purchase/buy-recharge-card', {
+      method: 'POST',
+      body: JSON.stringify({ ...params, quantity: params.quantity ?? 1 }),
+    }, true),
+};
+
+// ============================================================
+// PAYMENT (wallet funding only)
+// ============================================================
+export interface PaymentInitResponse {
+  success: boolean;
+  paymentUrl: string;
+  reference: string;
+}
+
+// ============================================================
+// WALLET
+// ============================================================
+export interface WalletLedgerEntry {
+  type: 'credit' | 'debit';
+  amount: number;
+  description: string;
+  date: string;
+  balance?: number;
+}
+
+export interface WalletResponse {
+  success: boolean;
+  balance: number;
+  ledger: WalletLedgerEntry[];
+}
+
+export const wallet = {
+  /** Get live wallet balance and last 30 ledger entries */
+  get: () => apiFetch<WalletResponse>('/api/my/wallet', {}, true),
+
+  /** Initiate a Paystack payment to top up the wallet */
+  depositInitiate: (amount: number) =>
+    apiFetch<PaymentInitResponse>('/api/wallet/deposit/initiate', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    }, true),
+};
+
+// ============================================================
+// TRANSACTIONS
+// ============================================================
+export interface Transaction {
+  id: string;
+  ref: string;
+  product: string;
+  category: string;
+  recipient: string;
+  amount: number;
+  status: 'success' | 'pending' | 'failed' | 'paid';
+  deliveryStatus: 'delivered' | 'pending' | 'failed';
+  date: string;
+  statusMessage?: string;
+}
+
+export interface TransactionsResponse {
+  success: boolean;
+  transactions: Transaction[];
+}
+
+/**
+ * FIXED: the backend Transaction document nests `product: {name, category,
+ * recipient, quantity}`, uses `_id`/`createdAt`/`paymentReference`, and never
+ * matched this flat `Transaction` interface. Every page reading `.product`,
+ * `.recipient`, `.date`, `.id`, `.ref` as flat strings was silently broken.
+ * Normalize once here instead of touching every call site.
+ */
+function normalizeTransaction(raw: any): Transaction {
+  return {
+    id: raw.id ?? raw._id,
+    ref: raw.paymentReference ?? raw.ref ?? '',
+    product: raw.product?.name ?? raw.product ?? raw.type,
+    category: raw.product?.category ?? raw.category ?? raw.type,
+    recipient: raw.product?.recipient ?? raw.recipient ?? '',
+    amount: raw.amount,
+    status: raw.status,
+    deliveryStatus: raw.deliveryStatus ?? (raw.status === 'success' ? 'delivered' : raw.status === 'failed' ? 'failed' : 'pending'),
+    date: raw.date ?? raw.createdAt,
+    statusMessage: raw.failReason ?? raw.deliveryError ?? raw.statusMessage,
+  };
+}
+
+// DashboardHome and TransactionsPage both call transactions.list() on mount —
+// a short TTL cache avoids refetching the same data twice within a few
+// seconds of navigating between them. `force: true` bypasses it (used by
+// TransactionsPage's manual refresh button).
+const TRANSACTIONS_CACHE_TTL_MS = 20_000;
+let transactionsCache: { data: { success: boolean; transactions: any[] }; expiresAt: number } | null = null;
+let transactionsInFlight: Promise<{ success: boolean; transactions: any[] }> | null = null;
+
+export const transactions = {
+  list: async (opts: { force?: boolean } = {}) => {
+    if (!opts.force && transactionsCache && transactionsCache.expiresAt > Date.now()) {
+      return transactionsCache.data;
+    }
+    if (!opts.force && transactionsInFlight) {
+      return transactionsInFlight;
+    }
+
+    const fetchPromise = (async () => {
+      const res = await apiFetch<{ success: boolean; transactions: any[] }>('/api/my/transactions', {}, true);
+      const result = { success: res.success, transactions: (res.transactions || []).map(normalizeTransaction) };
+      transactionsCache = { data: result, expiresAt: Date.now() + TRANSACTIONS_CACHE_TTL_MS };
+      return result;
+    })();
+
+    transactionsInFlight = fetchPromise;
+    try {
+      return await fetchPromise;
+    } finally {
+      transactionsInFlight = null;
+    }
+  },
+};
+
+// ============================================================
+// PLATFORM INFO
+// ============================================================
+export interface InfoResponse {
+  business: string;
+  version: string;
+  support: { phone: string; whatsapp: string };
+}
+
+export const info = {
+  get: () => apiFetch<InfoResponse>('/api/info'),
+};
+
+// ============================================================
+// CONTACT / AGENT / SUPPORT
+// Real backend endpoints — replaces the previous mailto: fallback forms.
+// ============================================================
+export const contact = {
+  submit: (data: { name: string; email: string; message: string }) =>
+    apiFetch<{ success: boolean; message: string }>('/api/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+export const agent = {
+  apply: (data: { name: string; phone: string; email: string; message?: string }) =>
+    apiFetch<{ success: boolean; message: string }>('/api/agent/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+export interface SupportReply { from: 'customer' | 'admin'; message: string; adminName?: string; createdAt: string }
+export interface TicketTimelineEvent { type: string; label: string; actorName: string; createdAt: string }
+export interface InternalNote { _id: string; adminId: string; adminName: string; note: string; createdAt: string }
+export interface TicketAttachment { url: string; name: string; uploadedAt: string }
+
+export interface SupportTicket {
+  _id: string;
+  userId?: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: 'billing' | 'technical' | 'account' | 'transaction' | 'general';
+  assignedAdminId?: string | null;
+  assignedAdminName?: string | null;
+  replies: SupportReply[];
+  internalNotes?: InternalNote[];
+  timeline?: TicketTimelineEvent[];
+  attachments?: TicketAttachment[];
+  lastReplyAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export const support = {
+  createTicket: (data: { subject: string; message: string }) =>
+    apiFetch<{ success: boolean; message: string; ticket: SupportTicket }>('/api/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true),
+
+  myTickets: () =>
+    apiFetch<{ success: boolean; tickets: SupportTicket[] }>('/api/support/tickets', {}, true),
+
+  getTicket: (id: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/support/tickets/${id}`, {}, true),
+
+  reply: (id: string, message: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/support/tickets/${id}/reply`, {
+      method: 'POST', body: JSON.stringify({ message }),
+    }, true),
+};
+
+// ============================================================
+// MODULE 8 — Admin Support Center
+// ============================================================
+
+export interface SupportDashboardStats {
+  totalTickets: number;
+  openTickets: number;
+  pendingTickets: number;
+  resolvedTickets: number;
+  closedTickets: number;
+  highPriority: number;
+  avgResponseTimeMinutes: number;
+  todayTickets: number;
+  weekTickets: number;
+  monthTickets: number;
+}
+
+export interface SupportTicketListFilters {
+  page?: number; pageSize?: number;
+  status?: string; priority?: string; category?: string;
+  userId?: string; assignedAdminId?: string; search?: string;
+  dateFrom?: string; dateTo?: string;
+  sortBy?: 'createdAt' | 'lastReplyAt' | 'priority' | 'status'; sortDir?: 'asc' | 'desc';
+}
+
+export interface CustomerSupportContext {
+  user: { _id: string; name: string; email: string; walletBalance: number; lastLogin?: string; createdAt: string; kycStatus: string; status: string };
+  accountAgeDays: number;
+  walletBalance: number;
+  lastLogin?: string;
+  totalTransactions: number;
+  successfulTransactions: number;
+  failedTransactions: number;
+  recentPurchases: AdminTransaction[];
+}
+
+export interface PreviousTicketSummary { _id: string; subject: string; status: string; priority: string; createdAt: string }
+
+export const adminSupport = {
+  dashboard: () => apiFetch<{ success: boolean; stats: SupportDashboardStats }>('/api/admin/support/dashboard', {}, true),
+
+  list: (filters: SupportTicketListFilters = {}) =>
+    apiFetch<{ success: boolean; tickets: SupportTicket[]; total: number; page: number; pageSize: number; totalPages: number }>(
+      `/api/admin/support/tickets${toQueryString(filters as any)}`, {}, true,
+    ),
+
+  listAdmins: () => apiFetch<{ success: boolean; admins: { _id: string; name: string; email: string }[]; isSuperAdmin: boolean }>('/api/admin/support/admins', {}, true),
+
+  detail: (id: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket; customer: CustomerSupportContext | null; previousTickets: PreviousTicketSummary[] }>(
+      `/api/admin/support/tickets/${id}`, {}, true,
+    ),
+
+  reply: (id: string, message: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }, true),
+
+  addNote: (id: string, note: string) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/notes`, { method: 'POST', body: JSON.stringify({ note }) }, true),
+
+  changeStatus: (id: string, status: SupportTicket['status']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }, true),
+
+  changePriority: (id: string, priority: SupportTicket['priority']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }, true),
+
+  changeCategory: (id: string, category: SupportTicket['category']) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/category`, { method: 'POST', body: JSON.stringify({ category }) }, true),
+
+  assign: (id: string, adminId: string | null) =>
+    apiFetch<{ success: boolean; ticket: SupportTicket }>(`/api/admin/support/tickets/${id}/assign`, { method: 'POST', body: JSON.stringify({ adminId }) }, true),
+
+  deleteTicket: (id: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/support/tickets/${id}`, { method: 'DELETE' }, true),
+};
+
+// ============================================================
+// ADMIN
+// Trimmed to match what the backend actually implements. The original had
+// calls to /api/info, /api/admin/services, /api/admin/wallet,
+// /api/admin/diagnostics, /api/admin/retry, /api/admin/plans/refresh,
+// /api/admin/overrides, /api/admin/products/:id/toggle|feature, and
+// /api/superadmin/tenants — none of which existed on the server. Removed as
+// dead code rather than leaving buttons that 404.
+// ============================================================
+export interface ProviderHealth {
+  name: string;
+  status: 'healthy' | 'low_balance' | 'offline' | 'unconfigured';
+  balance: number;
+  healthy: boolean;
+  minBalance?: number;
+  error?: string;
+}
+
+export interface SystemAlert {
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+}
+
+export interface AdminStats {
+  revenue: number;
+  profit: number;
+  todayRevenue: number;
+  weekRevenue: number;
+  monthRevenue: number;
+  totalUsers: number;
+  activeUsers: number;
+  totalWalletBalance: number;
+  totalTransactions: number;
+  delivered: number;
+  pending: number;
+  failed: number;
+  failureBreakdown: Record<string, number>;
+  todayTransactions: number;
+  openTickets: number;
+  providers: ProviderHealth[];
+  alerts: SystemAlert[];
+}
+
+export interface RevenuePoint {
+  date: string;
+  revenue: number;
+  profit: number;
+  count: number;
+}
+
+export interface AdminUser {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'admin' | 'customer';
+  status: 'active' | 'suspended';
+  isLocked: boolean;
+  kycStatus: 'not_started' | 'pending' | 'verified' | 'rejected';
+  walletBalance: number;
+  lastLogin?: string;
+  createdAt: string;
+}
+
+export interface AdminTransaction {
+  _id: string;
+  userId: { _id: string; name: string; email: string } | string;
+  amount: number;
+  cost?: number;
+  profit?: number;
+  type: string;
+  status: string;
+  deliveryStatus: 'pending' | 'delivered' | 'failed';
+  product: { name: string; category: string; recipient?: string; quantity?: number };
+  paymentReference: string;
+  failReason?: string;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  _id: string;
+  adminName: string;
+  action: string;
+  targetType: string;
+  targetLabel?: string;
+  before?: any;
+  after?: any;
+  reason?: string;
+  ip?: string;
+  createdAt: string;
+}
+
+export interface AdminNoteEntry {
+  _id: string;
+  adminName: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface LoginEventEntry {
+  _id: string;
+  ip?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface UserDetailResponse {
+  success: boolean;
+  user: AdminUser;
+  transactionSummary: { totalSpent: number; totalOrders: number; delivered: number; failed: number; pending: number };
+  recentTransactions: AdminTransaction[];
+  loginHistory: LoginEventEntry[];
+  adminNotes: AdminNoteEntry[];
+  recentActivity: AuditLogEntry[];
+}
+
+export interface PaginatedUsers { success: boolean; users: AdminUser[]; total: number; page: number; pageSize: number; totalPages: number }
+export interface PaginatedTransactions { success: boolean; transactions: AdminTransaction[]; total: number; page: number; pageSize: number; totalPages: number }
+
+export interface UserListFilters { page?: number; pageSize?: number; status?: string; role?: string; kycStatus?: string; search?: string }
+export interface TxnListFilters { page?: number; limit?: number; status?: string; category?: string; userId?: string; search?: string; dateFrom?: string; dateTo?: string }
+
+function toQueryString(params: Record<string, string | number | undefined>) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') q.set(k, String(v)); });
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
+export const admin = {
+  stats: () => apiFetch<{ success: boolean; stats: AdminStats }>('/api/admin/stats', {}, true),
+  revenueChart: (days = 30) =>
+    apiFetch<{ success: boolean; series: RevenuePoint[] }>(`/api/admin/revenue-chart?days=${days}`, {}, true),
+
+  // Transactions (Module 3)
+  transactions: (filters: TxnListFilters | number = {}) => {
+    const f = typeof filters === 'number' ? { limit: filters } : filters;
+    return apiFetch<PaginatedTransactions>(`/api/admin/transactions${toQueryString(f as any)}`, {}, true);
+  },
+
+  // Users (Module 2)
+  users: (filters: UserListFilters = {}) =>
+    apiFetch<PaginatedUsers>(`/api/admin/users${toQueryString(filters as any)}`, {}, true),
+  userDetail: (userId: string) =>
+    apiFetch<UserDetailResponse>(`/api/admin/users/${userId}`, {}, true),
+  updateUserRole: (userId: string, role: string) =>
+    apiFetch(`/api/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) }, true),
+  updateUserStatus: (userId: string, status: string, reason?: string) =>
+    apiFetch(`/api/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status, reason }) }, true),
+  setUserLock: (userId: string, locked: boolean, reason?: string) =>
+    apiFetch(`/api/admin/users/${userId}/lock`, { method: 'PUT', body: JSON.stringify({ locked, reason }) }, true),
+  resetUserPassword: (userId: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/users/${userId}/reset-password`, { method: 'POST' }, true),
+  addUserNote: (userId: string, note: string) =>
+    apiFetch<{ success: boolean; note: AdminNoteEntry }>(`/api/admin/users/${userId}/notes`, { method: 'POST', body: JSON.stringify({ note }) }, true),
+  notifyUser: (userId: string, title: string, message: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/api/admin/users/${userId}/notify`, { method: 'POST', body: JSON.stringify({ title, message }) }, true),
+  auditLogs: (params: AuditLogFilters & { targetId?: string; limit?: number } = {}) =>
+    apiFetch<AuditLogsResponse & { logs: AuditLogEntry[] }>(`/api/admin/audit-logs${toQueryString(params as any)}`, {}, true),
+
+  // Wallet (Module 3)
+  creditWallet: (userId: string, amount: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number }>(`/api/admin/users/${userId}/wallet/credit`, { method: 'POST', body: JSON.stringify({ amount, reason }) }, true),
+  debitWallet: (userId: string, amount: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number }>(`/api/admin/users/${userId}/wallet/debit`, { method: 'POST', body: JSON.stringify({ amount, reason }) }, true),
+
+  // Pricing (unchanged — future module)
+  getMarkup: () => apiFetch('/api/admin/markup', {}, true),
+  setMarkup: (markup: Record<string, number>) =>
+    apiFetch('/api/admin/markup', { method: 'PUT', body: JSON.stringify(markup) }, true),
+  providerStatus: () => apiFetch<{ success: boolean; providers: ProviderHealth[] }>('/api/admin/providers/status', {}, true),
+
+  // Module 6 — Provider Control Center
+  providersDashboard: () => apiFetch<ProviderDashboardResponse>('/api/admin/providers', {}, true),
+  updateProviderSettings: (settings: Partial<ProviderSettingsPayload> & { reason?: string }) =>
+    apiFetch<{ success: boolean; settings: ProviderSettingsPayload }>('/api/admin/providers/settings', { method: 'PUT', body: JSON.stringify(settings) }, true),
+  testProviderConnection: (name: string) =>
+    apiFetch<{ success: boolean; provider: string; result: { success: boolean; balance?: number; error?: string; durationMs: number } }>(`/api/admin/providers/${name}/test`, { method: 'POST' }, true),
+  providerLogs: (filters: ProviderLogFilters = {}) =>
+    apiFetch<ProviderLogsResponse>(`/api/admin/providers/logs${toQueryString(filters as any)}`, {}, true),
+
+  // Branding — primary brand color for the customer app
+  setBranding: (primaryColor: string) =>
+    apiFetch<{ success: boolean; primaryColor: string }>('/api/admin/branding', { method: 'PUT', body: JSON.stringify({ primaryColor }) }, true),
+
+  // Support contact settings (WhatsApp number + support email)
+  setSupportSettings: (supportEmail: string, whatsappNumber: string) =>
+    apiFetch<{ success: boolean; supportEmail: string; whatsappNumber: string }>(
+      '/api/admin/support-settings',
+      { method: 'PUT', body: JSON.stringify({ supportEmail, whatsappNumber }) },
+      true,
+    ),
+
+  // Module 9 — Promotion Management
+  listPromotions: () => apiFetch<{ success: boolean; promotions: Promotion[] }>('/api/admin/promotions', {}, true),
+  createPromotion: (data: Partial<Promotion>) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>('/api/admin/promotions', { method: 'POST', body: JSON.stringify(data) }, true),
+  updatePromotion: (id: string, data: Partial<Promotion>) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>(`/api/admin/promotions/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  togglePromotion: (id: string, enabled: boolean) =>
+    apiFetch<{ success: boolean; promotion: Promotion }>(`/api/admin/promotions/${id}/enabled`, { method: 'PUT', body: JSON.stringify({ enabled }) }, true),
+  deletePromotion: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/promotions/${id}`, { method: 'DELETE' }, true),
+
+  // Simple KYC review (BVN + NIN only)
+  listKyc: (status: string = 'pending') =>
+    apiFetch<{ success: boolean; submissions: KycSubmission[] }>(`/api/admin/kyc?status=${status}`, {}, true),
+  approveKyc: (userId: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>(`/api/admin/kyc/${userId}/approve`, { method: 'POST' }, true),
+  rejectKyc: (userId: string, reason?: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>(`/api/admin/kyc/${userId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+};
+
+export interface KycSubmission {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  bvn?: string;
+  nin?: string;
+  kycStatus: 'not_started' | 'pending' | 'verified' | 'rejected';
+  kycSubmittedAt?: string;
+  kycReviewedAt?: string;
+  kycReviewedBy?: string;
+  kycRejectionReason?: string;
+}
+
+export const kyc = {
+  // Customer-facing: submit BVN + NIN for review.
+  submit: (bvn: string, nin: string) =>
+    apiFetch<{ success: boolean; kycStatus: string }>('/api/my/kyc', { method: 'POST', body: JSON.stringify({ bvn, nin }) }, true),
+};
+
+export interface ProviderStats {
+  totalCalls30d: number;
+  successRate: number | null;
+  failureRate: number | null;
+  avgResponseMs: number | null;
+  dailyCalls: number;
+  monthlyCalls: number;
+  lastSyncAt: string | null;
+  lastError: string | null;
+}
+export interface ProviderDashboardItem {
+  name: string;
+  status: 'healthy' | 'low_balance' | 'offline' | 'unconfigured';
+  balance: number;
+  healthy: boolean;
+  disabled: boolean;
+  minBalance?: number;
+  error?: string;
+  priorityPosition: number;
+  isManualOverride: boolean;
+  stats: ProviderStats;
+}
+export interface ProviderDailyPoint {
+  date: string;
+  provider: string;
+  total: number;
+  success: number;
+  failed: number;
+  successRate: number;
+  avgResponseMs: number;
+}
+export interface ProviderSettingsPayload {
+  priorityOrder: string[];
+  manualOverrideProvider: string | null;
+  disabledProviders: string[];
+  minBalanceThreshold: number;
+}
+export interface ProviderDashboardResponse {
+  success: boolean;
+  providers: ProviderDashboardItem[];
+  alerts: { severity: 'critical' | 'warning' | 'info'; message: string; provider: string }[];
+  dailySeries: ProviderDailyPoint[];
+  settings: ProviderSettingsPayload;
+  availableProviderTypes: string[];
+}
+export interface ProviderCallLogEntry {
+  _id: string;
+  provider: string;
+  method: string;
+  success: boolean;
+  durationMs: number;
+  error?: string;
+  failReason?: string;
+  createdAt: string;
+}
+export interface ProviderLogFilters { page?: number; pageSize?: number; provider?: string; success?: string; method?: string; dateFrom?: string; dateTo?: string }
+export interface ProviderLogsResponse {
+  success: boolean;
+  logs: ProviderCallLogEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AuditLogFilters { page?: number; pageSize?: number; action?: string; adminId?: string; targetType?: string; search?: string; dateFrom?: string; dateTo?: string }
+export interface AuditLogsResponse {
+  success: boolean;
+  logs: AuditLogEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  distinctActions: string[];
+}
+
+// Public — no auth required, since the color has to apply before login
+export const settings = {
+  getBranding: () => apiFetch<{ success: boolean; primaryColor: string }>('/api/settings/branding'),
+  // Public — every customer-facing page reads support contact details from
+  // here instead of a hardcoded constant.
+  getSupport: () => apiFetch<{ success: boolean; supportEmail: string; whatsappNumber: string }>('/api/settings/support'),
+};
+
+// ============================================================
+// MODULE 4 — Retry Failed Transactions & Manual Processing
+// ============================================================
+export interface RetryEligibility { eligible: boolean; reason?: string }
+export interface RetryHistoryEntry { attemptedAt: string; adminName: string; previousDeliveryStatus: string; newDeliveryStatus: string; providerUsed?: string; reason?: string; error?: string }
+export interface ManualReviewNote { adminName: string; note: string; createdAt: string }
+export interface ManualReview { status: 'none' | 'pending' | 'approved' | 'rejected' | 'completed'; providerReference?: string; evidenceUrl?: string; notes: ManualReviewNote[] }
+
+export interface OperationsTransaction extends AdminTransaction {
+  retryCount: number;
+  isRetryLocked: boolean;
+  retryHistory: RetryHistoryEntry[];
+  manualReview: ManualReview;
+  refundedManually: boolean;
+  reversedManually: boolean;
+  retryEligibility?: RetryEligibility;
+}
+
+export interface TimelineEvent { type: string; label: string; detail?: string; admin?: string; timestamp: string }
+
+export interface OperationsStats {
+  failedTransactions: number;
+  pendingReviews: number;
+  manualProcessingQueue: number;
+  retrySuccessRate: number | null;
+  totalRetried: number;
+  successfulRetries: number;
+  todayRefundsAmount: number;
+  todayRefundsCount: number;
+  recentManualActions: AuditLogEntry[];
+}
+
+export interface OperationsQueueFilters { page?: number; pageSize?: number; search?: string; category?: string; provider?: string; userId?: string; dateFrom?: string; dateTo?: string; status?: string }
+export interface PaginatedOperationsTransactions { success: boolean; transactions: OperationsTransaction[]; total: number; page: number; pageSize: number; totalPages: number }
+
+export const adminOperations = {
+  stats: () => apiFetch<{ success: boolean; stats: OperationsStats }>('/api/admin/operations/stats', {}, true),
+
+  failedQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/failed${toQueryString(filters as any)}`, {}, true),
+  pendingQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/pending${toQueryString(filters as any)}`, {}, true),
+  manualReviewQueue: (filters: OperationsQueueFilters = {}) =>
+    apiFetch<PaginatedOperationsTransactions>(`/api/admin/operations/manual-review${toQueryString(filters as any)}`, {}, true),
+
+  timeline: (transactionId: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction; timeline: TimelineEvent[] }>(`/api/admin/operations/transactions/${transactionId}/timeline`, {}, true),
+
+  retry: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; retrySucceeded: boolean; transaction: OperationsTransaction; error?: string }>(`/api/admin/operations/transactions/${transactionId}/retry`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  bulkRetry: (transactionIds: string[], reason: string) =>
+    apiFetch<{ success: boolean; message: string; results: { id: string; success: boolean; error?: string }[] }>('/api/admin/operations/transactions/bulk-retry', { method: 'POST', body: JSON.stringify({ transactionIds, reason }) }, true),
+
+  flagForReview: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/flag-review`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  approve: (transactionId: string, reason: string, providerReference?: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/approve`, { method: 'POST', body: JSON.stringify({ reason, providerReference }) }, true),
+  reject: (transactionId: string, reason: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }, true),
+  markCompleted: (transactionId: string, reason: string, providerReference: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/complete`, { method: 'POST', body: JSON.stringify({ reason, providerReference }) }, true),
+  refund: (transactionId: string, reason: string, amount?: number) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/refund`, { method: 'POST', body: JSON.stringify({ reason, amount }) }, true),
+  reverse: (transactionId: string, reason: string, amount?: number) =>
+    apiFetch<{ success: boolean; message: string; newBalance: number; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/reverse`, { method: 'POST', body: JSON.stringify({ reason, amount }) }, true),
+  addNote: (transactionId: string, note: string, evidenceUrl?: string) =>
+    apiFetch<{ success: boolean; transaction: OperationsTransaction }>(`/api/admin/operations/transactions/${transactionId}/notes`, { method: 'POST', body: JSON.stringify({ note, evidenceUrl }) }, true),
+};
+
+// ============================================================
+// MODULE 5 — Product & Pricing Management
+// ============================================================
+export interface AdminProduct {
+  id: string;
+  name: string;
+  category: string;
+  provider: string;
+  providerId: string;
+  costPrice: number;
+  sellingPrice: number;
+  validity?: string;
+  planType?: string;
+  enabled: boolean;
+  visible: boolean;
+}
+
+export interface ProviderMappingEntry { provider: string; productCount: number; categories: string[] }
+export interface ElectricityDisco { id: string; name: string }
+
+export const adminProducts = {
+  list: (filters: { category?: string; search?: string; status?: string } = {}) =>
+    apiFetch<{ success: boolean; products: AdminProduct[]; total: number; categories: string[] }>(`/api/admin/products${toQueryString(filters as any)}`, {}, true),
+  categories: () => apiFetch<{ success: boolean; categories: string[]; discos: ElectricityDisco[] }>('/api/admin/products/categories', {}, true),
+  providerMapping: () => apiFetch<{ success: boolean; mapping: ProviderMappingEntry[] }>('/api/admin/products/provider-mapping', {}, true),
+
+  toggleEnabled: (productId: string, enabled: boolean, category: string, reason: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/enabled`, { method: 'PUT', body: JSON.stringify({ enabled, category, reason }) }, true),
+  toggleVisibility: (productId: string, visible: boolean, category: string, reason: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/visibility`, { method: 'PUT', body: JSON.stringify({ visible, category, reason }) }, true),
+  setCustomPricing: (productId: string, category: string, reason: string, customSellingPrice?: number | null, customMarkupPct?: number | null) =>
+    apiFetch<{ success: boolean }>(`/api/admin/products/${encodeURIComponent(productId)}/pricing`, { method: 'PUT', body: JSON.stringify({ category, reason, customSellingPrice, customMarkupPct }) }, true),
+  bulkUpdatePricing: (productIds: string[], customMarkupPct: number, reason: string) =>
+    apiFetch<{ success: boolean; message: string }>('/api/admin/products/bulk-pricing', { method: 'POST', body: JSON.stringify({ productIds, customMarkupPct, reason }) }, true),
+  importPricing: (csv: string, reason: string) =>
+    apiFetch<{ success: boolean; message: string; results: { row: number; productId: string; success: boolean; error?: string }[] }>('/api/admin/products/import', { method: 'POST', body: JSON.stringify({ csv, reason }) }, true),
+
+  /** Export returns raw CSV, not JSON — bypasses apiFetch's JSON parsing and triggers a real browser download, reusing the same auth token every other admin call uses. */
+  exportPricingCsv: async () => {
+    const res = await fetch(`${BASE_URL}/api/admin/products/export`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export pricing');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-pricing-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+};
+
+// ============================================================
+// UTILITIES
+// ============================================================
+export const NETWORKS = [
+  { id: 'mtn',     name: 'MTN Nigeria',  shortColor: '#FFCB04', bg: 'bg-yellow-400', textColor: 'text-gray-900' },
+  { id: 'airtel',  name: 'Airtel Nigeria', shortColor: '#EF4444', bg: 'bg-red-600',    textColor: 'text-white' },
+  { id: 'glo',     name: 'Glo World',    shortColor: '#16A34A', bg: 'bg-green-600',  textColor: 'text-white' },
+  { id: '9mobile', name: '9Mobile',      shortColor: '#065F46', bg: 'bg-emerald-900', textColor: 'text-white' },
+] as const;
+
+// Real Nigerian carrier prefix ranges (as allocated by the NCC) — used only
+// to suggest a network from a typed number; never changes what the user can
+// actually select or submit.
+const NETWORK_PREFIXES: Record<string, string[]> = {
+  mtn: ['0803', '0806', '0703', '0706', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916'],
+  glo: ['0705', '0805', '0807', '0811', '0815', '0905', '0915'],
+  airtel: ['0802', '0808', '0812', '0708', '0701', '0902', '0901', '0904', '0907', '0912'],
+  '9mobile': ['0809', '0817', '0818', '0908', '0909'],
+};
+
+export function detectNetworkId(phone: string): string | null {
+  const clean = phone.replace(/\s/g, '');
+  const prefix = clean.slice(0, 4);
+  for (const [network, prefixes] of Object.entries(NETWORK_PREFIXES)) {
+    if (prefixes.includes(prefix)) return network;
+  }
+  return null;
+}
+
+export const CABLE_PROVIDERS = [
+  { id: 'dstv_subscription', name: 'DSTV', bg: 'bg-blue-700',    textColor: 'text-white' },
+  { id: 'gotv_subscription', name: 'GOTV', bg: 'bg-orange-500',  textColor: 'text-white' },
+  { id: 'startimes',         name: 'StarTimes', bg: 'bg-red-700', textColor: 'text-white' },
+] as const;
+
+export const AIRTIME_UNIT_COST = 100; // backend RAW airtime cost per unit
+
+export function formatNaira(amount: number) {
+  return `₦${amount.toLocaleString('en-NG')}`;
+}
+
+export function formatDate(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString('en-NG', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ============================================================
+// MODULE 7 — Reports & Analytics
+// ============================================================
+
+export type ReportPeriod = 'today' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom' | 'all';
+
+/** Shared by every Module 7 endpoint — period selector plus the same drill-down filters as the Transactions table. */
+export interface ReportFilters {
+  period?: ReportPeriod;
+  dateFrom?: string;
+  dateTo?: string;
+  category?: string;   // Service
+  productId?: string;  // Product
+  provider?: string;    // Upstream provider (gladtidings)
+  userId?: string;      // User
+  status?: string;      // deliveryStatus
+}
+
+export interface ReportKpis {
+  totalRevenue: number;
+  netProfit: number;
+  grossSales: number;
+  walletFloat: number;
+  totalTransactions: number;
+  successfulTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  successRate: number;
+  failureRate: number;
+  newUsers: number;
+  activeUsers: number;
+  returningCustomers: number;
+  avgTransactionValue: number;
+}
+
+export interface TopListEntry { name: string; revenue: number; count: number }
+export interface ReportProviderPerformance { provider: string; totalCalls: number; successRate: number; avgResponseMs: number | null }
+
+export interface ReportLists {
+  topProducts: TopListEntry[];
+  topNetworks: TopListEntry[];
+  topBillers: TopListEntry[];
+  providerPerformance: ReportProviderPerformance[];
+}
+
+export interface DashboardResponse {
+  success: boolean;
+  period: ReportPeriod;
+  range: { from: string | null; to: string };
+  kpis: ReportKpis;
+  topProducts: TopListEntry[];
+  topNetworks: TopListEntry[];
+  topBillers: TopListEntry[];
+  providerPerformance: ReportProviderPerformance[];
+}
+
+export interface ReportBreakdownRow {
+  bucket: string;
+  revenue: number;
+  profit: number;
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+}
+
+export interface ReportSummaryResponse extends DashboardResponse {
+  granularity: 'hour' | 'day' | 'week' | 'month';
+  breakdown: ReportBreakdownRow[];
+}
+
+export type ChartMetric =
+  | 'revenueTrend' | 'profitTrend' | 'transactionTrend' | 'userGrowth' | 'providerPerformance'
+  | 'walletFlow' | 'productPerformance' | 'serviceDistribution' | 'failureTrend' | 'successTrend';
+
+export interface ChartResponse {
+  success: boolean;
+  metric: ChartMetric;
+  period: ReportPeriod;
+  range: { from: string | null; to: string };
+  granularity: 'hour' | 'day' | 'week' | 'month';
+  series: any[];
+}
+
+export const reports = {
+  dashboard: (filters: ReportFilters = {}) =>
+    apiFetch<DashboardResponse>(`/api/admin/reports/dashboard${toQueryString(filters as any)}`, {}, true),
+  summary: (filters: ReportFilters = {}) =>
+    apiFetch<ReportSummaryResponse>(`/api/admin/reports/summary${toQueryString(filters as any)}`, {}, true),
+  chart: (metric: ChartMetric, filters: ReportFilters = {}) =>
+    apiFetch<ChartResponse>(`/api/admin/reports/charts${toQueryString({ ...filters, metric } as any)}`, {}, true),
+
+  /** Both exports bypass apiFetch's JSON parsing (same reasoning as adminProducts.exportPricingCsv) and stream a real file download using the same bearer token. */
+  exportTransactionsCsv: async (filters: ReportFilters = {}) => {
+    const res = await fetch(`${BASE_URL}/api/admin/reports/export/transactions.csv${toQueryString(filters as any)}`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export transactions');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  exportSummaryCsv: async (filters: ReportFilters = {}) => {
+    const res = await fetch(`${BASE_URL}/api/admin/reports/export/summary.csv${toQueryString(filters as any)}`, {
+      headers: { Authorization: `Bearer ${token.get()}` },
+    });
+    if (!res.ok) throw new Error('Failed to export summary');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sescohub-report-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  /** Notifies the backend so client-generated PDF/print exports still land in the audit log, same as server-side CSV exports. */
+  logExport: (type: 'pdf' | 'print', period?: string) =>
+    apiFetch<{ success: boolean }>('/api/admin/reports/export/log', { method: 'POST', body: JSON.stringify({ type, period }) }, true),
+};

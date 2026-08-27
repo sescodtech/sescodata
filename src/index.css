@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   SescoHub V1 — Design tokens
+   Single source of truth for color / type / radius / shadow used
+   across the whole app. Existing gold/navy brand DNA, tightened.
+   ============================================================ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-shb-navy: #0B1220;
+  --color-shb-navy-2: #121C2E;
+  --color-shb-navy-3: #1A2740;
+  /* Primary brand color is blue, matching the admin panel's royal blue for a
+     consistent brand across customer + admin surfaces. Variable names kept
+     as "shb-gold-*" so every existing bg-shb-gold / text-shb-gold-dark /
+     ring-shb-gold class across the app updates automatically — renaming the
+     tokens themselves would mean touching ~28 files for a cosmetic label. */
+  --color-shb-gold: #2563EB;
+  --color-shb-gold-soft: #DBEAFE;
+  --color-shb-gold-dark: #1D4ED8;
+  --color-shb-success: #22C55E;
+  --color-shb-danger: #EF4444;
+  --color-shb-text: #F5F6F8;
+  --color-shb-muted: #8B93A7;
+
+  --shadow-card: 0 2px 10px rgba(11, 18, 32, 0.05), 0 8px 24px rgba(11, 18, 32, 0.06);
+  --shadow-gold: 0 6px 16px rgba(37, 99, 235, 0.18);
+  --shadow-pop: 0 12px 32px rgba(11, 18, 32, 0.12);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ============================================================
+     Admin — Business Control Center design tokens
+     Deliberately separate from the shb-* customer tokens above so
+     re-theming the admin can never affect a completed customer module.
+     Primary = professional royal blue. Secondary = deep navy (large
+     surfaces, headers). Gold is accent-only — highlights, active
+     indicators, premium touches — never a primary fill.
+     ============================================================ */
+  --color-admin-blue: #2563EB;
+  --color-admin-blue-dark: #1D4ED8;
+  --color-admin-blue-soft: #DBEAFE;
+  --color-admin-navy: #0F172A;
+  --color-admin-navy-2: #16213A;
+  --color-admin-gold: #D4A73B;
+  --color-admin-gold-soft: #FBF3DE;
+  --color-admin-bg: #F8FAFC;
+  --color-admin-success: #16A34A;
+  --color-admin-danger: #DC2626;
+  --color-admin-warning: #D97706;
+  --color-admin-muted: #64748B;
+
+  --shadow-admin-card: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --shadow-admin-blue: 0 8px 24px rgba(37, 99, 235, 0.22);
+}
+
+@layer base {
+  /* Dark-mode scaffold — Phase 2 makes the customer app "dark-mode ready"
+     per the design brief without shipping a toggle yet. Every shb-* surface
+     token gets a dark counterpart here; wiring an actual switch (add/remove
+     `dark` class on <html>, persist the choice) is a small follow-up once
+     product wants to ship it — no component rewrites needed at that point. */
+  :root.dark {
+    --color-shb-bg: #0B1220;
+    --color-shb-surface: #121C2E;
+    --color-shb-surface-alt: #1A2740;
+    --color-shb-text: #F5F6F8;
+    --color-shb-muted: #8B93A7;
+    --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  :root {
+    --color-shb-bg: #F8FAFC;
+    --color-shb-surface: #FFFFFF;
+    --color-shb-surface-alt: #F8FAFC;
+  }
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply font-sans text-gray-900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Touch targets — sized like a native fintech app (40px), not a marketing
+     site (44px+). Scoped to real controls only; `a` is excluded so inline
+     links, badges and nav rows don't get force-inflated. */
+  button, input, select, textarea {
+    min-height: 40px;
+  }
+  button.icon-btn {
+    min-height: 0;
+  }
+  /* Compact pill/tag controls (e.g. filter chips) — these are secondary,
+     low-emphasis selectors, not primary tap targets, so they're exempt
+     from the 40px minimum that keeps them from ballooning in height. */
+  button.shb-chip {
+    min-height: 0;
+  }
+
+  /* Better focus states for accessibility — gold ring matches brand instead of generic blue */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-shb-gold), 0 0 0 4px rgba(37, 99, 235, 0.25);
+    transition: box-shadow 0.15s var(--ease-premium);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Compact fintech-app density: this component layer is the single source
+     that most pages consume via shb-card / shb-btn-* / shb-input / admin-*.
+     Sizes are tightened across the board (OPay/Kuda/Moniepoint density
+     rather than marketing-site spacing) so the change cascades everywhere
+     these classes are used without touching every page. */
+  .shb-card {
+    @apply bg-white rounded-xl border border-gray-100 transition-shadow duration-300;
+    box-shadow: var(--shadow-card);
+  }
+
+  .shb-btn-primary {
+    background: linear-gradient(135deg, var(--color-shb-gold), var(--color-shb-gold-dark));
+    @apply text-white font-bold rounded-lg px-4 py-2.5 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: var(--shadow-gold);
+    transition: transform 0.15s var(--ease-premium), box-shadow 0.2s var(--ease-premium), filter 0.2s ease;
+  }
+  .shb-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
+    transform: translateY(-1px);
+  }
+  .shb-btn-primary:active:not(:disabled) {
+    transform: scale(0.98) translateY(0);
+    filter: brightness(0.98);
+  }
+
+  .shb-btn-secondary {
+    @apply border border-shb-navy text-shb-navy font-bold rounded-lg px-4 py-2.5 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 0.2s var(--ease-premium), color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
+  }
+  .shb-btn-secondary:hover:not(:disabled) { @apply bg-shb-navy text-white; }
+  .shb-btn-secondary:active:not(:disabled) { transform: scale(0.98); }
+
+  .shb-skeleton {
+    @apply rounded-lg relative overflow-hidden;
+    background: linear-gradient(90deg, #F1F2F4 25%, #F8F9FA 37%, #F1F2F4 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+
+  /* ── Premium primitives ──────────────────────────────────── */
+  .shb-card-sm {
+    @apply bg-white rounded-xl border border-gray-100 p-3 transition-shadow duration-300;
+    box-shadow: var(--shadow-card);
+  }
+
+  .shb-input {
+    @apply w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none text-[14px] text-gray-900 placeholder:text-gray-400;
+    transition: background-color 0.2s var(--ease-premium), border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
+  }
+  .shb-input:focus {
+    @apply bg-white border-transparent;
+    box-shadow: 0 0 0 2px var(--color-shb-gold);
+  }
+  .shb-input.shb-input-error {
+    @apply border-red-300 bg-red-50/40;
+  }
+  .shb-input.shb-input-error:focus {
+    box-shadow: 0 0 0 2px var(--color-shb-danger);
+  }
+
+  .shb-btn-ghost {
+    @apply font-bold rounded-lg px-4 py-2.5 text-[13px] text-shb-navy hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 0.2s var(--ease-premium), transform 0.15s var(--ease-premium);
+  }
+
+  .shb-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold;
+  }
+  .shb-badge-success { @apply bg-green-50 text-green-700; }
+  .shb-badge-danger  { @apply bg-red-50 text-red-600; }
+  .shb-badge-warning { @apply bg-amber-50 text-amber-700; }
+  .shb-badge-info    { @apply bg-shb-gold-soft/60 text-shb-gold-dark; }
+  .shb-badge-muted   { @apply bg-gray-100 text-gray-500; }
+
+  /* ── Admin component classes — modern SaaS console density ─ */
+  .admin-card {
+    @apply bg-white rounded-lg border border-gray-100;
+    box-shadow: var(--shadow-admin-card);
+  }
+
+  .admin-btn-primary {
+    background: linear-gradient(135deg, var(--color-admin-blue), var(--color-admin-blue-dark));
+    @apply text-white font-semibold rounded-lg px-3.5 py-2 text-[13px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: var(--shadow-admin-blue);
+  }
+
+  .admin-btn-secondary {
+    @apply border border-admin-navy text-admin-navy font-semibold rounded-lg px-3.5 py-2 text-[13px] transition-all duration-200 hover:bg-admin-navy hover:text-white active:scale-[0.98];
+  }
+
+  .admin-skeleton {
+    @apply animate-pulse bg-gray-100 rounded-lg;
+  }
+
+  /* Compact form controls + table density for the admin console specifically */
+  .admin-input {
+    @apply w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-[13px] text-gray-900 placeholder:text-gray-400;
+    transition: border-color 0.2s var(--ease-premium), box-shadow 0.2s var(--ease-premium);
+  }
+  .admin-input:focus {
+    @apply border-transparent;
+    box-shadow: 0 0 0 2px var(--color-admin-blue);
+  }
+  .admin-table th {
+    @apply text-left text-[11px] font-bold uppercase tracking-wide text-admin-muted px-3 py-2;
+  }
+  .admin-table td {
+    @apply px-3 py-2.5 text-[13px] text-gray-700;
+  }
+}
+
+/* Admin-scoped focus ring — blue instead of the customer app's gold,
+   applied only within .admin-shell so the customer app is unaffected. */
+.admin-shell button:focus-visible,
+.admin-shell a:focus-visible,
+.admin-shell input:focus-visible,
+.admin-shell select:focus-visible,
+.admin-shell textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-admin-blue), 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+.content-reveal {
+  animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ============================================================
+   App page system — consistent responsive geometry across the
+   authenticated customer experience. Pages own content width; the
+   dashboard shell owns the outer gutter. This prevents the old
+   double-padding effect on mobile and keeps every screen aligned.
+   ============================================================ */
+.shb-page {
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+}
+.shb-page--narrow { max-width: 760px; }
+.shb-page--medium { max-width: 980px; }
+.shb-page--wide { max-width: 1200px; }
+.shb-page > * { min-width: 0; }
+.shb-page img,
+.shb-page svg { max-width: 100%; }
+
+/* Cards and controls should never create a horizontal scrollbar when a
+   provider name, plan label, reference or other real-world value is long. */
+.shb-card,
+.shb-card-sm,
+.shb-page table,
+.shb-page input,
+.shb-page select,
+.shb-page textarea {
+  min-width: 0;
+}
+
+@media (max-width: 639px) {
+  .shb-page { max-width: none; }
+  .shb-page--narrow,
+  .shb-page--medium,
+  .shb-page--wide { max-width: none; }
+}
+
+/* Typography hierarchy — used consistently across every redesigned page
+   instead of ad-hoc text-2xl/text-xl choices per file. */
+.shb-page-title { @apply text-[17px] sm:text-[19px] font-extrabold text-gray-900 font-display tracking-tight leading-tight; }
+.shb-section-title { @apply text-[14px] font-extrabold text-gray-900 font-display tracking-tight; }
+.shb-eyebrow { @apply text-[11px] font-black uppercase tracking-wider text-shb-muted; }
+.shb-body { @apply text-[13px] text-gray-500 leading-relaxed; }
+
+/* Print isolation for digital receipts — everything except the receipt
+   itself is hidden when the user prints from the transaction details drawer.
+   An explicit @page rule and a capped, centered width keep the receipt the
+   same physical size on every device — without this, mobile browsers tend
+   to compute the print layout from the phone's narrow screen viewport and
+   then stretch that result to fill the full paper width, making the receipt
+   look oversized or cut off compared to printing from a laptop. */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print-area, .receipt-print-area * {
+    visibility: visible;
+  }
+  .receipt-print-area {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

@@ -1,0 +1,106 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { User } from '../models/User';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-12345';
+const TOKEN_EXPIRY_REMEMBER = '7d';
+const TOKEN_EXPIRY_SESSION = '1d'; // safety-net ceiling even if the browser somehow restores the session storage
+
+export class AuthService {
+  static async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
+
+  static async comparePassword(password: string, hash: string): Promise<boolean> {
+    return await bcrypt.compare(password, hash);
+  }
+
+  static generateToken(user: any, rememberMe: boolean = false): string {
+    const payload = {
+      id: user._id,
+      email: user.email,
+      role: user.role
+    };
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: rememberMe ? TOKEN_EXPIRY_REMEMBER : TOKEN_EXPIRY_SESSION });
+  }
+
+  static async register(userData: any) {
+    const { email, password, role, ...rest } = userData;
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      throw new Error('Please enter a valid email address');
+    }
+    if (!password || String(password).length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) throw new Error('Email already registered');
+
+    const hashedPassword = await this.hashPassword(password);
+    // Public registration can never grant admin — that's set manually in the DB / by an existing admin.
+    const user = await User.create({
+      ...rest,
+      email: cleanEmail,
+      password: hashedPassword,
+      role: 'customer'
+    });
+
+    const token = this.generateToken(user);
+    return { user, token };
+  }
+
+  static async login(email: string, password: string, rememberMe: boolean = false) {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) throw new Error('Invalid email or password');
+
+    if (user.status === 'suspended') throw new Error('This account has been suspended');
+    if (user.isLocked) throw new Error('This account has been locked for security reasons. Contact support.');
+
+    // Defensive guard: a document reaching this point without a password hash
+    // means it wasn't created through AuthService.register/seed.ts (the only
+    // two paths in this codebase that set one) — most likely inserted
+    // directly into MongoDB, bypassing Mongoose's `required: true` validation,
+    // which only runs on create()/save(), not raw driver inserts. Without
+    // this check, bcrypt.compare(password, undefined) throws its own opaque
+    // "Illegal arguments: string, undefined" instead of a clean auth failure.
+    if (!user.password) throw new Error('Invalid email or password');
+
+    const isMatch = await this.comparePassword(password, user.password);
+    if (!isMatch) throw new Error('Invalid email or password');
+
+    user.lastLogin = new Date();
+    await user.save({ validateModifiedOnly: true });
+
+    const token = this.generateToken(user, rememberMe);
+    return { user, token };
+  }
+
+  static async verifyToken(token: string) {
+    try {
+      return jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      throw new Error('Invalid or expired token');
+    }
+  }
+
+  /**
+   * Shared by both the customer self-service "forgot password" flow
+   * (AuthController.requestReset) and the admin-triggered "reset this
+   * user's password" action (AdminController) — one implementation instead
+   * of two copies of the same token-hashing logic.
+   */
+  static async generateResetToken(user: any) {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.resetPasswordTokenHash = tokenHash;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save({ validateModifiedOnly: true });
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+    return { rawToken, resetUrl };
+  }
+}
